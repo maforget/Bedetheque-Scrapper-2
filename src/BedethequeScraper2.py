@@ -5,7 +5,7 @@
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
-# Bedetheque Scraper 2 - Jul 2017- v 4.9
+# Bedetheque Scraper 2 - Mars 2021 - v 4.10
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "4.8"
+VERSION = "4.10"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -1578,6 +1578,8 @@ def _read_url(url, bSingle):
 	page = ''
 	#headers = { 'User-Agent' : 'Mozilla/5.0'}
 	##headers = { 'User-Agent' : 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)', 'Accept-Encoding':'gzip, deflate','Accept':'text/html, application/xhtml+xml, */*','Accept-Language':'en-GB,it-IT;q=0.8,it;q=0.6,en-US;q=0.4,en;q=0.2'}
+	if not bSingle and re.search("https://www.bedetheque.com/", url, re.IGNORECASE):
+		bSingle = True
 
 	if bSingle:
 		requestUri = quote(url, safe = "%/:=&~#+$!,?;'@()*[]")
@@ -1599,6 +1601,7 @@ def _read_url(url, bSingle):
 	#return page
 
 	try:
+		System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
 		Req = System.Net.HttpWebRequest.Create(requestUri)		
 		Req.CookieContainer = CookieContainer		
 		#Req.CookieContainer.Add(System.Uri(requestUri), Cookie("__utma", "164207276.656597940.1352121294.1352232667.1352393821.4"))
