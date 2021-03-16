@@ -5,7 +5,7 @@
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
-# Bedetheque Scraper 2 - Mars 2021 - v 4.10
+# Bedetheque Scraper 2 - Mars 2021 - v 4.11
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "4.10"
+VERSION = "4.11"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -566,17 +566,17 @@ def SetSerieId(book, serie, num, nBooksIn):
 			RegCompile = re.compile(SERIE_URL_PATTERN % checkRegExp(serie.strip()),  re.IGNORECASE)
 			nameRegex = RegCompile.search(request)
 			
-			if not nameRegex:
-				urlN = "/liste_revues_" + letter + ".html"
-				request = _read_url(urlN.encode('utf-8'), False)
-				if request:
-					#serie = serie.encode('utf-8')			
-					RegCompile = re.compile(REVUE_URL_PATTERN % checkRegExp(serie),  re.IGNORECASE)
-					nameRegex = RegCompile.search(request)
-				else:
-					cError = debuglog()
-					log_BD("** Error [" + serie + "] " + num + " - " + titlize(book.Title), cError, 1)
-					return ""
+			# if not nameRegex:
+				# urlN = "/liste_revues_" + letter + ".html"		
+				# request = _read_url(urlN.encode('utf-8'), False)
+				# if request:
+					# #serie = serie.encode('utf-8')			
+					# RegCompile = re.compile(REVUE_URL_PATTERN % checkRegExp(serie),  re.IGNORECASE)
+					# nameRegex = RegCompile.search(request)
+				# else:
+					# cError = debuglog()
+					# log_BD("** Error [" + serie + "] " + num + " - " + titlize(book.Title), cError, 1)
+					# return ""
 				
 			if nameRegex:
 				
@@ -1619,7 +1619,7 @@ def _read_url(url, bSingle):
 		Req.Accept = 'text/html, application/xhtml+xml, */*'
 		Req.Headers.Add('Accept-Language','en-GB,it-IT;q=0.8,it;q=0.6,en-US;q=0.4,en;q=0.2')
 		Req.KeepAlive = True		
-		webresponse = Req.GetResponse()	
+		webresponse = Req.GetResponse()
 		a = webresponse.Cookies	
 
 		Application.DoEvents()
@@ -1636,8 +1636,8 @@ def _read_url(url, bSingle):
 		cError = debuglog()
 		log_BD("   [" + dlgName + "] " + dlgNumber + " Alt.No " + dlgAltNumber + " -> " , cError, 1)
 		Result = MessageBox.Show(ComicRack.MainWindow, Trans(98) + cError ,Trans(97), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
-	
-	inStream.Close()	
+		
+	inStream.Close()
 	webresponse.Close()
 	
 	return page
