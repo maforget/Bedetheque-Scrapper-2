@@ -3323,6 +3323,8 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 					#LongSerie= re.sub(u'^10000\.html','\_\_10000.html',serieUrl.lower())		
 					#serieUrl = LongSerie
 					
+					serieUrl = "https://www.bedetheque.com" + serieUrl
+					
 				try:
 					ficheUrl = _read_url(serieUrl, False)
 				except:
