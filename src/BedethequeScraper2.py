@@ -5,7 +5,8 @@
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
-# Bedetheque Scraper 2 - Mars 2021 - v 4.11
+# Bedetheque Scraper 2 - Mars 2021 - v 4.11 -> maforget
+# Bedetheque Scraper 2 - Mar 2021- v 5.0 -> by kiwi13
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -13,7 +14,7 @@
 #
 # You are free to modify, enhance (possibly) and distribute this file, but only if mentioning the (c) part
 #
-# (C)'2011 Franck (C)'2007-2017 cYo Soft & (C)'2008 DouglasBubbletrousers & (C)'2008 wadegiles & (C)'2010 cbanack & (C)'2017 Mizio66
+# (C)'2011 Franck (C)'2007-2017 cYo Soft & (C)'2008 DouglasBubbletrousers & (C)'2008 wadegiles & (C)'2010 cbanack & (C)'2017 Mizio66 & (C)'2021 kiwi13 & maforget
 #
 
 from __future__ import unicode_literals
@@ -50,7 +51,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "4.11"
+VERSION = "5.0"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -82,13 +83,15 @@ CBSeries = True
 CBDefault = False
 CBRescrape = False
 CBStop = False
-ARTICLES = "Le,La,Les,Die,Der,Das,Het"
+ARTICLES = "Le,La,Les,L',The"
+SUBPATT = " - - "
 COUNTOF = False
 COUNTFINIE = False
 TITLEIT = True
 CBCouverture = True
-TIMEOUT = "50"
-TIMEOUTS = "15"
+TIMEOUT = "1000"
+TIMEOUTS = "7"
+TIMEPOPUP = "30"
 
 ########################################
 # Nombres auteurs
@@ -114,7 +117,6 @@ ALBUM_INFO_PATTERN = r'<meta\sname=\"description\"\scontent="(.*?)\"'
 SERIE_LANGUE_PATTERN = r'class=\"flag\"/>(.*?)</span>'
 SERIE_LANGUE = re.compile(SERIE_LANGUE_PATTERN, re.IGNORECASE)
 
-#SERIE_GENRE_PATTERN = r'<h2\sstyle.*?<span>(.*?)</'
 SERIE_GENRE_PATTERN = r'<span\sclass=\"style\">(.*?)<'
 SERIE_GENRE = re.compile(SERIE_GENRE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
@@ -167,7 +169,6 @@ ALBUM_SCENAR_MULTI_AUTHOR_NAMES = re.compile(ALBUM_SCENAR_MULTI_AUTHOR_NAMES_PAT
 ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN = r'label>storyboard\s:.*?itemprop.*?\">(.*?)<'
 ALBUM_STORYBOARD_MULTI_AUTHOR = re.compile(ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
-#ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES_PATTERN = r'[ustrator|erture]\">(.*?)<'
 ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES_PATTERN = r'<label>.*?\">(.*?)</a'
 ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES = re.compile(ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
@@ -234,9 +235,14 @@ ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | r
 ALBUM_INFOEDITION_PATTERN = r'<em>Info\s.*?dition\s:\s?</em>\s?(.*?)<'
 ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
-ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.%s<.*?<a\shref=\"(.*?)"'
-#ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.%s<.*?<a\shref=\"(.*?)\#(.*?)\"'
+#modif kiwi
+#ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.%s<.*?<a\shref=\"(.*?)"'
+ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.<.*?<a\shref=\"(.*?)"'
+
 ALBUM_SINGLE_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.%s<.*?<a\shref=\"(.*?)\#(.*?)\"'
+
+#modif kiwi
+ALBUM_NON_NUM_URL_PATTERN = r'<label><span\sclass=\"numa\">%s</span>.*?\.<.*?<a\shref=\"(.*?)"'   
 
 ALBUM_SINGLEALBUM_URLALL_PATTERN = r'<h3>(.*?)</h3>'
 ALBUM_SINGLEALBUM_URLALL = re.compile(ALBUM_SINGLEALBUM_URLALL_PATTERN, re.DOTALL | re.IGNORECASE)
@@ -249,64 +255,18 @@ ALBUMDETAILSSINGLE_URL_PATTERN = r'https:\/\/www.bedetheque.com\/album-(.*?)\"'
 ALBUM_URL_PATTERN_NOTNUM = r'<div\sclass=\"album.*?href=\"(.*?)\"'
 ALBUM_URL_NOTNUM = re.compile(ALBUM_URL_PATTERN_NOTNUM, re.MULTILINE | re.DOTALL | re.IGNORECASE)				
 
-#ALBUM_QNUM_PATTERN = r'titre.*?>(.*?)[<s|</]'
-#ALBUM_QNUM_PATTERN = r'titre.*?>(.*?)<s.*?<a\sname=\"'
-#ALBUM_QNUM_PATTERN = r'titre-rubrique\">(.*?)\.?\s?</span>'
-#ALBUM_QNUM_PATTERN = r'titre.*?\r\n(.*?)<span'
 ALBUM_QNUM_PATTERN = r'<title>(.*?)\-(.*?)\-?\s(.*?)</title>'
 ALBUM_QNUM = re.compile(ALBUM_QNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)			
 
-#ALBUM_QTITLE_PATTERN = r'titre.*?>(?:%s)?<.*?span>\.?\s?(.*?)</d'
-#ALBUM_QTITLE_PATTERN = r'titre.*?>(?:%s)?<.*?span>\.?\s?(.*?)</d.*?<a\sname='
-#ALBUM_QTITLE_PATTERN = r'titre-rubrique\">1.*?>(.*?)</h1>'
 ALBUM_QTITLE_PATTERN = r'titre.*?%s<span.*?name\">(.*?)<'
 ########################################
-# Info Revues
-REVUE_URL_PATTERN = r'<a\shref=\"(.{1,60}?)\.html\"\starget=\"_top\"\s>%s<'
 
-REVUE_LIST_PATTERN = r'<a\shref="(revue.*?)\".*?highlight>(.*?)\"><span\sclass'
-REVUE_LIST = re.compile(REVUE_LIST_PATTERN)
-
-REVUE_LIST_EXISTS_PATTERN = r'<h1>Revues</h1>'
-REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOTALL)				
-
-REVUE_LIST_CHECK_PATTERN = r'<h1>Revues</h1>.*?La\srecherche\seffectu.*?\srenvoie\splus\sde\s.*?<h1>S.*?ries<'
-REVUE_LIST_CHECK = re.compile(REVUE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
-
-REVUE_FIND_PATTERN = r'class=\"num\">%s\s?</'
-
-#REVUE_HEADER_PATTERN = r'<img\sclass=\"shadowed\"\ssrc=\"(.*?)\".*?numrevue\">Num.*?ro\s<span\sclass=\"num\">%s\s?</span>(.*?)\"main\">'
-REVUE_HEADER_PATTERN = r'<div\sclass=\"couv\"><a\shref=\"(.{1,150}?)\".{1,150}#?%s.*?Num.{1,3}?ro\s<span\sclass=\"num\">%s\s?</span>(.*?)</div><a\sname'
-
-#REVUE_COVER_PATTERN = r'title=\"\s?Couverture.*?\#%s\".*?src=\"(.*?)\"'
-
-REVUE_RESUME_PATTERN = r'<em>Sommaire.*?</em>(.*?)</p'
-REVUE_RESUME = re.compile(REVUE_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-REVUE_PLANCHES_PATTERN = r'>Nb\sPages\s:\s</label>(.*?)<'
-REVUE_PLANCHES = re.compile(REVUE_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-
-REVUE_DEPOT_PATTERN = r'<label>Parution\s:\s</label>(.*?)</'
-REVUE_DEPOT = re.compile(REVUE_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-
-REVUE_PERIOD_PATTERN = r'<label>Periodicit.*?</label>(?:<strong>)?(.*?)</'
-REVUE_PERIOD = re.compile(REVUE_PERIOD_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-
-#REVUE_CALC_PATTERN = r'<h2>(.*?)\snum.*?ros</h2>'
-REVUE_CALC_PATTERN = r'<option\svalue=\"(.{1,60}?)\">%s</'
-
-REVUE_NAME_PATTERN = r'\"title\"><h1>(.*?)</h1>'
-REVUE_NAME = re.compile(REVUE_NAME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-REVUE_NUMINT_PATTERN = r'#(.*?)$'
-REVUE_NUMINT = re.compile(REVUE_NUMINT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-########################################
 
 def BD_start(books):
 	
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, ARTICLES, COUNTOF, COUNTFINIE, TITLEIT
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, TIMEOUT, TIMEOUTS, CBDefault,CBRescrape, CBStop
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, TIMEOUT, TIMEOUTS, TIMEPOPUP, CBDefault,CBRescrape, CBStop
 		
 	aWord = Translate()
 	
@@ -351,7 +311,7 @@ def WorkerThread(books):
 
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBCouverture, CBDefault, CBRescrape, CBStop
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, COUNTOF, RenameSeries, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, SUBPATT, COUNTOF, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 
 	t = Thread(ThreadStart(thread_proc))
 
@@ -380,6 +340,9 @@ def WorkerThread(books):
 		nTIMEDOUT = 0
 		
 		nBooks = len(books)
+#modif kiwi
+		PickSeries = False
+		serie_rech_prev = None
 
 		for book in books:
 						
@@ -414,6 +377,13 @@ def WorkerThread(books):
 			dlgName = re.sub(r'^(' + ARTICLES.lower().replace(',','|') + ')\s+(.*)', r'\2 (\1)', dlgName)
 			dlgName = re.sub(r'^(' + ARTICLES.upper().replace(',','|') + ')\s+(.*)', r'\2 (\1)', dlgName)
 			dlgName = re.sub(r'^(L\')(.*)', r'\2 (\1)', dlgName)
+
+#modif Pitoufos
+			findCara = dlgName.find(SUBPATT)
+			if findCara > 0 :
+				lenDlgName = len(dlgName)
+				totalchar = lenDlgName - findCara
+				dlgName = dlgName[:-totalchar]
 
 			mPos = re.search(r'([.|,|\\|\/|-])', dlgNumber)
 			if not isnumeric(dlgNumber):
@@ -535,16 +505,14 @@ def WorkerThread(books):
 
 def SetSerieId(book, serie, num, nBooksIn):
 
-	global dlgName, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, lSoR, CBStop
+	global dlgName, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop
 	
 	if serie:
-		if re.match("[0-9]", serie[0]):
-
-			letter = "0"
-
+#modif kiwi
+		if re.match("[a-z]", remove_accents(serie[0]).lower()):
+			letter = remove_accents(serie[0])
 		else:
-
-			letter = serie[0]
+			letter = "0"
 	else:
 		return ""
 
@@ -565,18 +533,6 @@ def SetSerieId(book, serie, num, nBooksIn):
 			
 			RegCompile = re.compile(SERIE_URL_PATTERN % checkRegExp(serie.strip()),  re.IGNORECASE)
 			nameRegex = RegCompile.search(request)
-			
-			# if not nameRegex:
-				# urlN = "/liste_revues_" + letter + ".html"		
-				# request = _read_url(urlN.encode('utf-8'), False)
-				# if request:
-					# #serie = serie.encode('utf-8')			
-					# RegCompile = re.compile(REVUE_URL_PATTERN % checkRegExp(serie),  re.IGNORECASE)
-					# nameRegex = RegCompile.search(request)
-				# else:
-					# cError = debuglog()
-					# log_BD("** Error [" + serie + "] " + num + " - " + titlize(book.Title), cError, 1)
-					# return ""
 				
 			if nameRegex:
 				
@@ -586,15 +542,19 @@ def SetSerieId(book, serie, num, nBooksIn):
 				if DBGONOFF:print Trans(23) + serieUrl
 
 			else:
-								
-				ListSeries = list()
-								
-				#urlN = 'index.php?R=1&RechTexte=' + dlgName.lower().strip()
-				#urlN = 'search/albums?RechSerie=' + dlgName.lower().strip()
-				#urlN = '/search/tout?RechTexte=' + dlgName.lower().strip() + '&RechWhere=0'
-				#urlN = '/search/tout?&RechWhere=1&RechTexte=' + DoWebSearch(dlgName.lower().strip())
-				#urlN = '/search/tout?&RechWhere=0&RechTexte=' + url_fix(dlgName.lower().strip())				
-				urlN = '/search/tout?RechTexte=' + url_fix(dlgName.lower().strip()) +'&RechWhere=0'
+
+#modif kiwi
+				serie_rech = remove_accents(serie.lower())
+				if serie_rech == serie_rech_prev and PickSeries != False:
+					serie_rech_prev = serie_rech
+					RenameSeries = PickSeries		
+					return PickSeriesLink
+				else:
+					serie_rech_prev = serie_rech
+					PickSeries = False
+					
+				ListSeries = list()			
+				urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgName.lower().strip())) +'&RechWhere=0'
 
 				if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
 				
@@ -606,29 +566,13 @@ def SetSerieId(book, serie, num, nBooksIn):
 					if DBGONOFF:print Trans(114) + '[' + titlize(book.Series) + '] !'
 					return ''
 				
-				## check ##
-				#REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOTALL)				
-				if REVUE_LIST_EXISTS.search(request):
-					#REVUE_LIST_CHECK = re.compile(REVUE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)				
-					if REVUE_LIST_CHECK.search(request):	
-						Result = MessageBox.Show(ComicRack.MainWindow, Trans(114) + '[' + titlize(book.Series) + '] !', Trans(2), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
-						if DBGONOFF:print Trans(114) + '[' + titlize(book.Series) + '] !'
-						return ''
-					else:						
-						lSoR = False
-						i = 1						
-						for seriepick in REVUE_LIST.finditer(request):												
-							ListSeries.append([seriepick.group(1), seriepick.group(2).replace('</span>',''), str(i).zfill(3)])	
-							i = i + 1											
-
-				else:
-					i = 1
-					lSoR = True
-					RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
-					for seriepick in RegCompile.finditer(request):						
-						ListSeries.append(["serie-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])						
-						i = i + 1											
+				i = 1
+				RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
+				for seriepick in RegCompile.finditer(request):						
+					ListSeries.append(["serie-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])						
+					i = i + 1											
 					
+
 				ListSeries.sort(key=operator.itemgetter(2))
 
 				if len(ListSeries) == 1:
@@ -643,10 +587,11 @@ def SetSerieId(book, serie, num, nBooksIn):
 					if (CBStop == True or CBStop == "2") or nBooksIn == 1:				
 						lUnique = False
 						for i in range(len(ListSeries)):						
-							if ListSeries[i][1].lower() == dlgName.lower().strip():
+ #modif kiwi
+							if remove_accents(ListSeries[i][1].lower()) == remove_accents(dlgName.lower().strip()):
 								lUnique = True
 								nItem = i
-							if ListSeries[i][1].lower() == dlgName.lower().strip() and re.search(r'\(.{4,}?\)', ListSeries[i][1].lower()):
+							if remove_accents(ListSeries[i][1].lower()) == remove_accents(dlgName.lower().strip()) and re.search(r'\(.{4,}?\)', ListSeries[i][1].lower()):
 								lUnique = False
 						if lUnique:
 							if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
@@ -672,6 +617,9 @@ def SetSerieId(book, serie, num, nBooksIn):
 							log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
 							log_BD(Trans(111), "[" + NewSeries + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + NewLink + ")", 1)
 							RenameSeries = NewSeries						
+#modif kiwi
+							PickSeries	= RenameSeries
+							PickSeriesLink = NewLink                        
 							return NewLink
 					else:
 						if DBGONOFF:print Trans(142) + checkRegExp(serie) + "]"						
@@ -684,6 +632,19 @@ def SetSerieId(book, serie, num, nBooksIn):
 		log_BD("** Error [" + serie + "] " + num + " - " + titlize(book.Title), cError, 1)
 
 	return serieUrl
+
+
+#modif kiwi
+def remove_accents(raw_text):
+	raw_text = re.sub(u"[àáâãäåÀÁÂÄÅÃ]", 'a', raw_text)
+	raw_text = re.sub(u"[èéêëÉÈÊËÍÌÎÏ]", 'e', raw_text)
+	raw_text = re.sub(u"[çÇ]", 'c', raw_text)
+	raw_text = re.sub(u"[ìíîïÍÌÎÏ]", 'i', raw_text)
+	raw_text = re.sub(u"[òóôõöÓÒÔÖÕ]", 'o', raw_text)
+	raw_text = re.sub(u"[ùúûüÚÙÛÜ]", 'u', raw_text)
+	raw_text = re.sub(u"[œŒ]", 'oe', raw_text)
+	return raw_text
+
 
 def SetAlbumInformation(book, serieUrl, serie, num):
 
@@ -724,8 +685,6 @@ def parseSerieInfo(book, serieUrl, lDirect):
 	#SERIE_HEADER = re.compile(SERIE_HEADER_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 	SERIE_QSERIE = re.compile(SERIE_QSERIE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 	
-	REVUE_FIND = re.compile(REVUE_FIND_PATTERN % dlgNumber, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-	REVUE_HEADER = re.compile(REVUE_HEADER_PATTERN % (dlgNumber, dlgNumber), re.IGNORECASE | re.MULTILINE | re.DOTALL)
 	
 	albumURL = ''
 	
@@ -738,386 +697,239 @@ def parseSerieInfo(book, serieUrl, lDirect):
 		cError = debuglog()
 		log_BD("   " + serieUrl + " " + Trans(43), "", 1)
 		return False
-	
-	if 'revue' in serieUrl:
-		REVUE_CALC = re.compile(REVUE_CALC_PATTERN % dlgNumber, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-		nameRegex = REVUE_CALC.search(request)
-		if nameRegex:			
-			request = _read_url(nameRegex.group(1), False)
-		else:
-			return ""
-				
-		SerieInfoRegex = REVUE_HEADER.search(request)
-		if SerieInfoRegex:
-			RetVal = parseRevueInfo(book, SerieInfoRegex, serieUrl)
-			return RetVal
-		else:
-			return ""
 
-	else:
-		
-		SerieInfoRegex = SERIE_HEADER.search(request)
-		if SerieInfoRegex:
 
-			#Entete = SerieInfoRegex.group(1)
-			Entete = request
-		
-			if RenameSeries:
-				if CBSeries:
-					book.Series = titlize(RenameSeries)
-		
-			#Series if Quickscrape and empty name
-			qserie = ""
-			if lDirect and not book.Series:
-				nameRegex = SERIE_QSERIE.search(Entete)
-				if nameRegex:
-					qserie = checkWebChar(nameRegex.group(1).strip())			
-					#qserie = checkWebChar(nameRegex.group(1).decode('utf-8'))		
-					if CBSeries:	
-						book.Series = titlize(qserie)
-						if DBGONOFF:print Trans(9), qserie
-				else:
-					albumURL = False
-					return
+	SerieInfoRegex = SERIE_HEADER.search(request)
+	if SerieInfoRegex:
 
-			#genre
-			if CBGenre:
-				nameRegex = SERIE_GENRE.search(Entete)
-				if nameRegex:
-					genre = checkWebChar(nameRegex.group(1).strip())
-					#genre = checkWebChar(nameRegex.group('genre').decode('utf-8'))
-				else:
-					genre = ""
-				if genre != "":
-					book.Genre = genre
-				elif genre == "" and 'revue' in serieUrl:
-					book.Genre = "Revue"
-				if DBGONOFF:print Trans(51), book.Genre
-
-			#Resume
-			if CBSynopsys:								
-				nameRegex = SERIE_RESUME.search(checkWebChar(Entete.replace("\r\n","")), 0)
-				if nameRegex:
-					resume = strip_tags(nameRegex.group(1)).strip()
-					#resume = strip_tags(nameRegex.group('resume')).decode('utf-8').strip()
-				else:
-					resume = ""
-				
-				resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
-
-				book.Summary = (checkWebChar(resume)).strip()
-				cResume = if_else(resume, Trans(52), Trans(53))
-				if DBGONOFF:print cResume
-						
-
-			#fini
-			if CBStatus:
-				SerieState = ""
-				nameRegex = SERIE_STATUS.search(Entete)
-				if nameRegex:
-					fin = checkWebChar(nameRegex.group(1).strip())
-					#fin = checkWebChar(nameRegex.group('fin').decode('utf-8'))
-				else:
-					fin = ""
-
-				if ("finie" in fin) or ("One Shot" in fin) or (dlgNumber == "One Shot"):
-					book.SeriesComplete = YesNo.Yes
-					SerieState = Trans(54)
-				elif ("cours" in fin):
-					book.SeriesComplete = YesNo.No
-					SerieState = Trans(55)
-				else:
-					book.SeriesComplete = YesNo.Unknown
-					SerieState = Trans(56)
-
-				if DBGONOFF:print Trans(57) + SerieState + if_else(dlgNumber == "One Shot", " (One Shot)", "")
-
-			# Language
-			if CBLanguage:
-				nameRegex = SERIE_LANGUE.search(Entete)
-				dLang = {"Fr": "fr", "Al": "de", "An": "en", "It":"it", "Es":"es", "Ne":"du", "Po":"pt", "Ja":"ja"}
-				if nameRegex:
-					langue = nameRegex.group(1).strip()
-					if DBGONOFF:print Trans(36), langue[:2]
-					book.LanguageISO = dLang[langue[:2]]
-	
-			
-			#Default Values
-			if not CBDefault:
-				book.EnableProposed = YesNo.No
-				if DBGONOFF:print Trans(136), "No"
-
-			SerieInfoRegex = SERIE_HEADER2.search(request)
-			if SerieInfoRegex:
-				Entete2 = SerieInfoRegex.group(1)
-
-				#Notes-Rating
-				#if CBRating:
-				#	nameRegex = SERIE_NOTE.search(Entete)
-				#	if nameRegex:
-				#		note = nameRegex.group('note')
-				#	else:
-				#		note = "0.0"
-
-				#	book.CommunityRating = float(note) / 2
-				#	if DBGONOFF:print Trans(58) + str(float(note) / 2)
-			
-				# Number of...
-				if CBCount and not lDirect:			
-						
-					count = 0
-					cCountText = ""
-					if not COUNTOF:				
-						nameRegex = SERIE_COUNT.search(Entete2)
-						if nameRegex and AlbumNumNum:
-							count = checkWebChar(nameRegex.group(1))
-							book.Count = int(count)
-							cCountText = str(int(count))				
-						else:					
-							book.Count = -1
-							cCountText = "---"
-					elif COUNTFINIE and book.SeriesComplete == YesNo.No:				
-						book.Count = -1
-						cCountText = "---"
-					else:				
-						nameRegex = SERIE_COUNT_REAL.search(request)				
-						if nameRegex:							
-							for numof in SERIE_COUNTOF.finditer(nameRegex.group(1)):						
-								if isnumeric(numof.group(1)) and int(numof.group(1)) > count:
-									count = int(numof.group(1))
-							if count > 0 and AlbumNumNum:						
-								book.Count = int(count)	
-								cCountText = str(int(count))
-						else:					
-							book.Count = -1
-							cCountText = "---"
-					
-					if DBGONOFF:print Trans(59) + if_else(dlgNumber == "One Shot", "1", cCountText)
-				
-			# Check type of book number
-			if not lDirect:			
-				if (dlgNumber or dlgAltNumber) and dlgNumber != "One Shot":
-								
-					Regex = re.compile(ALBUM_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
-					nameRegex = Regex.search(request)
-					cBDNum = ""			
-					if nameRegex:
-						#albumURL_Temp = nameRegex.group(1) + "#" + nameRegex.group(2)
-						albumURL_Temp = nameRegex.group(1)
-
-						cBDNumS = re.search(r'\-(\d+).html', albumURL_Temp)
-						if cBDNumS:
-							cBDNum = cBDNumS.group(1)
-						else:
-							cBDNum = ""
-
-						#try:
-							#request = _read_url(albumURL_Temp, lDirect)
-							#Regex = re.compile(ALBUMDETAILS_URL_PATTERN % cBDNum, re.DOTALL | re.IGNORECASE)
-							#nameRegex = Regex.search(request)
-						#except:		
-							#cError = debuglog()
-							#log_BD("   " + albumURL_Temp + " " + Trans(43), "", 1)
-							#return False
-					else:
-						Regex = re.compile(ALBUM_SINGLE_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
-						nameRegex = Regex.search(request)
-						cBDNum = ""	
-						if nameRegex:
-							albumURL_Temp = nameRegex.group(1) + "#" + nameRegex.group(2)
-							cBDNum = nameRegex.group(2)
-							try:
-								request = _read_url(albumURL_Temp, lDirect)
-								Regex = re.compile(ALBUMDETAILS_URL_PATTERN % cBDNum, re.DOTALL | re.IGNORECASE)
-								nameRegex = Regex.search(request)
-							except:		
-								cError = debuglog()
-								log_BD("   " + albumURL_Temp + " " + Trans(43), "", 1)
-								return False	
-						else:															
-							albumURL = ""			
-	
-					if nameRegex:
-						#albumURL = "album-" + cBDNum + "-" + nameRegex.group(1)
-						albumURL = albumURL_Temp
-						try:
-							request = _read_url(albumURL, lDirect)
-						except:		
-							cError = debuglog()
-							log_BD("   " + albumURL + " " + Trans(43), "", 1)
-							return False
-					else:
-						#if dlgNumber == "":
-						#	dlgNumber = '.*?'
-						#if dlgAltNumber == "":
-						#	dlgAltNumber = '.*?'						
-						albumURL = ""
-						Regex = re.compile(ALBUM_SINGLEALBUM_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
-						for album_multi in ALBUM_SINGLEALBUM_URLALL.finditer(request):							
-							nameRegex = Regex.search(album_multi.group(1))
-							if nameRegex:
-								albumURL = nameRegex.group(1)
-								exit
-						if albumURL == "":							
-							return False
-				else:
-
-					#ALBUM_URL_NOTNUM = re.compile(ALBUM_URL_PATTERN_NOTNUM, re.MULTILINE | re.DOTALL | re.IGNORECASE)				
-					nameRegex = ALBUM_URL_NOTNUM.search(request)
-				
-					if nameRegex:
-						albumURL = nameRegex.group(1)
-			else:
-		
-				albumURL = True
-
-	
-
-	return albumURL
-
-def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
-
-	global aWord, RenameSeries, dlgNumber, dlgAltNumber, CBelid
-	
-	if DBGONOFF:print "=" * 60
-	if DBGONOFF:print "parseRevueInfo", "a)", serieUrl, "b)", Numero
-	if DBGONOFF:print "=" * 60
-	try:
-		
-		#request = _read_url(serieUrl, False)
-		
-		Entete = SerieInfoRegex.group(2)
+		#Entete = SerieInfoRegex.group(1)
+		Entete = request
 		
 		if RenameSeries:
 			if CBSeries:
 				book.Series = titlize(RenameSeries)
-		else:
-			if CBSeries:
-				book.Series = titlize(book.Series)
+		
+		#Series if Quickscrape and empty name
+		qserie = ""
+		if lDirect and not book.Series:
+			nameRegex = SERIE_QSERIE.search(Entete)
+			if nameRegex:
+				qserie = checkWebChar(nameRegex.group(1).strip())			
+				#qserie = checkWebChar(nameRegex.group(1).decode('utf-8'))		
+				if CBSeries:	
+					book.Series = titlize(qserie)
+					if DBGONOFF:print Trans(9), qserie
+			else:
+				albumURL = False
+				return
 
-		if Numero:
-			try:
-				if not book.Number:
-					book.Number = Numero
-					if DBGONOFF:print Trans(115), book.Number
-			except:
-				book.Number = ""
-							
-			try:
-				if not book.Series:					
-					if serie.group(1):
-						if CBSeries:
-							book.Series = titlize(serie.group(1))
-							if DBGONOFF:print Trans(9), titlize(book.Series)
-			except:
-				pass	
-
-				
 		#genre
-		if CBGenre:		
-			book.Genre = "Revue"
+		if CBGenre:
+			nameRegex = SERIE_GENRE.search(Entete)
+			if nameRegex:
+				genre = checkWebChar(nameRegex.group(1).strip())
+				#genre = checkWebChar(nameRegex.group('genre').decode('utf-8'))
+			else:
+				genre = ""
+			if genre != "":
+				book.Genre = genre
+			elif genre == "" and 'revue' in serieUrl:
+				book.Genre = "Revue"																
 			if DBGONOFF:print Trans(51), book.Genre
 
 		#Resume
-		if CBSynopsys:
-			nameRegex = REVUE_RESUME.search(Entete)
+		if CBSynopsys:								
+			nameRegex = SERIE_RESUME.search(checkWebChar(Entete.replace("\r\n","")), 0)
 			if nameRegex:
-				#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
 				resume = strip_tags(nameRegex.group(1)).strip()
+				#resume = strip_tags(nameRegex.group('resume')).decode('utf-8').strip()
 			else:
 				resume = ""
+			
+			resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
 			book.Summary = (checkWebChar(resume)).strip()
 			cResume = if_else(resume, Trans(52), Trans(53))
 			if DBGONOFF:print cResume
-		
-		#Notes-Rating
-		if CBRating:
-			nameRegex = SERIE_NOTE.search(Entete)
-			if nameRegex:
-				note = nameRegex.group('note')
-			else:
-				note = "0.0"
-
-			book.CommunityRating = float(note)
-			if DBGONOFF:print Trans(58) + str(float(note))
-	
-		#Couverture
-		# Cover Image only for fileless
-		if CBCover and not book.FilePath:			
-			CoverImg = SerieInfoRegex.group(1)
-			request = HttpWebRequest.Create("https://www.bedetheque.com//" + CoverImg)					
-			response = request.GetResponse()
-			response_stream = response.GetResponseStream()
-			retval = Image.FromStream(response_stream)
-			ComicRack.App.SetCustomBookThumbnail(book, retval)
-			if DBGONOFF:print Trans(105), "https://www.bedetheque.com//" + CoverImg
-	
-		#Parution
-		if CBPrinted:
-			#REVUE_DEPOT = re.compile(REVUE_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-			nameRegex = REVUE_DEPOT.search(Entete, 0)
-			if nameRegex:
-				if nameRegex.group(1) != '-':															
-					book.Month = int(nameRegex.group(1)[3:5])
-					book.Year = int(nameRegex.group(1)[6:10])
-					if DBGONOFF:print Trans(34), str(book.Month) + "/" + str(book.Year)
-				else:
-					book.Month = -1
-					book.Year = -1
-			else:
-				book.Month = -1
-				book.Year = -1	
-	
-		#Editeur
-		if CBEditor:
-			#ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-			nameRegex = ALBUM_EDITEUR.search(Entete, 0)
-			if nameRegex:
-				editeur = parseNames(nameRegex.group(1))
-				#editeur = parseNames(nameRegex.group(1).decode('utf-8'))
-				book.Publisher = editeur
-			else:
-				book.Publisher = ""
-					
-			if DBGONOFF:print Trans(35), book.Publisher
-		
-		# Planches			
-		if not book.FilePath:
-			#REVUE_PLANCHES = re.compile(REVUE_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-			nameRegex = REVUE_PLANCHES.search(Entete, 0)																
-			if nameRegex:
-				book.PageCount = int(nameRegex.group(1).strip())
-				if DBGONOFF:print Trans(122), int(nameRegex.group(1))
-
-		#Periodicité
-		if CBFormat:
-			#REVUE_PERIOD = re.compile(REVUE_PERIOD_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-			nameRegex = REVUE_PERIOD.search(Entete, 0)																
-			if nameRegex:
-				book.Format = nameRegex.group(1).strip()
-				if DBGONOFF:print Trans(131), nameRegex.group(1)
-
-		#web
-		if CBWeb == True and not CBRescrape:			
-			book.Web = serieUrl
-			if DBGONOFF:print Trans(123), book.Web
-		elif CBWeb == "2" and not CBRescrape:
-			cBelid = re.search(r'\-(\d+).html', serieUrl)			
-			if cBelid:			
-				book.Web = 'www.bedetheque.com/BD--' + cBelid.group(1) + '.html'
-				if DBGONOFF:print Trans(123), book.Web
 						
-		return True
 
-	except:
+		#fini
+		if CBStatus:
+			SerieState = ""
+			nameRegex = SERIE_STATUS.search(Entete)
+			if nameRegex:
+				fin = checkWebChar(nameRegex.group(1).strip())
+				log_BD(fin, Trans(25), 1)
+				#fin = checkWebChar(nameRegex.group('fin').decode('utf-8'))
+			else:
+				fin = ""
 
-		return False
+#modif kiwi
+			if ("finie" in fin) or ("One shot" in fin) or (dlgNumber == "One Shot"):
+				book.SeriesComplete = YesNo.Yes
+				SerieState = Trans(54)
+			elif ("cours" in fin):
+				book.SeriesComplete = YesNo.No
+				SerieState = Trans(55)
+			else:
+				book.SeriesComplete = YesNo.Unknown
+				SerieState = Trans(56)
+
+			if DBGONOFF:print Trans(57) + SerieState + if_else(dlgNumber == "One Shot", " (One Shot)", "")
+
+		# Language
+		if CBLanguage:
+			nameRegex = SERIE_LANGUE.search(Entete)
+			dLang = {"Fr": "fr", "Al": "de", "An": "en", "It":"it", "Es":"es", "Ne":"du", "Po":"pt", "Ja":"ja"}
+			if nameRegex:
+				langue = nameRegex.group(1).strip()
+				if DBGONOFF:print Trans(36), langue[:2]
+				book.LanguageISO = dLang[langue[:2]]
+	
+			
+		#Default Values
+		if not CBDefault:
+			book.EnableProposed = YesNo.No
+			if DBGONOFF:print Trans(136), "No"
+
+		SerieInfoRegex = SERIE_HEADER2.search(request)
+		if SerieInfoRegex:
+			Entete2 = SerieInfoRegex.group(1)
+
+			#Notes-Rating
+			#if CBRating:
+			#	nameRegex = SERIE_NOTE.search(Entete)
+			#	if nameRegex:
+			#		note = nameRegex.group('note')
+			#	else:
+			#		note = "0.0"
+
+			#	book.CommunityRating = float(note) / 2
+			#	if DBGONOFF:print Trans(58) + str(float(note) / 2)
+			
+			# Number of...
+			if CBCount and not lDirect:			
+					
+				count = 0
+				cCountText = ""
+				if not COUNTOF:				
+					nameRegex = SERIE_COUNT.search(Entete2)
+					if nameRegex and AlbumNumNum:
+						count = checkWebChar(nameRegex.group(1))
+						book.Count = int(count)
+						cCountText = str(int(count))				
+					else:					
+						book.Count = -1
+						cCountText = "---"
+				elif COUNTFINIE and book.SeriesComplete == YesNo.No:				
+					book.Count = -1
+					cCountText = "---"
+				else:				
+					nameRegex = SERIE_COUNT_REAL.search(request)				
+					if nameRegex:							
+						for numof in SERIE_COUNTOF.finditer(nameRegex.group(1)):						
+							if isnumeric(numof.group(1)) and int(numof.group(1)) > count:
+								count = int(numof.group(1))
+						if count > 0 and AlbumNumNum:						
+							book.Count = int(count)	
+							cCountText = str(int(count))
+					else:					
+						book.Count = -1
+						cCountText = "---"
+				
+				if DBGONOFF:print Trans(59) + if_else(dlgNumber == "One Shot", "1", cCountText)
+			
+		# Check type of book number
+		if not lDirect:			
+			if (dlgNumber or dlgAltNumber) and dlgNumber != "One Shot":
+
+#Modif kiwi
+				if isnumeric(dlgNumber):
+					#log_BD("numerique", Trans(25), 1)
+					Regex = re.compile(ALBUM_URL_PATTERN % dlgNumber, re.DOTALL | re.IGNORECASE)
+				else:
+					#log_BD("non numerique", Trans(25), 1)  
+					Regex = re.compile(ALBUM_NON_NUM_URL_PATTERN % dlgNumber, re.DOTALL | re.IGNORECASE)
+				
+				nameRegex = Regex.search(request)
+				cBDNum = ""	
+
+				if nameRegex:
+					#albumURL_Temp = nameRegex.group(1) + "#" + nameRegex.group(2)
+					albumURL_Temp = nameRegex.group(1)
+
+					cBDNumS = re.search(r'\-(\d+).html', albumURL_Temp)
+					if cBDNumS:
+						cBDNum = cBDNumS.group(1)
+					else:
+						cBDNum = ""
+
+					#try:
+						#request = _read_url(albumURL_Temp, lDirect)
+						#Regex = re.compile(ALBUMDETAILS_URL_PATTERN % cBDNum, re.DOTALL | re.IGNORECASE)
+						#nameRegex = Regex.search(request)
+					#except:		
+						#cError = debuglog()
+						#log_BD("   " + albumURL_Temp + " " + Trans(43), "", 1)
+						#return False
+				else:
+					Regex = re.compile(ALBUM_SINGLE_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
+					nameRegex = Regex.search(request)
+					cBDNum = ""	
+					if nameRegex:
+						albumURL_Temp = nameRegex.group(1) + "#" + nameRegex.group(2)
+						cBDNum = nameRegex.group(2)
+						try:
+							request = _read_url(albumURL_Temp, lDirect)
+							Regex = re.compile(ALBUMDETAILS_URL_PATTERN % cBDNum, re.DOTALL | re.IGNORECASE)
+							nameRegex = Regex.search(request)
+						except:		
+							cError = debuglog()
+							log_BD("   " + albumURL_Temp + " " + Trans(43), "", 1)
+							return False	
+					else:															
+						albumURL = ""			
+	
+				if nameRegex:
+					#albumURL = "album-" + cBDNum + "-" + nameRegex.group(1)
+					albumURL = albumURL_Temp
+					try:
+						request = _read_url(albumURL, lDirect)
+					except:		
+						cError = debuglog()
+						log_BD("   " + albumURL + " " + Trans(43), "", 1)
+						return False
+				else:
+					#if dlgNumber == "":
+					#	dlgNumber = '.*?'
+					#if dlgAltNumber == "":
+					#	dlgAltNumber = '.*?'						
+					albumURL = ""
+					Regex = re.compile(ALBUM_SINGLEALBUM_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
+					for album_multi in ALBUM_SINGLEALBUM_URLALL.finditer(request):							
+						nameRegex = Regex.search(album_multi.group(1))
+						if nameRegex:
+							albumURL = nameRegex.group(1)
+							exit
+					if albumURL == "":							
+						return False
+			else:
+
+				#ALBUM_URL_NOTNUM = re.compile(ALBUM_URL_PATTERN_NOTNUM, re.MULTILINE | re.DOTALL | re.IGNORECASE)				
+				nameRegex = ALBUM_URL_NOTNUM.search(request)
+			
+				if nameRegex:
+					albumURL = nameRegex.group(1)
+		else:	
+			albumURL = True
+
+
+	return albumURL
 
 def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
 	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseAlbumInfo", "a)", pageUrl, "b)", num , "c)", lDirect
@@ -1128,7 +940,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 	albumUrl = _read_url(pageUrl, False)							
 	
 	
-	# identify the album n. in BDTHQ
+	#identify the album n. in BDTHQ
 	cBDNum = False
 	cBDNumS = re.search(r'\-(\d+).html', pageUrl)
 	if cBDNumS:
@@ -1296,9 +1108,10 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					if nameRegex:					
 						scenaristes = nameRegex.group(1).strip()
 						book.Writer = parseNames(scenaristes)
+						log_BD(parseNames(scenaristes),"",1)                        
+  
 					else:
-						book.Writer = ""
-					
+						book.Writer = ""					
 				if DBGONOFF:print Trans(30), book.Writer
 
 			if CBPenciller:
@@ -1315,6 +1128,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					if nameRegex:
 						dessinateurs = nameRegex.group(1).strip()				
 						book.Penciller = parseNames(dessinateurs)
+  
 					else:
 						book.Penciller = ""
 					
@@ -1463,7 +1277,6 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				nameRegex = ALBUM_TAILLE.search(albumUrl, 0)														
 				if nameRegex:
 					taille = nameRegex.group(1)
-					#taille = nameRegex.group(1).decode('utf-8')
 					book.Format = taille
 				else:
 					book.Format = "" 
@@ -1636,7 +1449,7 @@ def _read_url(url, bSingle):
 		cError = debuglog()
 		log_BD("   [" + dlgName + "] " + dlgNumber + " Alt.No " + dlgAltNumber + " -> " , cError, 1)
 		Result = MessageBox.Show(ComicRack.MainWindow, Trans(98) + cError ,Trans(97), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
-		
+	
 	inStream.Close()
 	webresponse.Close()
 	
@@ -1665,22 +1478,6 @@ def checkWebChar(strIn):
 	strIn = re.sub('\xc3', u'\xc3', strIn)
 
 	return strIn 
-
-#def DoWebSearch(strIn):
-
-#	strIn = re.sub('\"', '%22', strIn)
-#	strIn = re.sub('\#', '%23', strIn)	
-#	strIn = re.sub('\$', '%24', strIn)	
-#	strIn = re.sub('\%', '%25', strIn)
-#	strIn = re.sub('\&', '%26', strIn)
-#	strIn = re.sub('\'', '%27', strIn)
-#	strIn = re.sub('\(', '%28', strIn)
-#	strIn = re.sub('\)', '%29', strIn)
-#	strIn = re.sub('\+', '%2B', strIn)
-#	strIn = re.sub('\:', '%3A', strIn)
-#	strIn = re.sub('\=', '%3D', strIn)
-
-#	return strIn.replace(" ", "+").encode("utf-8")
 
 
 def checkRegExp(strIn):
@@ -1783,6 +1580,7 @@ def url_fix(s, charset='utf-8'):
 	qs = quote_plus(qs, ':&=')
 
 	return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+
 def log_BD(bdstr, bdstat, lTime):
 
 	bdlogfile = (__file__[:-len('BedethequeScraper2.py')] + "BD2_Rename_Log.txt")
@@ -1891,7 +1689,7 @@ class ProgressBarDialog(Form):
 	
 def LoadSetting():
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
@@ -2036,7 +1834,11 @@ def LoadSetting():
 	try:
 		ARTICLES = MySettings.Get("ARTICLES")
 	except Exception as e:
-		ARTICLES = "Le,La,Les,Die,Der,Das,Het"
+		ARTICLES = "Le,La,Les,L',The"
+ 	try:
+		SUBPATT = MySettings.Get("SUBPATT")
+	except Exception as e:
+		SUBPATT = " - - "   	
 	try:
 		COUNTOF = ft(MySettings.Get("COUNTOF"))	
 	except Exception as e:
@@ -2056,11 +1858,15 @@ def LoadSetting():
 	try:
 		TIMEOUT = MySettings.Get("TIMEOUT")
 	except Exception as e:
-		TIMEOUT = "50"
+		TIMEOUT = "1000"
 	try:
 		TIMEOUTS = MySettings.Get("TIMEOUTS")
 	except Exception as e:
-		TIMEOUTS = "0"
+		TIMEOUTS = "7"
+	try:
+		TIMEPOPUP = MySettings.Get("TIMEPOPUP")
+	except Exception as e:
+		TIMEPOPUP = "30"
 
 	###############################################################
 	
@@ -2072,7 +1878,7 @@ def LoadSetting():
 	
 def SaveSetting():
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 	
@@ -2115,12 +1921,15 @@ def SaveSetting():
 	MySettings.Set("CBDefault",  tf(CBDefault))	
 	MySettings.Set("CBRescrape",  tf(CBRescrape))	
 	MySettings.Set("ARTICLES",  ARTICLES)
+ 	MySettings.Set("SUBPATT",  SUBPATT)   
 	MySettings.Set("COUNTOF",  tf(COUNTOF))	
 	MySettings.Set("CBCouverture",  tf(CBCouverture))	
 	MySettings.Set("COUNTFINIE",  tf(COUNTFINIE))	
 	MySettings.Set("TITLEIT",  tf(TITLEIT))	
 	MySettings.Set("TIMEOUT",  TIMEOUT)
-	MySettings.Set("TIMEOUTS",  TIMEOUTS)
+	MySettings.Set("TIMEOUTS",  TIMEOUTS) 
+	MySettings.Set("TIMEPOPUP",  TIMEPOPUP)
+
 	if CBStop == True:
 		MySettings.Set("CBStop",  "1")	
 	elif CBStop == False:
@@ -2191,7 +2000,7 @@ class BDConfigForm(Form):
 
 	def __init__(self):
 
-		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
@@ -2250,11 +2059,17 @@ class BDConfigForm(Form):
 		self._PB1 = System.Windows.Forms.PictureBox()
 		self._ButtonReset = System.Windows.Forms.Button()		
 		self._ARTICLES = System.Windows.Forms.TextBox()
+#modif kiwi
+		self._SUBPATT = System.Windows.Forms.TextBox()
+		self._labelSUBPATT = System.Windows.Forms.Label()
 		self._COUNTOF = System.Windows.Forms.CheckBox()
 		self._COUNTFINIE = System.Windows.Forms.CheckBox()
 		self._TITLEIT = System.Windows.Forms.CheckBox()
 		self._TIMEOUT = System.Windows.Forms.TextBox()
 		self._TIMEOUTS = System.Windows.Forms.TextBox()
+#modif kiwi
+		self._TIMEPOPUP = System.Windows.Forms.TextBox()
+		self._labelTIMEPOPUP = System.Windows.Forms.Label()
 		self._CBDefault = System.Windows.Forms.CheckBox()
 		self._CBRescrape = System.Windows.Forms.CheckBox()		
 		self._CBStop = System.Windows.Forms.CheckBox()		
@@ -2272,7 +2087,7 @@ class BDConfigForm(Form):
 		self._TabData.Location = System.Drawing.Point(0, 0)
 		self._TabData.Name = "TabData"
 		self._TabData.SelectedIndex = 0
-		self._TabData.Size = System.Drawing.Size(432, 312)
+		self._TabData.Size = System.Drawing.Size(512, 412)
 		self._TabData.TabIndex = 22
 		#
 		# tabPage1
@@ -2292,17 +2107,23 @@ class BDConfigForm(Form):
 		self._tabPage1.Controls.Add(self._radioFRE)						
 		self._tabPage1.Controls.Add(self._ARTICLES)	
 		self._tabPage1.Controls.Add(self._labelArt)	
+#modif kiwi
+		self._tabPage1.Controls.Add(self._SUBPATT)
+		self._tabPage1.Controls.Add(self._labelSUBPATT)	
 		self._tabPage1.Controls.Add(self._COUNTOF)
 		self._tabPage1.Controls.Add(self._COUNTFINIE)
 		self._tabPage1.Controls.Add(self._TITLEIT)		
 		self._tabPage1.Controls.Add(self._TIMEOUT)
 		self._tabPage1.Controls.Add(self._TIMEOUTS)
+#modif kiwi
+		self._tabPage1.Controls.Add(self._TIMEPOPUP)
+ 		self._tabPage1.Controls.Add(self._labelTIMEPOPUP)
 		self._tabPage1.Controls.Add(self._label4)		
 		self._tabPage1.Controls.Add(self._label6)	
 		self._tabPage1.Location = System.Drawing.Point(4, 22)
 		self._tabPage1.Name = "tabPage1"
 		self._tabPage1.Padding = System.Windows.Forms.Padding(3)
-		self._tabPage1.Size = System.Drawing.Size(424, 286)
+		self._tabPage1.Size = System.Drawing.Size(500, 400)
 		self._tabPage1.TabIndex = 0
 		self._tabPage1.Text = Trans(95)
 		self._tabPage1.UseVisualStyleBackColor = True
@@ -2340,7 +2161,7 @@ class BDConfigForm(Form):
 		self._tabPage2.Location = System.Drawing.Point(4, 22)
 		self._tabPage2.Name = "tabPage2"
 		self._tabPage2.Padding = System.Windows.Forms.Padding(3)
-		self._tabPage2.Size = System.Drawing.Size(424, 286)
+		self._tabPage2.Size = System.Drawing.Size(500, 400)
 		self._tabPage2.TabIndex = 1
 		self._tabPage2.Text = Trans(96)
 		self._tabPage2.UseVisualStyleBackColor = True
@@ -2622,9 +2443,9 @@ class BDConfigForm(Form):
 		self._CancelButton.BackColor = System.Drawing.Color.Red
 		self._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
 		self._CancelButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
-		self._CancelButton.Location = System.Drawing.Point(336, 256)
+		self._CancelButton.Location = System.Drawing.Point(420, 350)
 		self._CancelButton.Name = "CancelButton"
-		self._CancelButton.Size = System.Drawing.Size(75, 23)
+		self._CancelButton.Size = System.Drawing.Size(75, 32)
 		self._CancelButton.TabIndex = 30
 		self._CancelButton.Text = Trans(93)
 		self._CancelButton.UseVisualStyleBackColor = False
@@ -2635,9 +2456,9 @@ class BDConfigForm(Form):
 		self._OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
 		self._OKButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
 		self._OKButton.ForeColor = System.Drawing.Color.Black
-		self._OKButton.Location = System.Drawing.Point(8, 256)
+		self._OKButton.Location = System.Drawing.Point(8, 350)
 		self._OKButton.Name = "OKButton"
-		self._OKButton.Size = System.Drawing.Size(75, 23)
+		self._OKButton.Size = System.Drawing.Size(75, 32)
 		self._OKButton.TabIndex = 29
 		self._OKButton.Text = Trans(92)
 		self._OKButton.UseVisualStyleBackColor = False
@@ -2649,7 +2470,7 @@ class BDConfigForm(Form):
 		self._ButtonReset.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
 		self._ButtonReset.Location = System.Drawing.Point(336, 128)
 		self._ButtonReset.Name = "ButtonReset"
-		self._ButtonReset.Size = System.Drawing.Size(75, 23)
+		self._ButtonReset.Size = System.Drawing.Size(75, 30)
 		self._ButtonReset.TabIndex = 53
 		self._ButtonReset.Text = Trans(94)
 		self._ButtonReset.UseVisualStyleBackColor = False
@@ -2660,11 +2481,11 @@ class BDConfigForm(Form):
 		#
 		self._label3.Font = System.Drawing.Font("Microsoft Sans Serif", 6.75, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._label3.ImageAlign = System.Drawing.ContentAlignment.BottomCenter
-		self._label3.Location = System.Drawing.Point(64, 264)
+		self._label3.Location = System.Drawing.Point(114, 360)
 		self._label3.Name = "label3"
 		self._label3.Size = System.Drawing.Size(264, 16)
 		self._label3.TabIndex = 19
-		self._label3.Text = "Version " + VERSION + " (c) 2015 Mizio66"
+		self._label3.Text = "Version " + VERSION + " (c) 2021 kiwi13 && maforget"
 		self._label3.TextAlign = System.Drawing.ContentAlignment.BottomCenter
 		#
 		# label1
@@ -2689,7 +2510,7 @@ class BDConfigForm(Form):
 		#
 		self._labelArt.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._labelArt.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._labelArt.Location = System.Drawing.Point(230, 80)
+		self._labelArt.Location = System.Drawing.Point(250, 80)
 		self._labelArt.Name = "labelArt"
 		self._labelArt.Size = System.Drawing.Size(184, 17)
 		self._labelArt.TabIndex = 18
@@ -2697,11 +2518,51 @@ class BDConfigForm(Form):
 		#
 		# ARTICLES
 		#
-		self._ARTICLES.Location = System.Drawing.Point(280, 80)
+		self._ARTICLES.Location = System.Drawing.Point(320, 80)
 		self._ARTICLES.Name = "ARTICLES"
-		self._ARTICLES.Size = System.Drawing.Size(130, 20)
+		self._ARTICLES.Size = System.Drawing.Size(180, 20)
 		self._ARTICLES.TabIndex = 19
 		self._ARTICLES.Text = ARTICLES
+#modif kiwi
+		#
+		# label chaine à supp
+		#
+		self._labelSUBPATT.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._labelSUBPATT.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
+		self._labelSUBPATT.Location = System.Drawing.Point(8, 320)
+		self._labelSUBPATT.Name = "labelSubPatt"
+		self._labelSUBPATT.Size = System.Drawing.Size(184, 17)
+		self._labelSUBPATT.TabIndex = 100
+		self._labelSUBPATT.Text = "Chaîne fin nom de série"
+		#
+		# Pattern a supp
+		#
+		self._SUBPATT.Location = System.Drawing.Point(180, 320)
+		self._SUBPATT.Name = "PATTSUB"
+		self._SUBPATT.Size = System.Drawing.Size(130, 20)
+		self._SUBPATT.TabIndex = 101
+		self._SUBPATT.Text = SUBPATT
+		#
+		# label time out popup
+		#
+		self._labelTIMEPOPUP.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._labelTIMEPOPUP.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
+		self._labelTIMEPOPUP.Location = System.Drawing.Point(8, 280)
+		self._labelTIMEPOPUP.Name = "labelTimePopup"
+		self._labelTIMEPOPUP.Size = System.Drawing.Size(184, 17)
+		self._labelTIMEPOPUP.TabIndex = 102
+		self._labelTIMEPOPUP.Text = "Durée pop-up choix (en s)"
+		#
+		# time out popup
+		#
+		self._TIMEPOPUP.Location = System.Drawing.Point(180, 280)
+		self._TIMEPOPUP.Name = "TIMEPOPUP"
+		self._TIMEPOPUP.Size = System.Drawing.Size(50, 20)
+		self._TIMEPOPUP.TabIndex = 103
+		self._TIMEPOPUP.MaxLength = 3
+		self._TIMEPOPUP.TextAlign = HorizontalAlignment.Center
+		self._TIMEPOPUP.Text = TIMEPOPUP
+ ##############
 		#
 		# label2
 		#
@@ -2724,9 +2585,9 @@ class BDConfigForm(Form):
 		# CBRescrape
 		#
 		self._CBRescrape.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._CBRescrape.Location = System.Drawing.Point(280, 100)
+		self._CBRescrape.Location = System.Drawing.Point(320, 105)
 		self._CBRescrape.Name = "CBRescrape"
-		self._CBRescrape.Size = System.Drawing.Size(125, 30)
+		self._CBRescrape.Size = System.Drawing.Size(180, 20)
 		self._CBRescrape.TabIndex = 21
 		self._CBRescrape.Text = Trans(137)
 		self._CBRescrape.UseVisualStyleBackColor = True
@@ -2735,9 +2596,9 @@ class BDConfigForm(Form):
 		# COUNTOF
 		#
 		self._COUNTOF.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._COUNTOF.Location = System.Drawing.Point(280, 123)
+		self._COUNTOF.Location = System.Drawing.Point(320, 128)
 		self._COUNTOF.Name = "COUNTOF"
-		self._COUNTOF.Size = System.Drawing.Size(114, 30)
+		self._COUNTOF.Size = System.Drawing.Size(180, 20)
 		self._COUNTOF.TabIndex = 22
 		self._COUNTOF.Text = Trans(110)
 		self._COUNTOF.UseVisualStyleBackColor = True
@@ -2746,9 +2607,9 @@ class BDConfigForm(Form):
 		# COUNTFINIE
 		#
 		self._COUNTFINIE.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._COUNTFINIE.Location = System.Drawing.Point(280, 145)
+		self._COUNTFINIE.Location = System.Drawing.Point(320, 150)
 		self._COUNTFINIE.Name = "COUNTFINIE"
-		self._COUNTFINIE.Size = System.Drawing.Size(114, 30)
+		self._COUNTFINIE.Size = System.Drawing.Size(180, 20)
 		self._COUNTFINIE.TabIndex = 23
 		self._COUNTFINIE.Text = Trans(126)
 		self._COUNTFINIE.UseVisualStyleBackColor = True
@@ -2757,9 +2618,9 @@ class BDConfigForm(Form):
 		# TITLEIT
 		#
 		self._TITLEIT.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._TITLEIT.Location = System.Drawing.Point(280, 167)
+		self._TITLEIT.Location = System.Drawing.Point(320, 172)
 		self._TITLEIT.Name = "TITLEIT"
-		self._TITLEIT.Size = System.Drawing.Size(114, 30)
+		self._TITLEIT.Size = System.Drawing.Size(180, 20)
 		self._TITLEIT.TabIndex = 24
 		self._TITLEIT.Text = Trans(127)
 		self._TITLEIT.UseVisualStyleBackColor = True
@@ -2768,9 +2629,9 @@ class BDConfigForm(Form):
 		# Stop at error scraping
 		#
 		self._CBStop.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._CBStop.Location = System.Drawing.Point(280, 189)
+		self._CBStop.Location = System.Drawing.Point(320, 194)
 		self._CBStop.Name = "CBStop"
-		self._CBStop.Size = System.Drawing.Size(114, 30)
+		self._CBStop.Size = System.Drawing.Size(180, 20)
 		self._CBStop.TabIndex = 26
 		self._CBStop.Text = Trans(141)
 		self._CBStop.UseVisualStyleBackColor = True
@@ -2786,7 +2647,7 @@ class BDConfigForm(Form):
 		#
 		self._label4.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._label4.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._label4.Location = System.Drawing.Point(310, 236)
+		self._label4.Location = System.Drawing.Point(320, 236)
 		self._label4.Name = "label4"
 		self._label4.Size = System.Drawing.Size(160, 23)
 		self._label4.TabIndex = 99
@@ -2794,19 +2655,19 @@ class BDConfigForm(Form):
 		#
 		# TIMEOUT
 		#
-		self._TIMEOUT.Location = System.Drawing.Point(280, 232)
+		self._TIMEOUT.Location = System.Drawing.Point(435, 232)
 		self._TIMEOUT.Name = "TIMEOUT"
-		self._TIMEOUT.Size = System.Drawing.Size(25, 21)
+		self._TIMEOUT.Size = System.Drawing.Size(50, 21)
 		self._TIMEOUT.TabIndex = 27
 		self._TIMEOUT.TextAlign = HorizontalAlignment.Center
-		self._TIMEOUT.MaxLength = 3
+		self._TIMEOUT.MaxLength = 4
 		self._TIMEOUT.Text = TIMEOUT
 		#
 		# TIMEOUTS Label6
 		#
 		self._label6.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._label6.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._label6.Location = System.Drawing.Point(140, 236)
+		self._label6.Location = System.Drawing.Point(8, 236)
 		self._label6.Name = "label6"
 		self._label6.Size = System.Drawing.Size(160, 23)
 		self._label6.TabIndex = 99
@@ -2814,12 +2675,12 @@ class BDConfigForm(Form):
 		#
 		# TIMEOUTS
 		#
-		self._TIMEOUTS.Location = System.Drawing.Point(230, 232)
+		self._TIMEOUTS.Location = System.Drawing.Point(180, 232)
 		self._TIMEOUTS.Name = "TIMEOUTS"
-		self._TIMEOUTS.Size = System.Drawing.Size(25, 21)
+		self._TIMEOUTS.Size = System.Drawing.Size(50, 21)
 		self._TIMEOUTS.TabIndex = 25
 		self._TIMEOUTS.TextAlign = HorizontalAlignment.Center
-		self._TIMEOUTS.MaxLength = 2
+		self._TIMEOUTS.MaxLength = 3
 		self._TIMEOUTS.Text = TIMEOUTS
 		#
 		# DBGONOFF
@@ -2827,7 +2688,7 @@ class BDConfigForm(Form):
 		self._DBGONOFF.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._DBGONOFF.Location = System.Drawing.Point(8, 80)
 		self._DBGONOFF.Name = "DBGONOFF"
-		self._DBGONOFF.Size = System.Drawing.Size(200, 17)
+		self._DBGONOFF.Size = System.Drawing.Size(200, 25)
 		self._DBGONOFF.TabIndex = 3
 		self._DBGONOFF.Text = Trans(68)
 		self._DBGONOFF.UseVisualStyleBackColor = True
@@ -2838,7 +2699,7 @@ class BDConfigForm(Form):
 		self._SHOWDBGLOG.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._SHOWDBGLOG.Location = System.Drawing.Point(8, 40)
 		self._SHOWDBGLOG.Name = "SHOWDBGLOG"
-		self._SHOWDBGLOG.Size = System.Drawing.Size(240, 17)
+		self._SHOWDBGLOG.Size = System.Drawing.Size(300, 25)
 		self._SHOWDBGLOG.TabIndex = 2
 		self._SHOWDBGLOG.Text = Trans(67)
 		self._SHOWDBGLOG.UseVisualStyleBackColor = True
@@ -2849,7 +2710,7 @@ class BDConfigForm(Form):
 		self._SHOWRENLOG.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._SHOWRENLOG.Location = System.Drawing.Point(8, 0)
 		self._SHOWRENLOG.Name = "SHOWRENLOG"
-		self._SHOWRENLOG.Size = System.Drawing.Size(280, 24)
+		self._SHOWRENLOG.Size = System.Drawing.Size(300, 25)
 		self._SHOWRENLOG.TabIndex = 1
 		self._SHOWRENLOG.Text = Trans(66)
 		self._SHOWRENLOG.UseVisualStyleBackColor = True
@@ -2874,7 +2735,7 @@ class BDConfigForm(Form):
 		self._radioFRE.Size = System.Drawing.Size(104, 24)
 		self._radioFRE.TabIndex = 7
 		self._radioFRE.TabStop = True
-		self._radioFRE.Text = "Francaise"
+		self._radioFRE.Text = "Français"
 		self._radioFRE.UseVisualStyleBackColor = True
 		if LANGENFR == "FR":
 			self._radioFRE.Checked = True
@@ -2887,7 +2748,7 @@ class BDConfigForm(Form):
 		#
 		pImage = (__file__[:-len('BedethequeScraper2.py')] + "BD2.png")
 		self._PB1.Image = System.Drawing.Bitmap(pImage)
-		self._PB1.Location = System.Drawing.Point(340, 4)
+		self._PB1.Location = System.Drawing.Point(420, 4)
 		self._PB1.Name = "PB1"
 		self._PB1.Size = System.Drawing.Size(72, 64)
 		self._PB1.TabIndex = 35
@@ -2895,7 +2756,7 @@ class BDConfigForm(Form):
 		#
 		# ConfigForm
 		#
-		self.ClientSize = System.Drawing.Size(429, 308)
+		self.ClientSize = System.Drawing.Size(512, 412)
 		self.Controls.Add(self._TabData)
 
 		self._TabData.ResumeLayout(False)
@@ -2913,7 +2774,7 @@ class BDConfigForm(Form):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 
 		if sender.Name.CompareTo(self._OKButton.Name) == 0:
 			SHOWRENLOG = if_else(self._SHOWRENLOG.CheckState == CheckState.Checked, True, False)
@@ -2959,20 +2820,37 @@ class BDConfigForm(Form):
 				CBStop = "2"
 			
 			ARTICLES = self._ARTICLES.Text
+			SUBPATT = self._SUBPATT.Text
 			COUNTOF = if_else(self._COUNTOF.CheckState == CheckState.Checked, True, False)
 			COUNTFINIE = if_else(self._COUNTFINIE.CheckState == CheckState.Checked, True, False)
 			TITLEIT = if_else(self._TITLEIT.CheckState == CheckState.Checked, True, False)
+#modif kiwi
 			try:
-				TIMEOUT = self._TIMEOUT.Text
+				if int(self._TIMEOUT.Text) > 0:
+					TIMEOUT = self._TIMEOUT.Text
+				else:
+					TIMEOUT = "1000"
 			except:
-				TIMEOUT = "50"
+				TIMEOUT = "1000"
 
 			try:
-				TIMEOUTS = self._TIMEOUTS.Text
+				if int(self._TIMEOUTS.Text) > 0:
+					TIMEOUTS = self._TIMEOUTS.Text
+				else:
+					TIMEOUTS = "7"
 			except:
-				TIMEOUTS = "0"
+				TIMEOUTS = "7"
+
+			try:
+				if int(self._TIMEPOPUP.Text) > 0:
+					TIMEPOPUP = self._TIMEPOPUP.Text
+				else:
+					TIMEPOPUP = "30"
+			except:
+				TIMEPOPUP = "30"
 
 			aWord = Translate()
+			log_BD(TIMEOUTS,"",1)
 
 		if sender.Name.CompareTo(self._ButtonReset.Name) == 0:
 			for CBControl in self._tabPage2.Controls:
@@ -3043,7 +2921,8 @@ def titlize(s):
 		return NewString		
 	else:
 		return s
-	
+
+
 class SeriesForm(Form):
 	
 	global aWord, ListSeries, NewLink, NewSeries
@@ -3056,7 +2935,7 @@ class SeriesForm(Form):
 	
 	def InitializeComponent(self, serie):
 
-		global ListSeries, SeriesSearch, NewLink, NewSeries, TIMEOUTS, CBStop
+		global ListSeries, SeriesSearch, NewLink, NewSeries, TIMEPOPUP, CBStop
 		
 		self._ListSeries = System.Windows.Forms.ListBox()
 		self._CancelButton = System.Windows.Forms.Button()
@@ -3065,7 +2944,8 @@ class SeriesForm(Form):
 		#self._labelSearch = System.Windows.Forms.Label()
 		if CBStop == "2":
 			self._timer1 = System.Windows.Forms.Timer()
-			self._timer1.Interval = int(TIMEOUTS) * 1000
+#modif kiwi
+			self._timer1.Interval = int(TIMEPOPUP) * 1000
 			self._timer1.Enabled = True
 			self._timer1.Tick += self.CloseForm
 		
@@ -3078,7 +2958,7 @@ class SeriesForm(Form):
 		self._ListSeries.ItemHeight = 15
 		self._ListSeries.Location = System.Drawing.Point(8, 8)
 		self._ListSeries.Name = "ListSeries"
-		self._ListSeries.Size = System.Drawing.Size(368, 229)
+		self._ListSeries.Size = System.Drawing.Size(450, 229)
 		self._ListSeries.Sorted = True
 		self._ListSeries.TabIndex = 1
 		self._ListSeries.DoubleClick += self.DoubleClick		
@@ -3088,9 +2968,9 @@ class SeriesForm(Form):
 		self._CancelButton.BackColor = System.Drawing.Color.Red
 		self._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
 		self._CancelButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
-		self._CancelButton.Location = System.Drawing.Point(301, 296)
+		self._CancelButton.Location = System.Drawing.Point(301, 290)
 		self._CancelButton.Name = "CancelButton"
-		self._CancelButton.Size = System.Drawing.Size(75, 23)
+		self._CancelButton.Size = System.Drawing.Size(75, 30)
 		self._CancelButton.TabIndex = 2
 		self._CancelButton.Text = Trans(93)
 		self._CancelButton.UseVisualStyleBackColor = False
@@ -3102,14 +2982,14 @@ class SeriesForm(Form):
 		self._OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
 		self._OKButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
 		self._OKButton.ForeColor = System.Drawing.Color.Black
-		self._OKButton.Location = System.Drawing.Point(8, 296)
+		self._OKButton.Location = System.Drawing.Point(8, 290)
 		self._OKButton.Name = "OKButton"
-		self._OKButton.Size = System.Drawing.Size(75, 23)
+		self._OKButton.Size = System.Drawing.Size(75, 30)
 		self._OKButton.TabIndex = 3
 		self._OKButton.Text = Trans(92)
 		self._OKButton.UseVisualStyleBackColor = False
 		self._OKButton.Click += self.button_Click
-		self._OKButton.DialogResult = DialogResult.OK	
+		self._OKButton.DialogResult = DialogResult.OK
 		
 			
 		self.ClientSize = System.Drawing.Size(390, 325)		
@@ -3123,10 +3003,7 @@ class SeriesForm(Form):
 		self.Name = "SeriesForm"
 		self.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide
 		self.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-		if lSoR:
-			self.Text = Trans(132) + serie
-		else:
-			self.Text = Trans(133) + serie
+		self.Text = Trans(132) + serie
 			
 		self.AcceptButton = self._OKButton
 		self.CancelButton = self._CancelButton
@@ -3175,7 +3052,7 @@ class SeriesForm(Form):
 def ConfigureBD2Quick():
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 	
 	if not LoadSetting():
 		return
@@ -3196,7 +3073,7 @@ def ConfigureBD2(self):
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 	
 	if not LoadSetting():
 		return
@@ -3218,7 +3095,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, dlgName, dlgNumber
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, LinkBD2, Numero, LinkBD2R
-	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS
+	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 
 	RetAlb = False
 	
@@ -3264,8 +3141,6 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 					serieUrl = re.sub('https://www.bedetheque.com/', '', cLink)
 					if re.search(r'album', serieUrl):
 						LinkBD2 = serieUrl
-					else:
-						LinkBD2R = serieUrl
 					
 				else:
 
@@ -3315,23 +3190,18 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 
 					if LinkBD2:						
 						serieUrl = LinkBD2
-					else:
-						serieUrl = LinkBD2R
-						#serieUrl = LinkBD2R + if_else(Numero, "#" + Numero, "")
-				
-					serieUrl = re.sub('(https://)?www.bedetheque.com', '', serieUrl)					
+#modif kiwi
+#					serieUrl = re.sub('(https://)?www.bedetheque.com', '', serieUrl)					
 					#LongSerie= re.sub(u'^10000\.html','\_\_10000.html',serieUrl.lower())		
 					#serieUrl = LongSerie
-					
-					serieUrl = "https://www.bedetheque.com" + serieUrl
-					
+
+						
 				try:
 					ficheUrl = _read_url(serieUrl, False)
 				except:
 					return False
 
 				fiche = FICHE_SERIE.search(ficheUrl)
-				
 				log_BD(Trans(7) + str(MyBooks.Count) +  Trans(8), "\n============ " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + " ===========", 0)
 
 				if not cLink:
@@ -3340,33 +3210,14 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	
 				if LinkBD2:
 					if DBGONOFF:print Trans(104), LinkBD2
-				else:
-					if DBGONOFF:print Trans(104), LinkBD2R, if_else(Numero, " -> #" + Numero, "")
 	
 				RetVal = True
-								
 				if fiche:					
 					RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
 																		
 				if RetVal:
 					if LinkBD2:					
-						RetVal = parseAlbumInfo(MyBook, serieUrl, dlgNumber, True)					
-					else:						
-						request = _read_url(serieUrl, False)
-						REVUE_CALC = re.compile(REVUE_CALC_PATTERN % Numero, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-						nameRegex = REVUE_CALC.search(request)
-						if nameRegex:								
-							nameRegex_2 = REVUE_NUMINT.search(nameRegex.group(1))			
-							if nameRegex_2:
-								NumeroInt = nameRegex_2.group(1)							
-								REVUE_HEADER = re.compile(REVUE_HEADER_PATTERN % (NumeroInt, Numero), re.IGNORECASE | re.MULTILINE | re.DOTALL)
-								SerieInfoRegex = REVUE_HEADER.search(request)
-								RetVal = False
-								if SerieInfoRegex:
-									#REVUE_NAME = re.compile(REVUE_NAME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-									serie = REVUE_NAME.search(request, 0)
-									if serie:
-										RetVal = parseRevueInfo(MyBook, SerieInfoRegex, serieUrl, Numero, serie)										
+						RetVal = parseAlbumInfo(MyBook, serieUrl, dlgNumber, True)															
 
 				if RetVal:
 					if not cLink:
@@ -3442,14 +3293,6 @@ class DirectScrape(Form):
 			self._label1 = System.Windows.Forms.Label()						
 			self._OKScrape = System.Windows.Forms.Button()
 			self._CancScrape = System.Windows.Forms.Button()
-			# revues
-			self._LinkBD2R = System.Windows.Forms.TextBox()
-			self._label1R = System.Windows.Forms.Label()
-			self._Numero = System.Windows.Forms.TextBox()
-			self._label2R = System.Windows.Forms.Label()
-			self._OKScrapeR = System.Windows.Forms.Button()			
-			self._CancScrapeR = System.Windows.Forms.Button()
-			self.SuspendLayout()
 			#
 			# LinkBD2
 			#
@@ -3460,54 +3303,15 @@ class DirectScrape(Form):
 			self._LinkBD2.Text = ""
 			self._LinkBD2.WordWrap = False
 			#
-			# LinkBD2R
-			#
-			self._LinkBD2R.Location = System.Drawing.Point(8, 140)
-			self._LinkBD2R.Name = "LinkBD2R"
-			self._LinkBD2R.Size = System.Drawing.Size(576, 20)
-			self._LinkBD2R.TabIndex = 5
-			self._LinkBD2R.Text = ""
-			self._LinkBD2R.WordWrap = False
-			#
 			# label1
 			#
 			self._label1.Font = System.Drawing.Font("Microsoft Sans Serif", 11.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 			self._label1.Location = System.Drawing.Point(104, 8)
 			self._label1.Name = "label1"
-			self._label1.Size = System.Drawing.Size(360, 16)
+			self._label1.Size = System.Drawing.Size(450, 20)
 			self._label1.TabIndex = 99
 			self._label1.Text = Trans(102)
 			self._label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
-			#
-			# label1R
-			#
-			self._label1R.Font = System.Drawing.Font("Microsoft Sans Serif", 11.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-			self._label1R.Location = System.Drawing.Point(104, 108)
-			self._label1R.Name = "label1R"
-			self._label1R.Size = System.Drawing.Size(360, 16)
-			self._label1R.TabIndex = 99
-			self._label1R.Text = Trans(134)
-			self._label1R.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
-			#			
-			#
-			# Numero
-			#
-			self._Numero.Location = System.Drawing.Point(620, 140)
-			self._Numero.Name = "Numero"
-			self._Numero.Size = System.Drawing.Size(80, 20)
-			self._Numero.TabIndex = 6
-			self._Numero.Text = ""
-			self._Numero.WordWrap = False			
-			#
-			# label2R
-			#
-			self._label2R.Font = System.Drawing.Font("Microsoft Sans Serif", 11.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-			self._label2R.Location = System.Drawing.Point(610, 108)
-			self._label2R.Name = "label2R"
-			self._label2R.Size = System.Drawing.Size(100, 16)
-			self._label2R.TabIndex = 99
-			self._label2R.Text = Trans(135)
-			self._label2R.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
 			#
 			# OKScrape
 			#
@@ -3515,25 +3319,12 @@ class DirectScrape(Form):
 			self._OKScrape.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
 			self._OKScrape.Location = System.Drawing.Point(48, 72)
 			self._OKScrape.Name = "OKScrape"
-			self._OKScrape.Size = System.Drawing.Size(104, 24)
+			self._OKScrape.Size = System.Drawing.Size(104, 30)
 			self._OKScrape.TabIndex = 3
 			self._OKScrape.Text =  Trans(92)
 			self._OKScrape.UseVisualStyleBackColor = False
 			self._OKScrape.Click += self.button_Click
 			self._OKScrape.DialogResult = System.Windows.Forms.DialogResult.OK
-			#
-			# OKScrapeR
-			#
-			self._OKScrapeR.BackColor = System.Drawing.Color.FromArgb(128, 255, 128)
-			self._OKScrapeR.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
-			self._OKScrapeR.Location = System.Drawing.Point(48, 172)
-			self._OKScrapeR.Name = "OKScrapeR"
-			self._OKScrapeR.Size = System.Drawing.Size(104, 24)
-			self._OKScrapeR.TabIndex = 7
-			self._OKScrapeR.Text =  Trans(92)
-			self._OKScrapeR.UseVisualStyleBackColor = False
-			self._OKScrapeR.Click += self.button_Click
-			self._OKScrapeR.DialogResult = System.Windows.Forms.DialogResult.OK
 			#
 			# CancScrape
 			#
@@ -3542,43 +3333,22 @@ class DirectScrape(Form):
 			self._CancScrape.Location = System.Drawing.Point(550, 72)
 			self._CancScrape.DialogResult = System.Windows.Forms.DialogResult.Cancel
 			self._CancScrape.Name = "CancScrape"
-			self._CancScrape.Size = System.Drawing.Size(104, 24)
+			self._CancScrape.Size = System.Drawing.Size(104, 30)
 			self._CancScrape.TabIndex = 4
 			self._CancScrape.Text =  Trans(93)
 			self._CancScrape.UseVisualStyleBackColor = False
 			self._CancScrape.Click += self.button_Click
 			#
-			#
-			# CancScrapeR
-			#
-			self._CancScrapeR.BackColor = System.Drawing.Color.FromArgb(255, 128, 128)
-			self._CancScrapeR.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
-			self._CancScrapeR.Location = System.Drawing.Point(550, 172)
-			self._CancScrapeR.DialogResult = System.Windows.Forms.DialogResult.Cancel
-			self._CancScrapeR.Name = "CancScrapeR"
-			self._CancScrapeR.Size = System.Drawing.Size(104, 24)
-			self._CancScrapeR.TabIndex = 8
-			self._CancScrapeR.Text =  Trans(93)
-			self._CancScrapeR.UseVisualStyleBackColor = False
-			self._CancScrapeR.Click += self.button_Click
-			#
 			# ScrapeLink
 			#
 		
 			# BD
-			self.ClientSize = System.Drawing.Size(710, 208)
+			self.ClientSize = System.Drawing.Size(710, 108)
 			self.ControlBox = False
 			self.Controls.Add(self._CancScrape)
 			self.Controls.Add(self._OKScrape)
 			self.Controls.Add(self._label1)
 			self.Controls.Add(self._LinkBD2)			
-			# Revues
-			self.Controls.Add(self._CancScrapeR)
-			self.Controls.Add(self._OKScrapeR)
-			self.Controls.Add(self._label1R)
-			self.Controls.Add(self._LinkBD2R)
-			self.Controls.Add(self._label2R)
-			self.Controls.Add(self._Numero)
 			#
 			self.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
 			self.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
@@ -3586,8 +3356,6 @@ class DirectScrape(Form):
 			self.Text = Trans(103)
 			pIcon = (__file__[:-len('BedethequeScraper2.py')] + "BD2.ico")
 			self.Icon = System.Drawing.Icon(pIcon)
-			self.AcceptButton = self._OKScrape
-			self.CancelButton = self._CancScrape
 			self.KeyPreview = True
 			self.ResumeLayout(False)
 			self.PerformLayout()
@@ -3611,19 +3379,3 @@ class DirectScrape(Form):
 			
 			else:
 				LinkBD2 = self._LinkBD2.Text
-				
-		elif sender.Name.CompareTo(self._OKScrapeR.Name) == 0:
-
-			global LinkBD2R, Numero
-
-			if not self._LinkBD2R.Text:
-				self.Hide()				
-				LinkBD2R = ""
-			elif not re.search ('www.bedetheque.*?\/revue', self._LinkBD2R.Text):
-				self.Hide()
-				Result = MessageBox.Show(ComicRack.MainWindow, Trans(106), Trans(2), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
-				LinkBD2R = ""
-			
-			else:
-				LinkBD2R = self._LinkBD2R.Text
-				Numero = self._Numero.Text
