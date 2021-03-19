@@ -1028,7 +1028,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					except:
 						qnum = ""
 						pass
-				book.Number = qnum.strip()		
+					book.Number = qnum.strip()		
 				if DBGONOFF:print Trans(115), qnum
 
 			#if lDirect and not book.Number:
