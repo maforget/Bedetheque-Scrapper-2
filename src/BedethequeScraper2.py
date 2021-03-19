@@ -1048,7 +1048,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					#RegCompile = re.compile(ALBUM_QTITLE_PATTERN % qnum , re.IGNORECASE | re.MULTILINE | re.DOTALL)					
 					#nameRegex = RegCompile.search(albumUrl, 0)	
 					try: 
-						NewTitle = titlize(nameRegex.group(3))
+						title = re.sub(r'BD, informations, cotes',"", nameRegex.group(3), re.IGNORECASE)
+						NewTitle = titlize(title)
 						book.Series = titlize(nameRegex.group(1))
 					except:
 						NewTitle = ""
