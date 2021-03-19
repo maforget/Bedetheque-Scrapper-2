@@ -6,7 +6,7 @@
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
 # Bedetheque Scraper 2 - Mars 2021 - v 4.11 -> maforget
-# Bedetheque Scraper 2 - Mar 2021- v 5.0 -> by kiwi13
+# Bedetheque Scraper 2 - Mar 2021- v 5.1 -> by kiwi13
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -51,7 +51,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.0"
+VERSION = "5.1"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -255,8 +255,10 @@ ALBUMDETAILSSINGLE_URL_PATTERN = r'https:\/\/www.bedetheque.com\/album-(.*?)\"'
 ALBUM_URL_PATTERN_NOTNUM = r'<div\sclass=\"album.*?href=\"(.*?)\"'
 ALBUM_URL_NOTNUM = re.compile(ALBUM_URL_PATTERN_NOTNUM, re.MULTILINE | re.DOTALL | re.IGNORECASE)				
 
-ALBUM_QNUM_PATTERN = r'<title>(.*?)\-(.*?)\-?\s(.*?)</title>'
-ALBUM_QNUM = re.compile(ALBUM_QNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)			
+#ALBUM_QNUM_PATTERN = r'<title>(.*?)\-(.*?)\-?\s(.*?)</title>'
+ALBUM_QNUM_PATTERN = r'og:title\"\scontent=\"(.*?)\-(.*?)\-?\s(.*?)\"\s*/>'
+#ALBUM_QNUM = re.compile(ALBUM_QNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)			
+ALBUM_QNUM = re.compile(ALBUM_QNUM_PATTERN, re.IGNORECASE)		
 
 ALBUM_QTITLE_PATTERN = r'titre.*?%s<span.*?name\">(.*?)<'
 ########################################
@@ -939,7 +941,6 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 	
 	albumUrl = _read_url(pageUrl, False)							
 	
-	
 	#identify the album n. in BDTHQ
 	cBDNum = False
 	cBDNumS = re.search(r'\-(\d+).html', pageUrl)
@@ -957,7 +958,6 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 		
 		# Album N. est Numerique
 		if dlgNumber or dlgAltNumber:
-
 			ALBUM_BDTHEQUE_NUM_PATTERN = r'tails\">%s<span\sclass=\"numa">%s</span>.*?<a name=\"(.*?)\"'
 			ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % (num, dlgAltNumber), re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
@@ -977,8 +977,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					return False
 		
 		# Album N. in Lettres				
-		else:
-								
+		else:			
 			#ALBUM_BDTHEQUE_NOTNUM = re.compile(ALBUM_BDTHEQUE_NOTNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 			nameRegex = ALBUM_BDTHEQUE_NOTNUM.search(albumUrl)
 			if nameRegex:
@@ -1001,10 +1000,11 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			
 		RegCompile = re.compile(ALBUM_INFO_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 		nameRegex = RegCompile.search(albumUrl)
-						
+		
 		if nameRegex:
-				
+		
 			albumInfo = nameRegex.group(1)		
+
 
 			if RenameSeries:
 				if CBSeries:
@@ -1028,7 +1028,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					except:
 						qnum = ""
 						pass
-					book.Number = qnum.strip()				
+				book.Number = qnum.strip()		
 				if DBGONOFF:print Trans(115), qnum
 
 			#if lDirect and not book.Number:
@@ -1047,8 +1047,14 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				if lDirect:
 					#RegCompile = re.compile(ALBUM_QTITLE_PATTERN % qnum , re.IGNORECASE | re.MULTILINE | re.DOTALL)					
 					#nameRegex = RegCompile.search(albumUrl, 0)	
-					NewTitle = nameRegex.group(3)											
-					book.Series = titlize(nameRegex.group(1))
+					try: 
+						NewTitle = titlize(nameRegex.group(3))
+						book.Series = titlize(nameRegex.group(1))
+					except:
+						NewTitle = ""
+						nameRegex2 = re.search(r'og:title\"\scontent=\"(.*?)\"\s*/>', albumUrl, re.IGNORECASE)
+						book.Series = titlize(nameRegex2.group(1))
+						pass
 					nameRegex = ""
 
 				else:
@@ -1289,13 +1295,12 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
 				if nameRegex:					
 					resume = strip_tags(nameRegex.group(1)).strip()						
-					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
-					#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
-					if not lDirect and book.Summary != resume and resume:
-						book.Summary = book.Summary + chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-					elif resume and book.Title:
-						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-							
+					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)				
+					#if not lDirect and book.Summary != resume and resume:
+						#book.Summary = book.Summary + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+					#elif resume and book.Title:
+					if resume:
+						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume	
 						if DBGONOFF:print Trans(100)						
 				else:
 					if DBGONOFF:print Trans(101)
@@ -1305,13 +1310,15 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				#ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 				nameRegex = ALBUM_INFOEDITION.search(albumUrl, 0)														
 				if nameRegex:										
-					if nameRegex.group(1) !=" &nbsp;":						
+					if nameRegex.group(1) !=" &nbsp;":	
+						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
 						infoedition = strip_tags(nameRegex.group(1)).strip()
-						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
-						if not lDirect:
+						# if not lDirect:
+							# book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
+						# else:
+							# book.Summary = infoedition
+						if infoedition:
 							book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
-						else:
-							book.Summary = infoedition
 						if DBGONOFF:print Trans(118) + Trans(119)		
 						
 			# series only formatted
@@ -3098,7 +3105,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 
 	RetAlb = False
-	
+
 	if not cLink:
 		if not LoadSetting():
 			return False
@@ -3114,7 +3121,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 		return False
 
 	LinkBD2 = ""
-	LinkBD2R = ""
+
 	if not cLink:
 		nRenamed = 0
 		nIgnored = 0	
@@ -3147,7 +3154,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 					scrape = DirectScrape()
 					result = scrape.ShowDialog()
 
-					if result == DialogResult.Cancel or (LinkBD2 == "" and LinkBD2R == ""):
+					if result == DialogResult.Cancel or (LinkBD2 == ""):
 						return False
 				
 					if MyBook.Number:
@@ -3341,7 +3348,6 @@ class DirectScrape(Form):
 			#
 			# ScrapeLink
 			#
-		
 			# BD
 			self.ClientSize = System.Drawing.Size(710, 108)
 			self.ControlBox = False
