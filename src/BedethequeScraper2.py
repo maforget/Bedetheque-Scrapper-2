@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 #@Name Bedetheque Scraper 2
 #@Key Bedetheque2
-#@Hook Books
+#@Hook	Books, Editor
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
