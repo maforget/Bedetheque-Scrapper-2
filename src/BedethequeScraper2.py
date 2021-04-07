@@ -154,7 +154,7 @@ INFO_SERIENAMENUMBER_ALBUM_PATTERN = r'<span\sclass=\"type\">S.*?rie\s:\s</span>
 ALBUM_BDTHEQUE_NOTNUM_PATTERN = r'tails\">.*?<span\sclass=\"numa"></span>.*?<a name=\"(.*?)\"'			
 ALBUM_BDTHEQUE_NOTNUM = re.compile(ALBUM_BDTHEQUE_NOTNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_TITLE_PATTERN = r'itemprop=\"url\"\shref=\"%s\"\stitle=\"(.*?)\"'
+ALBUM_TITLE_PATTERN = r'itemprop=\"url\"\shref=\"%s\"\stitle=\"(.*?)\">'
 
 ALBUM_EVAL_PATTERN = r'ratingValue\">(.*?)<'
 ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
