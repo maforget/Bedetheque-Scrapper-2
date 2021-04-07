@@ -220,7 +220,7 @@ ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTI
 ALBUM_TAILLE_PATTERN = r'<label>Format\s:\s?</label>.*?(.+?)</'
 ALBUM_TAILLE = re.compile(ALBUM_TAILLE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
-ALBUM_ISBN_PATTERN = r'<label>ISBN\s:\s.*?\">(.*?)<'
+ALBUM_ISBN_PATTERN = r"<label>ISBN\s:\s</label>(.*?)<"
 ALBUM_ISBN = re.compile(ALBUM_ISBN_PATTERN, re.IGNORECASE | re.DOTALL)	
 
 ALBUM_PLANCHES_PATTERN = r'<label>Planches\s:\s?</label>(\d*?)</'
