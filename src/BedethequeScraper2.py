@@ -5,8 +5,7 @@
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
-# Bedetheque Scraper 2 - Mars 2021 - v 4.11 -> maforget
-# Bedetheque Scraper 2 - Mar 2021- v 5.1 -> by kiwi13
+# Bedetheque Scraper 2 - Avril 2021- v 5.2 -> by kiwi13 & maforget
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -51,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.1"
+VERSION = "5.2"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -437,7 +436,7 @@ def WorkerThread(books):
 				
 					if not RetAlb and not 'revue' in serieUrl:					
 						# reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
-						RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
+						RetAlb = parseAlbumInfoAlt (book, serieUrl, albumNum)
 						
 			if RetAlb:
 				nRenamed += 1				
@@ -662,7 +661,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 		if DBGONOFF:print Trans(26), Trans(25)
 
 	if albumUrl and not 'revue' in serieUrl:
-		if not parseAlbumInfo(book, albumUrl, num):
+		if not parseAlbumInfoAlt(book, albumUrl, num):
 			return False
 		return True
 
@@ -927,6 +926,423 @@ def parseSerieInfo(book, serieUrl, lDirect):
 
 	return albumURL
 
+def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
+
+	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	
+	if DBGONOFF:print "=" * 60
+	if DBGONOFF:print "parseAlbumInfoAlt", "a)", pageUrl, "b)", num , "c)", lDirect
+	if DBGONOFF:print "=" * 60
+	
+	AlbumBDThequeNum = ""
+	
+	albumUrl = _read_url(pageUrl, False)							
+	
+	#identify the album n. in BDTHQ
+	cBDNum = False
+	cBDNumS = re.search(r'\-(\d+).html', pageUrl)
+	if cBDNumS:
+		cBDNum = cBDNumS.group(1)
+		if cBDNum:				
+			AlbumBDThequeNum = cBDNum
+	elif "serie-" in pageUrl:
+		ID_ALBUM_PATT = re.search(r'serie.*?\.html\#(\d+)$', pageUrl)		
+		if ID_ALBUM_PATT:			
+			ID_ALBUM = ID_ALBUM_PATT.group(1)		
+			AlbumBDThequeNum = ID_ALBUM
+				
+	else:
+		
+		# Album N. est Numerique
+		if dlgNumber or dlgAltNumber:
+			ALBUM_BDTHEQUE_NUM_PATTERN = r'tails\">%s<span\sclass=\"numa">%s</span>.*?<a name=\"(.*?)\"'
+			ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % (num, dlgAltNumber), re.IGNORECASE | re.MULTILINE | re.DOTALL)
+
+			nameRegex = ALBUM_BDTHEQUE_NUM.search(albumUrl)
+
+			if nameRegex:
+				AlbumBDThequeNum = nameRegex.group(1)
+			else:
+				ALBUM_BDTHEQUE_NUM_PATTERN = r'>%s<span\sclass=\"numa">.*?</span>.*?<a name=\"(.*?)\"'
+				ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % num, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+				nameRegex = ALBUM_BDTHEQUE_NUM.search(albumUrl)
+				if nameRegex:
+					AlbumBDThequeNum = nameRegex.group(1)
+				else:
+					# Album not found
+					nameRegex = ""
+					return False
+		
+		# Album N. in Lettres				
+		else:			
+			#ALBUM_BDTHEQUE_NOTNUM = re.compile(ALBUM_BDTHEQUE_NOTNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+			nameRegex = ALBUM_BDTHEQUE_NOTNUM.search(albumUrl)
+			if nameRegex:
+				AlbumBDThequeNum = nameRegex.group(1)
+					
+			else:
+			
+				nameRegex = ""
+				return False
+	
+	try:	
+		i = 0
+		picked = False
+		for albumPick in re.finditer(r'browse-couvertures"\shref="(.+?)"\s\stitle.+?<h3 class="titre">.+?\s+(.*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)\s+</h3>(.+?)</div>.+?', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE):
+			if i == 0:
+				couv0 = albumPick.group(1)
+				title0 = albumPick.group(4)
+				info0 = albumPick.group(5)
+				n0 = albumPick.group(2)
+				
+			a = albumPick.group(3)
+			n = albumPick.group(2)
+					
+			if lDirect:
+				regexFullNum = a
+				fullNum = dlgAltNumber	
+			else:
+				regexFullNum = n + a
+				fullNum = num + dlgAltNumber	
+			if DBGONOFF:print "regexFullNum)", regexFullNum, "fullNum)", fullNum
+			
+			# If no match take the first value
+			if picked == False :
+				if fullNum == regexFullNum :
+					picked = True
+					couv = albumPick.group(1)
+					title = albumPick.group(4)
+					info = albumPick.group(5)
+					debugText = "---> fullNum = " + fullNum
+				else :
+					couv = couv0
+					title = title0
+					info = info0
+					n = n0
+					debugText = "---> Using First"
+			i = i + 1
+			
+		if info :
+			if DBGONOFF: print debugText
+			
+			if RenameSeries:
+				if CBSeries:
+					book.Series = titlize(RenameSeries)
+			elif (Shadow1 or book.Series != titlize(dlgName)):
+				if CBSeries:	
+					book.Series = titlize(dlgName)
+
+			if Shadow2:
+				book.Number = dlgNumber
+				
+			qnum = ""
+			if lDirect:
+				try:					
+					qnum = n
+				except:
+					qnum = ""
+					pass
+				book.Number = qnum.strip()		
+				if DBGONOFF:print Trans(115), qnum
+		
+			if CBTitle:
+				NewTitle = ""
+				if lDirect:
+					nameRegex = re.search("<label>Série : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+					if nameRegex:
+						book.Series = checkWebChar(nameRegex.group(1))
+
+				try:
+					NewTitle = titlize(strip_tags(checkWebChar(title)))
+				except:
+					NewTitle = title
+								
+				book.Title = NewTitle
+				if DBGONOFF:print Trans(29), book.Title
+			
+			if CBNotes:
+				book.Notes = "Bedetheque.com - " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + chr(10) + "BD2 scraper v" + VERSION
+			
+			#web
+			if CBWeb == True and not CBRescrape:			
+				book.Web = pageUrl
+				if DBGONOFF:print Trans(123), book.Web
+			elif CBWeb == "2" and not CBRescrape:
+				cBelid = re.search(r'\-(\d+).html', pageUrl)
+				if cBelid:			
+					book.Web = 'www.bedetheque.com/BD--' + cBelid.group(1) + '.html'
+					if DBGONOFF:print Trans(123), book.Web
+			
+			if TBTags == "DEL":
+				book.Tags = ""
+			elif TBTags != "":
+				book.Tags = TBTags	
+			
+			if CBWriter:
+				nameRegex = ALBUM_SCENAR_MULTI_AUTHOR.search(info, 0)
+				if nameRegex:
+					scenaristes = ""
+					thisscen = ""					
+					for scenar_multi in ALBUM_SCENAR_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
+						thisscen = parseNames(scenar_multi.group(1).strip())
+						if thisscen not in scenaristes:	
+							scenaristes = scenaristes + thisscen + ", "
+
+					thisscen = ""
+					for scenar_multi in ALBUM_STORYBOARD_MULTI_AUTHOR.finditer(info, 0):
+						thisscen = parseNames(scenar_multi.group(1).strip())
+						if thisscen not in scenaristes:
+							scenaristes = scenaristes + thisscen + ", "
+			
+					book.Writer = scenaristes[:-2]
+
+				else:
+
+					nameRegex = ALBUM_SCENAR.search(info, 0)
+					if nameRegex:					
+						scenaristes = nameRegex.group(1).strip()
+						book.Writer = parseNames(scenaristes)
+						log_BD(parseNames(scenaristes),"",1)                        
+  
+					else:
+						book.Writer = ""					
+				if DBGONOFF:print Trans(30), book.Writer
+			
+			if CBPenciller:
+				nameRegex = ALBUM_DESSIN_MULTI_AUTHOR.search(info, 0)
+				if nameRegex:
+					dessinateurs = ""				
+					for dessin_multi in ALBUM_DESSIN_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):		
+						dessinateurs = dessinateurs + parseNames(dessin_multi.group(1).strip()) + ", "
+							
+					book.Penciller = dessinateurs[:-2]
+
+				else:
+					nameRegex = ALBUM_DESSIN.search(info, 0)					
+					if nameRegex:
+						dessinateurs = nameRegex.group(1).strip()				
+						book.Penciller = parseNames(dessinateurs)
+  
+					else:
+						book.Penciller = ""
+					
+				if DBGONOFF:print Trans(31), book.Penciller
+			
+			if CBColorist:
+				cColorNote = ""
+				nameRegex = ALBUM_COLOR_MULTI_AUTHOR.search(info, 0)
+				cColorist = ""				
+				if nameRegex:					
+					for color_multi in ALBUM_COLOR_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
+						cColorist = cColorist + parseNames(color_multi.group(1).strip()) + ", "
+							
+					book.Colorist = cColorist[:-2]
+					cColorist = cColorist[:-2]
+
+				else:
+					nameRegex = ALBUM_COLOR.search(info, 0)						
+					if nameRegex:
+						coloristes = nameRegex.group(1).strip()					
+						cColorist = parseNames(coloristes)
+						if re.search("<.*?>", cColorist):
+							book.Colorist = ""
+							cColorNote = Trans(32)
+						else:
+							book.Colorist = cColorist							
+					else:
+						book.Colorist = ""
+						
+				if DBGONOFF:print Trans(33), cColorist , cColorNote
+			
+			if CBCouverture:
+				nameRegex = ALBUM_COUVERT_MULTI_AUTHOR.search(info, 0)
+				cCoverNote = ""	
+				if nameRegex:						
+					for cover_multi in ALBUM_COUVERT_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):				
+						cCoverNote = cCoverNote + parseNames(cover_multi.group(1).strip()) + ", "
+							
+					book.CoverArtist = cCoverNote[:-2]
+					cCoverNote = ""						
+
+				else:
+					nameRegex = ALBUM_COUVERT.search(info, 0)						
+					if nameRegex:					
+						couvertures = nameRegex.group(1)
+						cCouvertures = parseNames(couvertures)
+						if re.search("<.*?>", cCouvertures):
+							book.CoverArtist = ""
+							cCoverNote = Trans(32)
+						else:
+							book.CoverArtist = cCouvertures							
+					else:
+						book.CoverArtist = ""
+						
+				if DBGONOFF:print Trans(120), book.CoverArtist , cCoverNote
+			
+			if CBPrinted:
+				nameRegex = ALBUM_DEPOT.search(info, 0)
+				if nameRegex:
+					if nameRegex.group('month') != '-' and nameRegex.group('month') != "":
+						book.Month = int(nameRegex.group('month'))
+						book.Year = int(nameRegex.group('year'))
+						if DBGONOFF:print Trans(34), str(book.Month) + "/" + str(book.Year)
+					else:
+						book.Month = -1
+						book.Year = -1
+				else:
+					book.Month = -1
+					book.Year = -1	
+			
+			if CBEditor:
+				nameRegex = ALBUM_EDITEUR.search(info, 0)
+				if nameRegex:
+					#editeur = parseNames(nameRegex.group(1).decode('utf-8'))
+					editeur = parseNames(nameRegex.group(1))
+					book.Publisher = editeur
+				else:
+					book.Publisher = ""
+					
+				if DBGONOFF:print Trans(35), book.Publisher
+			
+			if CBISBN:
+				nameRegex = ALBUM_ISBN.search(info, 0)
+				if nameRegex:
+					isbn = nameRegex.group(1)
+					if isbn	!= '</span>':
+						book.ISBN = checkWebChar(isbn)
+					else:
+						book.ISBN = ""
+				else:
+					book.ISBN = ""
+					
+				if DBGONOFF:print "ISBN: ", book.ISBN
+			
+			# Lettrage is optional => So, there is a specific research
+			if CBLetterer:
+				#ALBUM_LETTRAGE = re.compile(ALBUM_LETTRAGE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
+				nameRegex = ALBUM_LETTRAGE.search(info, 0)								
+				if nameRegex:
+					letterer = nameRegex.group(1).strip()
+					#letterer = nameRegex.group(1).decode('utf-8')
+					book.Letterer = parseNames(letterer)
+				else:
+					book.Letterer = ""
+						
+				if DBGONOFF:print Trans(38), book.Letterer 
+			
+			# Album evaluation is optional => So, there is a specific research
+			if CBRating:
+				#ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
+				nameRegex = ALBUM_EVAL.search(albumUrl, 0)														
+				if nameRegex:
+					evaluation = nameRegex.group(1)
+					book.CommunityRating = float(evaluation)
+					if DBGONOFF:print Trans(39) + str(float(evaluation))
+			
+			# Achevè imp. is optional => So, there is a specific research
+			if CBPrinted:
+				#ALBUM_ACHEVE = re.compile(ALBUM_ACHEVE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)																	   
+				nameRegex = ALBUM_ACHEVE.search(info, 0)
+				if nameRegex and book.Month < 1:
+					book.Month = int(nameRegex.group('month'))
+					book.Year = int(nameRegex.group('year'))
+					if DBGONOFF:print Trans(40), str(book.Month) + "/" + str(book.Year)
+			
+			# Collection is optional => So, there is a specific research
+			if CBImprint:
+				#ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
+				nameRegex = ALBUM_COLLECTION.search(albumUrl, 0)													
+				if nameRegex:
+					collection = nameRegex.group(1)
+					#collection = nameRegex.group(1).decode('utf-8')
+					book.Imprint = checkWebChar(collection)						
+				else:
+					book.Imprint = ""
+					
+				if DBGONOFF:print Trans(41), book.Imprint
+			
+			# Format is optional => So, there is a specific research
+			if CBFormat:
+				#ALBUM_TAILLE = re.compile(ALBUM_TAILLE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)								   
+				nameRegex = ALBUM_TAILLE.search(info, 0)
+				if nameRegex:
+					taille = nameRegex.group(1)
+					book.Format = taille
+				else:
+					book.Format = "" 
+					
+				if DBGONOFF:print Trans(42), book.Format
+			
+			# Album summary is optional => So, there is a specific research
+			if CBSynopsys:
+				#ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
+				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
+				if nameRegex:					
+					resume = strip_tags(nameRegex.group(1)).strip()						
+					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)				
+					#if not lDirect and book.Summary != resume and resume:
+						#book.Summary = book.Summary + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+					#elif resume and book.Title:
+					if resume:
+						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume	
+						if DBGONOFF:print Trans(100)						
+				else:
+					if DBGONOFF:print Trans(101)
+					
+			# Info edition			
+			if CBSynopsys:
+				#ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
+				nameRegex = ALBUM_INFOEDITION.search(info, 0)											
+				if nameRegex:										
+					if nameRegex.group(1) !=" &nbsp;":	
+						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
+						infoedition = strip_tags(nameRegex.group(1)).strip()
+						# if not lDirect:
+							# book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
+						# else:
+							# book.Summary = infoedition
+						if infoedition:
+							book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
+						if DBGONOFF:print Trans(118) + Trans(119)		
+						
+			# series only formatted
+			if CBSeries:													
+				book.Series = titlize(book.Series)							
+				if DBGONOFF:print Trans(9), titlize(book.Series)
+			
+			# Cover Image only for fileless
+			if CBCover and not book.FilePath:													 
+				if couv:
+					CoverImg = couv										
+					request = HttpWebRequest.Create(CoverImg)					
+					response = request.GetResponse()
+					response_stream = response.GetResponseStream()
+					retval = Image.FromStream(response_stream)
+					ComicRack.App.SetCustomBookThumbnail(book, retval)
+					if DBGONOFF:print Trans(105), CoverImg	
+					
+			# Planches			
+			if not book.FilePath:
+					#ALBUM_PLANCHES = re.compile(ALBUM_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
+					nameRegex = ALBUM_PLANCHES.search(info, 0)	
+					if nameRegex:
+						if nameRegex.group(1):
+							book.PageCount =  int(nameRegex.group(1).strip())
+						else:
+							book.PageCount =  0
+
+						if DBGONOFF:print Trans(122), book.PageCount
+				
+	except:
+		nameRegex = ""
+		cError = debuglog()
+		log_BD("   " + pageUrl + " " + Trans(43), "", 1)
+		return False
+		
+	return True
+	
 def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
 	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid
@@ -3225,7 +3641,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 																		
 				if RetVal:
 					if LinkBD2:					
-						RetVal = parseAlbumInfo(MyBook, serieUrl, dlgNumber, True)															
+						RetVal = parseAlbumInfoAlt(MyBook, serieUrl, dlgNumber, True)															
 
 				if RetVal:
 					if not cLink:
