@@ -5,7 +5,7 @@
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
-# Bedetheque Scraper 2 - Avril 2021- v 5.2 -> by kiwi13 & maforget
+# Bedetheque Scraper 2 - Avril 2021- v 5.3 -> by kiwi13 & maforget
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.2"
+VERSION = "5.3"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -81,11 +81,11 @@ CBTitle = True
 CBSeries = True
 CBDefault = False
 CBRescrape = False
-CBStop = False
+CBStop = "2"
 ARTICLES = "Le,La,Les,L',The"
 SUBPATT = " - - "
-COUNTOF = False
-COUNTFINIE = False
+COUNTOF = True
+COUNTFINIE = True
 TITLEIT = True
 CBCouverture = True
 TIMEOUT = "1000"
@@ -219,7 +219,7 @@ ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTI
 ALBUM_TAILLE_PATTERN = r'<label>Format\s:\s?</label>.*?(.+?)</'
 ALBUM_TAILLE = re.compile(ALBUM_TAILLE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
-ALBUM_ISBN_PATTERN = r"<label>ISBN\s:\s</label>(.*?)<"
+ALBUM_ISBN_PATTERN = r"<label>ISBN\s:\s</label.*?>([\d-]*?)</"
 ALBUM_ISBN = re.compile(ALBUM_ISBN_PATTERN, re.IGNORECASE | re.DOTALL)	
 
 ALBUM_PLANCHES_PATTERN = r'<label>Planches\s:\s?</label>(\d*?)</'
@@ -634,18 +634,16 @@ def SetSerieId(book, serie, num, nBooksIn):
 
 	return serieUrl
 
-
 #modif kiwi
 def remove_accents(raw_text):
 	raw_text = re.sub(u"[àáâãäåÀÁÂÄÅÃ]", 'a', raw_text)
-	raw_text = re.sub(u"[èéêëÉÈÊËÍÌÎÏ]", 'e', raw_text)
+	raw_text = re.sub(u"[èéêëÉÈÊË]", 'e', raw_text)
 	raw_text = re.sub(u"[çÇ]", 'c', raw_text)
 	raw_text = re.sub(u"[ìíîïÍÌÎÏ]", 'i', raw_text)
 	raw_text = re.sub(u"[òóôõöÓÒÔÖÕ]", 'o', raw_text)
 	raw_text = re.sub(u"[ùúûüÚÙÛÜ]", 'u', raw_text)
 	raw_text = re.sub(u"[œŒ]", 'oe', raw_text)
 	return raw_text
-
 
 def SetAlbumInformation(book, serieUrl, serie, num):
 
@@ -841,7 +839,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 			
 		# Check type of book number
 		if not lDirect:			
-			if (dlgNumber or dlgAltNumber) and dlgNumber != "One Shot":
+			if (dlgNumber or dlgAltNumber) and dlgNumber != "":
 
 #Modif kiwi
 				if isnumeric(dlgNumber):
@@ -987,46 +985,54 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				nameRegex = ""
 				return False
 	
-	try:	
+	try:		
 		i = 0
 		picked = False
-		for albumPick in re.finditer(r'browse-couvertures"\shref="(.+?)"\s\stitle.+?<h3 class="titre">.+?\s+(.*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)\s+</h3>(.+?)</div>.+?', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE):
+		info = albumUrl
+		qnum = ""
+		for albumPick in re.finditer(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE):
 			if i == 0:
 				couv0 = albumPick.group(1)
-				title0 = albumPick.group(4)
+				title0 = albumPick.group(4).strip()
 				info0 = albumPick.group(5)
-				n0 = albumPick.group(2)
+				n0 = albumPick.group(2).strip()
 				
-			a = albumPick.group(3)
-			n = albumPick.group(2)
-					
-			if lDirect:
+			a = albumPick.group(3).strip()
+			aFirstLetter = a[0] if a else ""
+			n = albumPick.group(2).strip()
+			
+			if "serie-" in pageUrl:
+				regexFullNum = n
+				partialRegexFullNum = ""
+				fullNum = num
+			elif lDirect:
 				regexFullNum = a
+				partialRegexFullNum = aFirstLetter
 				fullNum = dlgAltNumber	
 			else:
 				regexFullNum = n + a
+				partialRegexFullNum = n + aFirstLetter
 				fullNum = num + dlgAltNumber	
-			if DBGONOFF:print "regexFullNum)", regexFullNum, "fullNum)", fullNum
+			if DBGONOFF:print "regexFullNum)", regexFullNum, "partialRegexFullNum)", partialRegexFullNum, "fullNum)", fullNum, "n)", n, "a)", a
 			
 			# If no match take the first value
 			if picked == False :
-				if fullNum == regexFullNum :
+				if fullNum and regexFullNum and (fullNum == regexFullNum or fullNum == partialRegexFullNum) :
 					picked = True
 					couv = albumPick.group(1)
-					title = albumPick.group(4)
+					title = albumPick.group(4).strip()
 					info = albumPick.group(5)
-					debugText = "---> fullNum = " + fullNum
+					qnum = albumPick.group(2).strip()
+					if DBGONOFF:print "---> Using fullNum)", fullNum, "n)", n, "a)", a
 				else :
 					couv = couv0
 					title = title0
 					info = info0
-					n = n0
-					debugText = "---> Using First"
+					qnum = n0
+					if DBGONOFF:print "---> Using First"
 			i = i + 1
 			
 		if info :
-			if DBGONOFF: print debugText
-			
 			if RenameSeries:
 				if CBSeries:
 					book.Series = titlize(RenameSeries)
@@ -1036,29 +1042,26 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 
 			if Shadow2:
 				book.Number = dlgNumber
-				
-			qnum = ""
+			
 			if lDirect:
-				try:					
-					qnum = n
-				except:
-					qnum = ""
-					pass
-				book.Number = qnum.strip()		
+				book.Number = qnum
 				if DBGONOFF:print Trans(115), qnum
 		
 			if CBTitle:
 				NewTitle = ""
-				if lDirect:
-					nameRegex = re.search("<label>Série : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)
-					if nameRegex:
-						book.Series = checkWebChar(nameRegex.group(1))
+				nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+				if nameRegex:
+					book.Series = titlize(checkWebChar(nameRegex.group(1).strip()))
+					if DBGONOFF:print nameRegex.group(1).strip()
 
 				try:
 					NewTitle = titlize(strip_tags(checkWebChar(title)))
 				except:
 					NewTitle = title
-								
+				
+				if NewTitle.lower() == book.Series.lower():
+					NewTitle = ""
+				
 				book.Title = NewTitle
 				if DBGONOFF:print Trans(29), book.Title
 			
@@ -1253,8 +1256,12 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			# Collection is optional => So, there is a specific research
 			if CBImprint:
 				#ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_COLLECTION.search(albumUrl, 0)													
-				if nameRegex:
+				nameRegex = ALBUM_COLLECTION.search(albumUrl, 0)
+				nameRegex2 = ALBUM_COLLECTION.search(info, 0)
+				if nameRegex or nameRegex2:
+					if nameRegex2:
+						nameRegex = nameRegex2
+						
 					collection = nameRegex.group(1)
 					#collection = nameRegex.group(1).decode('utf-8')
 					book.Imprint = checkWebChar(collection)						
@@ -1277,6 +1284,7 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			
 			# Album summary is optional => So, there is a specific research
 			if CBSynopsys:
+				book.Summary = ""
 				#ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
 				if nameRegex:					
@@ -1315,7 +1323,8 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			# Cover Image only for fileless
 			if CBCover and not book.FilePath:													 
 				if couv:
-					CoverImg = couv										
+					CoverImg = couv
+					couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', couv)#get higher resolution image
 					request = HttpWebRequest.Create(CoverImg)					
 					response = request.GetResponse()
 					response_stream = response.GetResponseStream()
@@ -1903,7 +1912,6 @@ def checkWebChar(strIn):
 
 	return strIn 
 
-
 def checkRegExp(strIn):
 
 	strIn = re.sub('\\(', '.', strIn)
@@ -2254,7 +2262,7 @@ def LoadSetting():
 	try:
 		CBStop = ft(MySettings.Get("CBStop"))
 	except Exception as e:
-		CBStop = False
+		CBStop = "2"
 	try:
 		ARTICLES = MySettings.Get("ARTICLES")
 	except Exception as e:
@@ -2266,7 +2274,7 @@ def LoadSetting():
 	try:
 		COUNTOF = ft(MySettings.Get("COUNTOF"))	
 	except Exception as e:
-		COUNTOF = False
+		COUNTOF = True
 	try:
 		CBCouverture = ft(MySettings.Get("CBCouverture"))	
 	except Exception as e:
@@ -2274,7 +2282,7 @@ def LoadSetting():
 	try:
 		COUNTFINIE = ft(MySettings.Get("COUNTFINIE"))	
 	except Exception as e:
-		COUNTFINIE = False
+		COUNTFINIE = True
 	try:
 		TITLEIT = ft(MySettings.Get("TITLEIT"))	
 	except Exception as e:
