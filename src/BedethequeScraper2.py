@@ -5,7 +5,7 @@
 #@Image BD2.png
 #@Description Search on wwww.bedetheque.com informations about the selected eComics
 #
-# Bedetheque Scraper 2 - Avril 2021- v 5.3 -> by kiwi13 & maforget
+# Bedetheque Scraper 2 - Avril 2021- v 5.4 -> by kiwi13 & maforget
 #
 # Original work by Franck (c) - revised by Mizio66 (c)
 #
@@ -83,6 +83,7 @@ CBDefault = False
 CBRescrape = False
 CBStop = "2"
 ARTICLES = "Le,La,Les,L',The"
+FORMATARTICLES = True
 SUBPATT = " - - "
 COUNTOF = True
 COUNTFINIE = True
@@ -1047,11 +1048,13 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				book.Number = qnum
 				if DBGONOFF:print Trans(115), qnum
 		
+			NewSeries = ""
 			if CBTitle:
-				NewTitle = ""
-				nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+				NewTitle = ""		
+				nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
+				#nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
 				if nameRegex:
-					book.Series = titlize(checkWebChar(nameRegex.group(1).strip()))
+					NewSeries = checkWebChar(nameRegex.group(1).strip())
 					if DBGONOFF:print nameRegex.group(1).strip()
 
 				try:
@@ -1059,7 +1062,7 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				except:
 					NewTitle = title
 				
-				if NewTitle.lower() == book.Series.lower():
+				if NewTitle.lower() == NewSeries.lower():
 					NewTitle = ""
 				
 				book.Title = NewTitle
@@ -1317,8 +1320,8 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 						
 			# series only formatted
 			if CBSeries:													
-				book.Series = titlize(book.Series)							
-				if DBGONOFF:print Trans(9), titlize(book.Series)
+				book.Series = titlize(NewSeries, True)							
+				if DBGONOFF:print Trans(9), book.Series
 			
 			# Cover Image only for fileless
 			if CBCover and not book.FilePath:													 
@@ -2121,7 +2124,7 @@ class ProgressBarDialog(Form):
 	
 def LoadSetting():
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
@@ -2299,6 +2302,10 @@ def LoadSetting():
 		TIMEPOPUP = MySettings.Get("TIMEPOPUP")
 	except Exception as e:
 		TIMEPOPUP = "30"
+	try:
+		FORMATARTICLES = ft(MySettings.Get("FORMATARTICLES"))	
+	except Exception as e:
+		FORMATARTICLES = True
 
 	###############################################################
 	
@@ -2310,7 +2317,7 @@ def LoadSetting():
 	
 def SaveSetting():
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 	
@@ -2361,6 +2368,7 @@ def SaveSetting():
 	MySettings.Set("TIMEOUT",  TIMEOUT)
 	MySettings.Set("TIMEOUTS",  TIMEOUTS) 
 	MySettings.Set("TIMEPOPUP",  TIMEPOPUP)
+	MySettings.Set("FORMATARTICLES", tf(FORMATARTICLES))
 
 	if CBStop == True:
 		MySettings.Set("CBStop",  "1")	
@@ -2432,7 +2440,7 @@ class BDConfigForm(Form):
 
 	def __init__(self):
 
-		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
@@ -2497,6 +2505,7 @@ class BDConfigForm(Form):
 		self._COUNTOF = System.Windows.Forms.CheckBox()
 		self._COUNTFINIE = System.Windows.Forms.CheckBox()
 		self._TITLEIT = System.Windows.Forms.CheckBox()
+		self._FORMATARTICLES = System.Windows.Forms.CheckBox()
 		self._TIMEOUT = System.Windows.Forms.TextBox()
 		self._TIMEOUTS = System.Windows.Forms.TextBox()
 #modif kiwi
@@ -2544,7 +2553,8 @@ class BDConfigForm(Form):
 		self._tabPage1.Controls.Add(self._labelSUBPATT)	
 		self._tabPage1.Controls.Add(self._COUNTOF)
 		self._tabPage1.Controls.Add(self._COUNTFINIE)
-		self._tabPage1.Controls.Add(self._TITLEIT)		
+		self._tabPage1.Controls.Add(self._TITLEIT)
+		self._tabPage1.Controls.Add(self._FORMATARTICLES)		
 		self._tabPage1.Controls.Add(self._TIMEOUT)
 		self._tabPage1.Controls.Add(self._TIMEOUTS)
 #modif kiwi
@@ -3058,10 +3068,21 @@ class BDConfigForm(Form):
 		self._TITLEIT.UseVisualStyleBackColor = True
 		self._TITLEIT.CheckState = if_else(TITLEIT, CheckState.Checked, CheckState.Unchecked)
 		#
+		# FORMATARTICLES
+		#
+		self._FORMATARTICLES.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._FORMATARTICLES.Location = System.Drawing.Point(320, 194)
+		self._FORMATARTICLES.Name = "FORMATARTICLES"
+		self._FORMATARTICLES.Size = System.Drawing.Size(180, 20)
+		self._FORMATARTICLES.TabIndex = 25
+		self._FORMATARTICLES.Text = Trans(144)
+		self._FORMATARTICLES.UseVisualStyleBackColor = True
+		self._FORMATARTICLES.CheckState = if_else(FORMATARTICLES, CheckState.Checked, CheckState.Unchecked)
+		#
 		# Stop at error scraping
 		#
 		self._CBStop.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._CBStop.Location = System.Drawing.Point(320, 194)
+		self._CBStop.Location = System.Drawing.Point(320, 216)
 		self._CBStop.Name = "CBStop"
 		self._CBStop.Size = System.Drawing.Size(180, 20)
 		self._CBStop.TabIndex = 26
@@ -3079,7 +3100,7 @@ class BDConfigForm(Form):
 		#
 		self._label4.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._label4.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._label4.Location = System.Drawing.Point(320, 236)
+		self._label4.Location = System.Drawing.Point(320, 258)
 		self._label4.Name = "label4"
 		self._label4.Size = System.Drawing.Size(160, 23)
 		self._label4.TabIndex = 99
@@ -3087,7 +3108,7 @@ class BDConfigForm(Form):
 		#
 		# TIMEOUT
 		#
-		self._TIMEOUT.Location = System.Drawing.Point(435, 232)
+		self._TIMEOUT.Location = System.Drawing.Point(435, 254)
 		self._TIMEOUT.Name = "TIMEOUT"
 		self._TIMEOUT.Size = System.Drawing.Size(50, 21)
 		self._TIMEOUT.TabIndex = 27
@@ -3110,7 +3131,7 @@ class BDConfigForm(Form):
 		self._TIMEOUTS.Location = System.Drawing.Point(180, 232)
 		self._TIMEOUTS.Name = "TIMEOUTS"
 		self._TIMEOUTS.Size = System.Drawing.Size(50, 21)
-		self._TIMEOUTS.TabIndex = 25
+		self._TIMEOUTS.TabIndex = 28
 		self._TIMEOUTS.TextAlign = HorizontalAlignment.Center
 		self._TIMEOUTS.MaxLength = 3
 		self._TIMEOUTS.Text = TIMEOUTS
@@ -3206,7 +3227,7 @@ class BDConfigForm(Form):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
 
 		if sender.Name.CompareTo(self._OKButton.Name) == 0:
 			SHOWRENLOG = if_else(self._SHOWRENLOG.CheckState == CheckState.Checked, True, False)
@@ -3256,6 +3277,7 @@ class BDConfigForm(Form):
 			COUNTOF = if_else(self._COUNTOF.CheckState == CheckState.Checked, True, False)
 			COUNTFINIE = if_else(self._COUNTFINIE.CheckState == CheckState.Checked, True, False)
 			TITLEIT = if_else(self._TITLEIT.CheckState == CheckState.Checked, True, False)
+			FORMATARTICLES = if_else(self._FORMATARTICLES.CheckState == CheckState.Checked, True, False)
 #modif kiwi
 			try:
 				if int(self._TIMEOUT.Text) > 0:
@@ -3295,7 +3317,6 @@ class BDConfigForm(Form):
 					pass
 			self._TBTags.Text = ""
 
-
 def Translate():
 
 	global aWord, LANGENFR
@@ -3331,9 +3352,16 @@ def Trans(nWord):
 
 	return tText
 
-def titlize(s):
+def titlize(s, formatArticles = False):
 	
-	global TITLEIT
+	global TITLEIT, FORMATARTICLES, ARTICLES
+	
+	if formatArticles and FORMATARTICLES:
+		for article in ARTICLES.split(','):
+			ns = re.sub(r"^(" + article +")\s*(?<=[' ])([^\r\n]*)", r"\2 (\1)", s, 1)
+			if ns:
+				s = ns
+			if DBGONOFF:print "article = " + article + " / ns = " + ns + " / s = " + s
 	
 	if TITLEIT:
 		#CharList = '[\.\?\!\(\[]\s\"\'\[\]'		
@@ -3353,7 +3381,6 @@ def titlize(s):
 		return NewString		
 	else:
 		return s
-
 
 class SeriesForm(Form):
 	
