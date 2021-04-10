@@ -1327,7 +1327,7 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			if CBCover and not book.FilePath:													 
 				if couv:
 					CoverImg = couv
-					couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', couv)#get higher resolution image
+					CoverImg = re.sub('/cache/thb_couv/', '/media/Couvertures/', couv)#get higher resolution image
 					request = HttpWebRequest.Create(CoverImg)					
 					response = request.GetResponse()
 					response_stream = response.GetResponseStream()
