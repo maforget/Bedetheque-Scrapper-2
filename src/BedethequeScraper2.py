@@ -1048,15 +1048,15 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				book.Number = qnum
 				if DBGONOFF:print Trans(115), qnum
 		
-			NewSeries = ""
+			NewSeries = book.Series
+			nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
+			#nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
+			if nameRegex:
+				NewSeries = checkWebChar(nameRegex.group(1).strip())
+				if DBGONOFF: nameRegex.group(1).strip()
+				
 			if CBTitle:
 				NewTitle = ""		
-				nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
-				#nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
-				if nameRegex:
-					NewSeries = checkWebChar(nameRegex.group(1).strip())
-					if DBGONOFF:print nameRegex.group(1).strip()
-
 				try:
 					NewTitle = titlize(strip_tags(checkWebChar(title)))
 				except:
