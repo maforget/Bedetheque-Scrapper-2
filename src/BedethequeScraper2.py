@@ -991,12 +991,14 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 		picked = False
 		info = albumUrl
 		qnum = ""
-		for albumPick in re.finditer(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE):
+		anum = ""
+		for albumPick in re.finditer(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE):			
 			if i == 0:
 				couv0 = albumPick.group(1)
 				title0 = albumPick.group(4).strip()
 				info0 = albumPick.group(5)
 				n0 = albumPick.group(2).strip()
+				a0 = albumPick.group(3).strip()
 				
 			a = albumPick.group(3).strip()
 			aFirstLetter = a[0] if a else ""
@@ -1023,14 +1025,16 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 					couv = albumPick.group(1)
 					title = albumPick.group(4).strip()
 					info = albumPick.group(5)
-					qnum = albumPick.group(2).strip()
+					qnum = n
+					anum = a
 					if DBGONOFF:print "---> Using fullNum)", fullNum, "n)", n, "a)", a
 				else :
 					couv = couv0
 					title = title0
 					info = info0
 					qnum = n0
-					if DBGONOFF:print "---> Using First"
+					anum = a0
+					if DBGONOFF:print "---> Using First"		
 			i = i + 1
 			
 		if info :
@@ -1045,8 +1049,8 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				book.Number = dlgNumber
 			
 			if lDirect:
-				book.Number = qnum
-				if DBGONOFF:print Trans(115), qnum
+				book.Number = anum if not qnum and anum else qnum
+				if DBGONOFF:print Trans(115), book.Number
 		
 			NewSeries = book.Series
 			nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
