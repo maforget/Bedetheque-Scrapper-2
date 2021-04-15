@@ -1295,12 +1295,13 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
 				if nameRegex:					
 					resume = strip_tags(nameRegex.group(1)).strip()						
-					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)				
-					#if not lDirect and book.Summary != resume and resume:
-						#book.Summary = book.Summary + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-					#elif resume and book.Title:
-					if resume:
-						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume	
+					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
+					#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
+					if not lDirect and book.Summary != resume and resume:
+						book.Summary = book.Summary + chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+					elif resume and book.Title:
+						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+							
 						if DBGONOFF:print Trans(100)						
 				else:
 					if DBGONOFF:print Trans(101)
@@ -1310,15 +1311,13 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 				#ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 				nameRegex = ALBUM_INFOEDITION.search(info, 0)														
 				if nameRegex:										
-					if nameRegex.group(1) !=" &nbsp;":	
-						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
+					if nameRegex.group(1) !=" &nbsp;":						
 						infoedition = strip_tags(nameRegex.group(1)).strip()
-						# if not lDirect:
-							# book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
-						# else:
-							# book.Summary = infoedition
-						if infoedition:
+						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
+						if not lDirect:
 							book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
+						else:
+							book.Summary = infoedition
 						if DBGONOFF:print Trans(118) + Trans(119)		
 						
 			# series only formatted
@@ -1731,12 +1730,13 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
 				if nameRegex:					
 					resume = strip_tags(nameRegex.group(1)).strip()						
-					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)				
-					#if not lDirect and book.Summary != resume and resume:
-						#book.Summary = book.Summary + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-					#elif resume and book.Title:
-					if resume:
-						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume	
+					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
+					#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
+					if not lDirect and book.Summary != resume and resume:
+						book.Summary = book.Summary + chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+					elif resume and book.Title:
+						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+							
 						if DBGONOFF:print Trans(100)						
 				else:
 					if DBGONOFF:print Trans(101)
@@ -1746,16 +1746,14 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				#ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 				nameRegex = ALBUM_INFOEDITION.search(albumUrl, 0)														
 				if nameRegex:										
-					if nameRegex.group(1) !=" &nbsp;":	
-						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
+					if nameRegex.group(1) !=" &nbsp;":						
 						infoedition = strip_tags(nameRegex.group(1)).strip()
-						# if not lDirect:
-							# book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
-						# else:
-							# book.Summary = infoedition
-						if infoedition:
+						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
+						if not lDirect:
 							book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
-						if DBGONOFF:print Trans(118) + Trans(119)		
+						else:
+							book.Summary = infoedition
+						if DBGONOFF:print Trans(118) + Trans(119)			
 						
 			# series only formatted
 			if CBSeries:					
