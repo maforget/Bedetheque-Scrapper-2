@@ -1291,7 +1291,6 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			
 			# Album summary is optional => So, there is a specific research
 			if CBSynopsys:
-				book.Summary = ""
 				#ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
 				if nameRegex:					
@@ -1305,11 +1304,11 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 						if DBGONOFF:print Trans(100)						
 				else:
 					if DBGONOFF:print Trans(101)
-					
+
 			# Info edition			
 			if CBSynopsys:
 				#ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_INFOEDITION.search(info, 0)											
+				nameRegex = ALBUM_INFOEDITION.search(info, 0)														
 				if nameRegex:										
 					if nameRegex.group(1) !=" &nbsp;":	
 						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
