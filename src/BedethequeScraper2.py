@@ -1338,6 +1338,10 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 					retval = Image.FromStream(response_stream)
 					ComicRack.App.SetCustomBookThumbnail(book, retval)
 					if DBGONOFF:print Trans(105), CoverImg	
+			
+			#When QS, no language is set. This is a Temp solution, because there could be other language, but we must go through the series page to check
+			if CBLanguage and lDirect and not book.LanguageISO:
+				book.LanguageISO = "fr"
 					
 			# Planches			
 			if not book.FilePath:
