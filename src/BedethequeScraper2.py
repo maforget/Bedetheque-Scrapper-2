@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.5"
+VERSION = "5.6"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -82,6 +82,7 @@ CBSeries = True
 CBDefault = False
 CBRescrape = False
 CBStop = "2"
+PopUpEditionForm = False
 ARTICLES = "Le,La,Les,L',The"
 FORMATARTICLES = True
 SUBPATT = " - - "
@@ -237,12 +238,14 @@ ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MUL
 
 #modif kiwi
 #ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.%s<.*?<a\shref=\"(.*?)"'
-ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.<.*?<a\shref=\"(.*?)"'
+#ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.<.*?<a\shref=\"(.*?)"'
+ALBUM_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.<.*?<a\shref=\"(.*?)"\s.*?title=.+?\">(.+?)</'
 
 ALBUM_SINGLE_URL_PATTERN = r'<label>%s<span\sclass=\"numa.*?\.%s<.*?<a\shref=\"(.*?)\#(.*?)\"'
 
 #modif kiwi
-ALBUM_NON_NUM_URL_PATTERN = r'<label><span\sclass=\"numa\">%s</span>.*?\.<.*?<a\shref=\"(.*?)"'   
+#ALBUM_NON_NUM_URL_PATTERN = r'<label><span\sclass=\"numa\">%s</span>.*?\.<.*?<a\shref=\"(.*?)"'   
+ALBUM_NON_NUM_URL_PATTERN = r'<label><span\sclass=\"numa\">%s</span>.*?\.<.*?<a\shref=\"(.*?)"\s.*?title=.+?\">(.+?)</'  
 
 ALBUM_SINGLEALBUM_URLALL_PATTERN = r'<h3>(.*?)</h3>'
 ALBUM_SINGLEALBUM_URLALL = re.compile(ALBUM_SINGLEALBUM_URLALL_PATTERN, re.DOTALL | re.IGNORECASE)
@@ -437,7 +440,7 @@ def WorkerThread(books):
 				
 					if not RetAlb and not 'revue' in serieUrl:					
 						# reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
-						RetAlb = parseAlbumInfoAlt (book, serieUrl, albumNum)
+						RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
 						
 			if RetAlb:
 				nRenamed += 1				
@@ -606,7 +609,7 @@ def SetSerieId(book, serie, num, nBooksIn):
 						NewLink = ''
 						NewSeries = ''									
 						a = ListSeries
-						pickAseries = SeriesForm(serie)
+						pickAseries = SeriesForm(serie, ListSeries, FormType.SERIE)
 						result = pickAseries.ShowDialog()
 					
 						if result == DialogResult.Cancel:
@@ -660,23 +663,21 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 		if DBGONOFF:print Trans(26), Trans(25)
 
 	if albumUrl and not 'revue' in serieUrl:
-		if not parseAlbumInfoAlt(book, albumUrl, num):
+		if not parseAlbumInfo(book, albumUrl, num):
 			return False
 		return True
 
 	elif 'revue' in serieUrl:
-		
 		return albumUrl
 
 	else:
-
 		if DBGONOFF:print Trans(27) + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo.' + dlgAltNumber) + "\n"
 		log_BD("   [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo.' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(28), 1)
 		return False
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -749,8 +750,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 			resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
 			book.Summary = (checkWebChar(resume)).strip()
 			cResume = if_else(resume, Trans(52), Trans(53))
-			if DBGONOFF:print cResume
-						
+			if DBGONOFF:print cResume					
 
 		#fini
 		if CBStatus:
@@ -783,8 +783,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 			if nameRegex:
 				langue = nameRegex.group(1).strip()
 				if DBGONOFF:print Trans(36), langue[:2]
-				book.LanguageISO = dLang[langue[:2]]
-	
+				book.LanguageISO = dLang[langue[:2]]	
 			
 		#Default Values
 		if not CBDefault:
@@ -837,102 +836,69 @@ def parseSerieInfo(book, serieUrl, lDirect):
 						cCountText = "---"
 				
 				if DBGONOFF:print Trans(59) + if_else(dlgNumber == "One Shot", "1", cCountText)
-			
-		# Check type of book number
-		if not lDirect:			
-			if (dlgNumber or dlgAltNumber) and dlgNumber != "":
-
-#Modif kiwi
-				if isnumeric(dlgNumber):
-					#log_BD("numerique", Trans(25), 1)
-					Regex = re.compile(ALBUM_URL_PATTERN % dlgNumber, re.DOTALL | re.IGNORECASE)
-				else:
-					#log_BD("non numerique", Trans(25), 1)  
-					Regex = re.compile(ALBUM_NON_NUM_URL_PATTERN % dlgNumber, re.DOTALL | re.IGNORECASE)
+		
+		Regex = re.compile(r'<label>([^<]*?)<span\sclass=\"numa\">(.*?)</span.*?<a\shref=\"(.*?)".*?title=.+?\">(.+?)</', re.IGNORECASE | re.DOTALL)
+						
+		i = 0
+		ListAlbum, ListAlbumAll = list(), list()
+		for r in Regex.finditer(request):
+			n, a, url, title = r.group(1), r.group(2), r.group(3), r.group(4)
+			num = if_else(n,n, if_else(a, a, ""))
+			ListAlbumAll.append([url, num + ". " + title, str(i).zfill(3)])
+			if dlgNumber != "" and (n == dlgNumber or a == dlgNumber) and not lDirect:
+				ListAlbum.append([url, num + ". " + title, str(i).zfill(3)])
+			i = i + 1
+		
+		if len(ListAlbum) == 0: 
+			ListAlbum = ListAlbumAll
+		
+		if DBGONOFF:print "Nbr. d'item dans la Liste Album est de: " + str(len(ListAlbum))
+		if len(ListAlbum) > 1:
+			if (CBStop == True or CBStop == "2"):
+				NewLink = ""
+				NewSeries = ""									
+				pickAnAlbum = SeriesForm(dlgNumber, ListAlbum, FormType.ALBUM)
+				result = pickAnAlbum.ShowDialog()
 				
-				nameRegex = Regex.search(request)
-				cBDNum = ""	
-
-				if nameRegex:
-					#albumURL_Temp = nameRegex.group(1) + "#" + nameRegex.group(2)
-					albumURL_Temp = nameRegex.group(1)
-
-					cBDNumS = re.search(r'\-(\d+).html', albumURL_Temp)
-					if cBDNumS:
-						cBDNum = cBDNumS.group(1)
-					else:
-						cBDNum = ""
-
-					#try:
-						#request = _read_url(albumURL_Temp, lDirect)
-						#Regex = re.compile(ALBUMDETAILS_URL_PATTERN % cBDNum, re.DOTALL | re.IGNORECASE)
-						#nameRegex = Regex.search(request)
-					#except:		
-						#cError = debuglog()
-						#log_BD("   " + albumURL_Temp + " " + Trans(43), "", 1)
-						#return False
+				if result == DialogResult.Cancel:
+					albumURL = ListAlbum[0][0]	
+					if DBGONOFF:print "---> Appuie sur Cancel, choix du 1er item"
 				else:
-					Regex = re.compile(ALBUM_SINGLE_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
-					nameRegex = Regex.search(request)
-					cBDNum = ""	
-					if nameRegex:
-						albumURL_Temp = nameRegex.group(1) + "#" + nameRegex.group(2)
-						cBDNum = nameRegex.group(2)
-						try:
-							request = _read_url(albumURL_Temp, lDirect)
-							Regex = re.compile(ALBUMDETAILS_URL_PATTERN % cBDNum, re.DOTALL | re.IGNORECASE)
-							nameRegex = Regex.search(request)
-						except:		
-							cError = debuglog()
-							log_BD("   " + albumURL_Temp + " " + Trans(43), "", 1)
-							return False	
-					else:															
-						albumURL = ""			
-	
-				if nameRegex:
-					#albumURL = "album-" + cBDNum + "-" + nameRegex.group(1)
-					albumURL = albumURL_Temp
-					try:
-						request = _read_url(albumURL, lDirect)
-					except:		
-						cError = debuglog()
-						log_BD("   " + albumURL + " " + Trans(43), "", 1)
-						return False
-				else:
-					#if dlgNumber == "":
-					#	dlgNumber = '.*?'
-					#if dlgAltNumber == "":
-					#	dlgAltNumber = '.*?'						
-					albumURL = ""
-					Regex = re.compile(ALBUM_SINGLEALBUM_URL_PATTERN % (dlgNumber, dlgAltNumber), re.DOTALL | re.IGNORECASE)
-					for album_multi in ALBUM_SINGLEALBUM_URLALL.finditer(request):							
-						nameRegex = Regex.search(album_multi.group(1))
-						if nameRegex:
-							albumURL = nameRegex.group(1)
-							exit
-					if albumURL == "":							
-						return False
+					albumURL = NewLink
 			else:
-
-				#ALBUM_URL_NOTNUM = re.compile(ALBUM_URL_PATTERN_NOTNUM, re.MULTILINE | re.DOTALL | re.IGNORECASE)				
-				nameRegex = ALBUM_URL_NOTNUM.search(request)
-			
-				if nameRegex:
-					albumURL = nameRegex.group(1)
-		else:	
-			albumURL = True
-
+				albumURL = ListAlbum[0][0]
+				if DBGONOFF:print "---> Plus d'un item mais l'option pause scrape est désactivé, choix du 1er item"
+		elif len(ListAlbum) == 1:
+			albumURL = ListAlbum[0][0]
+			if DBGONOFF:print "---> Seulement 1 item dans la liste"	
+		else:
+			Regex = re.compile(r'class="titre"\shref="(.+?)".+?<span class="numa">.*?</span>.+?', re.IGNORECASE | re.DOTALL)#Rien trouvé il ce peux qu'il n'est pas de liste sur le coté, surement 1 seul item
+			r = Regex.search(request)
+			if r:
+				albumURL = r.group(1)
+				if DBGONOFF:print "---> Numéro n'existe pas dans la liste, choix du 1er item"
+			else:
+				return False
 
 	return albumURL
 
-def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
+class AlbumInfo:
+	def __init__ (self, n, a, title, info, couv, url):
+		self.Couv = couv
+		self.N = n
+		self.A = a
+		self.Title = title
+		self.Info = info	
+		self.URL = url
 
-	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
+def parseAlbumInfo(book, pageUrl, num, lDirect = False):
+
+	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
 	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 	
 	if DBGONOFF:print "=" * 60
-	if DBGONOFF:print "parseAlbumInfoAlt", "a)", pageUrl, "b)", num , "c)", lDirect
+	if DBGONOFF:print "parseAlbumInfo", "a)", pageUrl, "b)", num , "c)", lDirect
 	if DBGONOFF:print "=" * 60
 	
 	AlbumBDThequeNum = ""
@@ -952,8 +918,7 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			ID_ALBUM = ID_ALBUM_PATT.group(1)		
 			AlbumBDThequeNum = ID_ALBUM
 				
-	else:
-		
+	else:		
 		# Album N. est Numerique
 		if dlgNumber or dlgAltNumber:
 			ALBUM_BDTHEQUE_NUM_PATTERN = r'tails\">%s<span\sclass=\"numa">%s</span>.*?<a name=\"(.*?)\"'
@@ -988,54 +953,57 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 	
 	try:		
 		i = 0
+		ListAlbum = list()
+		pickedVar = ""
 		picked = False
 		info = albumUrl
-		qnum = ""
-		anum = ""
-		for albumPick in re.finditer(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE):			
-			if i == 0:
-				couv0 = albumPick.group(1)
-				title0 = albumPick.group(4).strip()
-				info0 = albumPick.group(5)
-				n0 = albumPick.group(2).strip()
-				a0 = albumPick.group(3).strip()
-				
-			a = albumPick.group(3).strip()
-			aFirstLetter = a[0] if a else ""
-			n = albumPick.group(2).strip()
+		tome = re.search(r"<label>Tome\s:\s</label>(.*?)</li>", albumUrl, re.IGNORECASE | re.DOTALL)
+		t = tome.group(1) if tome else ""
+		nameRegex = re.compile(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--.+?class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
+		for albumPick in nameRegex.finditer(albumUrl):	
+			couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', albumPick.group(1)) if albumPick.group(1) else "" #get higher resolution image
+			title = checkWebChar(albumPick.group(4).strip())
+			nfo = albumPick.group(5)
+			a = albumPick.group(3).strip() if isnumeric(dlgNumber) else re.sub(t,'',albumPick.group(3).strip()).strip()
+			url = pageUrl if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
+			albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
+			if DBGONOFF:print "Tome)", t, "Alt)", a, "Title)", title
 			
-			if "serie-" in pageUrl:
-				regexFullNum = n
-				partialRegexFullNum = ""
-				fullNum = num
-			elif lDirect:
-				regexFullNum = a
-				partialRegexFullNum = aFirstLetter
-				fullNum = dlgAltNumber	
-			else:
-				regexFullNum = n + a
-				partialRegexFullNum = n + aFirstLetter
-				fullNum = num + dlgAltNumber	
-			if DBGONOFF:print "regexFullNum)", regexFullNum, "partialRegexFullNum)", partialRegexFullNum, "fullNum)", fullNum, "n)", n, "a)", a
-			
-			# If no match take the first value
-			if picked == False :
-				if fullNum and regexFullNum and (fullNum == regexFullNum or fullNum == partialRegexFullNum) :
-					picked = True
-					couv = albumPick.group(1)
-					title = albumPick.group(4).strip()
-					info = albumPick.group(5)
-					qnum = n
-					anum = a
-					if DBGONOFF:print "---> Using fullNum)", fullNum, "n)", n, "a)", a
-				else :
-					couv = couv0
-					title = title0
-					info = info0
-					qnum = n0
-					anum = a0
-					if DBGONOFF:print "---> Using First"		
+			ListAlbum.append([a, albumInfo, str(i).zfill(3)])
 			i = i + 1
+		
+		if len(ListAlbum) == 1:
+			pickedVar = ListAlbum[0][1]
+			if DBGONOFF:print "---> Seulement 1 item dans la liste"	
+		elif len(ListAlbum) > 1:			
+			for f in ListAlbum:
+				if dlgAltNumber != "" and f[1].A == dlgAltNumber:
+					pickedVar = f[1]
+					picked = True
+					break
+			
+			if PopUpEditionForm:
+				picked = False
+			
+			if PopUpEditionForm and (CBStop == True or CBStop == "2") and not picked:
+				NewLink = ""
+				NewSeries = ""	
+				pickAvar = SeriesForm(num, ListAlbum, FormType.EDITION)
+				result = pickAvar.ShowDialog()
+				
+				if result == DialogResult.Cancel:
+					pickedVar = ListAlbum[0][1]
+					if DBGONOFF:print "---> Cancel appuyer, on choisi le premier"
+
+				else:
+					pickedVar = NewSeries
+			elif not picked:
+				pickedVar = ListAlbum[0][1]
+				if DBGONOFF:print "---> Choix du 1er item"
+				
+		if pickedVar :
+			info = pickedVar.Info
+			if DBGONOFF:print "Choisi #Alt: " + pickedVar.A + " // Titre: " + pickedVar.Title
 			
 		if info :
 			if RenameSeries:
@@ -1048,36 +1016,9 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 			if Shadow2:
 				book.Number = dlgNumber
 			
-			if lDirect:
-				book.Number = anum if not qnum and anum else qnum
-				if DBGONOFF:print Trans(115), book.Number
-		
-			NewSeries = book.Series
-			nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
-			#nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
-			if nameRegex:
-				NewSeries = checkWebChar(nameRegex.group(1).strip())
-				if DBGONOFF: nameRegex.group(1).strip()
-				
-			if CBTitle:
-				NewTitle = ""		
-				try:
-					NewTitle = titlize(strip_tags(checkWebChar(title)))
-				except:
-					NewTitle = title
-				
-				if NewTitle.lower() == NewSeries.lower():
-					NewTitle = ""
-				
-				book.Title = NewTitle
-				if DBGONOFF:print Trans(29), book.Title
-			
-			if CBNotes:
-				book.Notes = "Bedetheque.com - " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + chr(10) + "BD2 scraper v" + VERSION
-			
 			#web
 			if CBWeb == True and not CBRescrape:			
-				book.Web = pageUrl
+				book.Web = pickedVar.URL
 				if DBGONOFF:print Trans(123), book.Web
 			elif CBWeb == "2" and not CBRescrape:
 				cBelid = re.search(r'\-(\d+).html', pageUrl)
@@ -1085,6 +1026,36 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 					book.Web = 'www.bedetheque.com/BD--' + cBelid.group(1) + '.html'
 					if DBGONOFF:print Trans(123), book.Web
 			
+			qnum = pickedVar.N#is equal to t always, but keep it in case of needed modification
+			anum = pickedVar.A
+			book.Number = anum if not qnum and anum else qnum#set number to Alt if no number and an Alt Exists
+			book.AlternateNumber = dlgAltNumber if not qnum and anum else anum#Don't change if prev was set to anum, else set to Alt
+			if DBGONOFF:print "Num: ", book.Number
+			if DBGONOFF:print "Alt: ", book.AlternateNumber
+		
+			series = book.Series
+			nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
+			#nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
+			if nameRegex:
+				series = checkWebChar(nameRegex.group(1).strip())
+				if DBGONOFF: nameRegex.group(1).strip()
+				
+			if CBTitle:
+				NewTitle = ""		
+				try:
+					NewTitle = titlize(strip_tags(pickedVar.Title))
+				except:
+					NewTitle = pickedVar.Title
+				
+				if NewTitle.lower() == series.lower():
+					NewTitle = ""
+				
+				book.Title = NewTitle
+				if DBGONOFF:print Trans(29), book.Title
+			
+			if CBNotes:
+				book.Notes = "Bedetheque.com - " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + chr(10) + "BD2 scraper v" + VERSION
+						
 			if TBTags == "DEL":
 				book.Tags = ""
 			elif TBTags != "":
@@ -1322,14 +1293,13 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 						
 			# series only formatted
 			if CBSeries:													
-				book.Series = titlize(NewSeries, True)							
+				book.Series = titlize(series, True)							
 				if DBGONOFF:print Trans(9), book.Series
 			
 			# Cover Image only for fileless
 			if CBCover and not book.FilePath:													 
-				if couv:
-					CoverImg = couv
-					CoverImg = re.sub('/cache/thb_couv/', '/media/Couvertures/', couv)#get higher resolution image
+				if pickedVar.Couv:
+					CoverImg = pickedVar.Couv
 					request = HttpWebRequest.Create(CoverImg)					
 					response = request.GetResponse()
 					response_stream = response.GetResponseStream()
@@ -1359,441 +1329,6 @@ def parseAlbumInfoAlt(book, pageUrl, num, lDirect = False):
 		log_BD("   " + pageUrl + " " + Trans(43), "", 1)
 		return False
 		
-	return True
-	
-def parseAlbumInfo(book, pageUrl, num, lDirect = False):
-
-	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
-	
-	if DBGONOFF:print "=" * 60
-	if DBGONOFF:print "parseAlbumInfo", "a)", pageUrl, "b)", num , "c)", lDirect
-	if DBGONOFF:print "=" * 60
-		
-	AlbumBDThequeNum = ""
-	
-	albumUrl = _read_url(pageUrl, False)							
-	
-	#identify the album n. in BDTHQ
-	cBDNum = False
-	cBDNumS = re.search(r'\-(\d+).html', pageUrl)
-	if cBDNumS:
-		cBDNum = cBDNumS.group(1)
-		if cBDNum:				
-			AlbumBDThequeNum = cBDNum
-	elif "serie-" in pageUrl:
-		ID_ALBUM_PATT = re.search(r'serie.*?\.html\#(\d+)$', pageUrl)		
-		if ID_ALBUM_PATT:			
-			ID_ALBUM = ID_ALBUM_PATT.group(1)		
-			AlbumBDThequeNum = ID_ALBUM
-				
-	else:
-		
-		# Album N. est Numerique
-		if dlgNumber or dlgAltNumber:
-			ALBUM_BDTHEQUE_NUM_PATTERN = r'tails\">%s<span\sclass=\"numa">%s</span>.*?<a name=\"(.*?)\"'
-			ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % (num, dlgAltNumber), re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-			nameRegex = ALBUM_BDTHEQUE_NUM.search(albumUrl)
-
-			if nameRegex:
-				AlbumBDThequeNum = nameRegex.group(1)
-			else:
-				ALBUM_BDTHEQUE_NUM_PATTERN = r'>%s<span\sclass=\"numa">.*?</span>.*?<a name=\"(.*?)\"'
-				ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % num, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-				nameRegex = ALBUM_BDTHEQUE_NUM.search(albumUrl)
-				if nameRegex:
-					AlbumBDThequeNum = nameRegex.group(1)
-				else:
-					# Album not found
-					nameRegex = ""
-					return False
-		
-		# Album N. in Lettres				
-		else:			
-			#ALBUM_BDTHEQUE_NOTNUM = re.compile(ALBUM_BDTHEQUE_NOTNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-			nameRegex = ALBUM_BDTHEQUE_NOTNUM.search(albumUrl)
-			if nameRegex:
-				AlbumBDThequeNum = nameRegex.group(1)
-					
-			else:
-			
-				nameRegex = ""
-				return False
-				
-	try:
-		
-		#RegCompile = re.compile(ALBUM_ID_PATTERN % (AlbumBDThequeNum, AlbumBDThequeNum), re.IGNORECASE | re.MULTILINE | re.DOTALL)
-		#nameRegex = RegCompile.search(albumUrl)
-				
-		#if nameRegex:
-			
-			#pageUrl = '/album-' + AlbumBDThequeNum + nameRegex.group(1) + '.html'
-			#albumUrl = _read_url(pageUrl, False)
-			
-		RegCompile = re.compile(ALBUM_INFO_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-		nameRegex = RegCompile.search(albumUrl)
-		
-		if nameRegex:
-		
-			albumInfo = nameRegex.group(1)		
-
-
-			if RenameSeries:
-				if CBSeries:
-					book.Series = titlize(RenameSeries)
-			elif (Shadow1 or book.Series != titlize(dlgName)) and not lDirect:
-				if CBSeries:	
-					book.Series = titlize(dlgName)
-			#elif lDirect:
-				
-			
-			if Shadow2:
-				book.Number = dlgNumber
-
-			qnum = ""
-
-			if lDirect:
-				nameRegex = ALBUM_QNUM.search(albumUrl)
-				if nameRegex:
-					try:					
-						qnum = nameRegex.group(2)
-					except:
-						qnum = ""
-						pass
-					book.Number = qnum.strip()		
-				if DBGONOFF:print Trans(115), qnum
-
-			#if lDirect and not book.Number:
-			#	nameRegex = ALBUM_QNUM.search(albumUrl)
-			#	if nameRegex:
-			#		qnum = nameRegex.group(1)
-			#		book.Number = qnum.strip()
-			#		if DBGONOFF:print Trans(115), qnum
-			#elif lDirect:
-			#	qnum = book.Number
-
-					
-			if CBTitle:
-				NewTitle = ""
-				
-				if lDirect:
-					#RegCompile = re.compile(ALBUM_QTITLE_PATTERN % qnum , re.IGNORECASE | re.MULTILINE | re.DOTALL)					
-					#nameRegex = RegCompile.search(albumUrl, 0)	
-					try: 
-						title = re.sub(r'BD, informations, cotes',"", nameRegex.group(3), re.IGNORECASE)
-						NewTitle = titlize(title)
-						book.Series = titlize(nameRegex.group(1))
-					except:
-						NewTitle = ""
-						nameRegex2 = re.search(r'og:title\"\scontent=\"(.*?)\"\s*/>', albumUrl, re.IGNORECASE)
-						book.Series = titlize(nameRegex2.group(1))
-						pass
-					nameRegex = ""
-
-				else:
-					RegCompile = re.compile(ALBUM_TITLE_PATTERN % pageUrl, re.IGNORECASE | re.MULTILINE | re.DOTALL)					
-					nameRegex = RegCompile.search(albumUrl, 0)
-						
-				if nameRegex:
-					try:
-						NewTitle = titlize(strip_tags(nameRegex.group(1)))						
-					except:
-						NewTitle = nameRegex.group(1)
-							
-				book.Title = NewTitle
-					
-				if DBGONOFF:print Trans(29), book.Title
-					
-											
-			if CBNotes:
-				book.Notes = "Bedetheque.com - " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + chr(10) + "BD2 scraper v" + VERSION
-
-			#web
-			if CBWeb == True and not CBRescrape:			
-				book.Web = pageUrl
-				if DBGONOFF:print Trans(123), book.Web
-			elif CBWeb == "2" and not CBRescrape:
-				cBelid = re.search(r'\-(\d+).html', pageUrl)
-				if cBelid:			
-					book.Web = 'www.bedetheque.com/BD--' + cBelid.group(1) + '.html'
-					if DBGONOFF:print Trans(123), book.Web
-
-			if TBTags == "DEL":
-				book.Tags = ""
-			elif TBTags != "":
-				book.Tags = TBTags					
-
-			if CBWriter:
-				nameRegex = ALBUM_SCENAR_MULTI_AUTHOR.search(albumUrl, 0)
-				if nameRegex:
-					scenaristes = ""
-					thisscen = ""					
-					for scenar_multi in ALBUM_SCENAR_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
-						thisscen = parseNames(scenar_multi.group(1).strip())
-						if thisscen not in scenaristes:	
-							scenaristes = scenaristes + thisscen + ", "
-
-					thisscen = ""
-					for scenar_multi in ALBUM_STORYBOARD_MULTI_AUTHOR.finditer(albumUrl, 0):
-						thisscen = parseNames(scenar_multi.group(1).strip())
-						if thisscen not in scenaristes:
-							scenaristes = scenaristes + thisscen + ", "
-			
-					book.Writer = scenaristes[:-2]
-
-				else:
-
-					nameRegex = ALBUM_SCENAR.search(albumUrl, 0)
-					if nameRegex:					
-						scenaristes = nameRegex.group(1).strip()
-						book.Writer = parseNames(scenaristes)
-						log_BD(parseNames(scenaristes),"",1)                        
-  
-					else:
-						book.Writer = ""					
-				if DBGONOFF:print Trans(30), book.Writer
-
-			if CBPenciller:
-				nameRegex = ALBUM_DESSIN_MULTI_AUTHOR.search(albumUrl, 0)
-				if nameRegex:
-					dessinateurs = ""				
-					for dessin_multi in ALBUM_DESSIN_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):		
-						dessinateurs = dessinateurs + parseNames(dessin_multi.group(1).strip()) + ", "
-							
-					book.Penciller = dessinateurs[:-2]
-
-				else:
-					nameRegex = ALBUM_DESSIN.search(albumUrl, 0)					
-					if nameRegex:
-						dessinateurs = nameRegex.group(1).strip()				
-						book.Penciller = parseNames(dessinateurs)
-  
-					else:
-						book.Penciller = ""
-					
-				if DBGONOFF:print Trans(31), book.Penciller
-
-			if CBColorist:
-				cColorNote = ""
-				nameRegex = ALBUM_COLOR_MULTI_AUTHOR.search(albumUrl, 0)
-				cColorist = ""				
-				if nameRegex:					
-					for color_multi in ALBUM_COLOR_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
-						cColorist = cColorist + parseNames(color_multi.group(1).strip()) + ", "
-							
-					book.Colorist = cColorist[:-2]
-					cColorist = cColorist[:-2]
-
-				else:
-					nameRegex = ALBUM_COLOR.search(albumUrl, 0)						
-					if nameRegex:
-						coloristes = nameRegex.group(1).strip()					
-						cColorist = parseNames(coloristes)
-						if re.search("<.*?>", cColorist):
-							book.Colorist = ""
-							cColorNote = Trans(32)
-						else:
-							book.Colorist = cColorist							
-					else:
-						book.Colorist = ""
-						
-				if DBGONOFF:print Trans(33), cColorist , cColorNote
-
-			if CBCouverture:
-				nameRegex = ALBUM_COUVERT_MULTI_AUTHOR.search(albumUrl, 0)
-				cCoverNote = ""	
-				if nameRegex:						
-					for cover_multi in ALBUM_COUVERT_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):				
-						cCoverNote = cCoverNote + parseNames(cover_multi.group(1).strip()) + ", "
-							
-					book.CoverArtist = cCoverNote[:-2]
-					cCoverNote = ""						
-
-				else:
-					nameRegex = ALBUM_COUVERT.search(albumUrl, 0)						
-					if nameRegex:					
-						couvertures = nameRegex.group(1)
-						cCouvertures = parseNames(couvertures)
-						if re.search("<.*?>", cCouvertures):
-							book.CoverArtist = ""
-							cCoverNote = Trans(32)
-						else:
-							book.CoverArtist = cCouvertures							
-					else:
-						book.CoverArtist = ""
-						
-				if DBGONOFF:print Trans(120), book.CoverArtist , cCoverNote
-
-			if CBPrinted:
-				#ALBUM_DEPOT = re.compile(ALBUM_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_DEPOT.search(albumUrl, 0)
-				if nameRegex:
-					if nameRegex.group('month') != '-' and nameRegex.group('month') != "":
-						book.Month = int(nameRegex.group('month'))
-						book.Year = int(nameRegex.group('year'))
-						if DBGONOFF:print Trans(34), str(book.Month) + "/" + str(book.Year)
-					else:
-						book.Month = -1
-						book.Year = -1
-				else:
-					book.Month = -1
-					book.Year = -1	
-
-			if CBEditor:
-				#ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_EDITEUR.search(albumUrl, 0)
-				if nameRegex:
-					#editeur = parseNames(nameRegex.group(1).decode('utf-8'))
-					editeur = parseNames(nameRegex.group(1))
-					book.Publisher = editeur
-				else:
-					book.Publisher = ""
-					
-				if DBGONOFF:print Trans(35), book.Publisher
-				
-			# ISBN
-			if CBISBN:
-				#ALBUM_ISBN = re.compile(ALBUM_ISBN_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_ISBN.search(albumUrl, 0)				
-				if nameRegex:
-					isbn = nameRegex.group(1)
-					if isbn	!= '</span>':
-						book.ISBN = checkWebChar(isbn)
-					else:
-						book.ISBN = ""
-				else:
-					book.ISBN = ""
-					
-				if DBGONOFF:print "ISBN: ", book.ISBN
-					
-			# Lettrage is optional => So, there is a specific research
-			if CBLetterer:
-				#ALBUM_LETTRAGE = re.compile(ALBUM_LETTRAGE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_LETTRAGE.search(albumUrl, 0)								
-				if nameRegex:
-					letterer = nameRegex.group(1).strip()
-					#letterer = nameRegex.group(1).decode('utf-8')
-					book.Letterer = parseNames(letterer)
-				else:
-					book.Letterer = ""
-						
-				if DBGONOFF:print Trans(38), book.Letterer 
-
-			# Album evaluation is optional => So, there is a specific research
-			if CBRating:
-				#ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_EVAL.search(albumUrl, 0)														
-				if nameRegex:
-					evaluation = nameRegex.group(1)
-					book.CommunityRating = float(evaluation)
-					if DBGONOFF:print Trans(39) + str(float(evaluation))
-					
-			# Achevè imp. is optional => So, there is a specific research
-			if CBPrinted:
-				#ALBUM_ACHEVE = re.compile(ALBUM_ACHEVE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_ACHEVE.search(albumUrl, 0)														
-				if nameRegex and book.Month < 1:
-					book.Month = int(nameRegex.group('month'))
-					book.Year = int(nameRegex.group('year'))
-					if DBGONOFF:print Trans(40), str(book.Month) + "/" + str(book.Year)
-
-			# Collection is optional => So, there is a specific research
-			if CBImprint:
-				#ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_COLLECTION.search(albumUrl, 0)													
-				if nameRegex:
-					collection = nameRegex.group(1)
-					#collection = nameRegex.group(1).decode('utf-8')
-					book.Imprint = checkWebChar(collection)						
-				else:
-					book.Imprint = ""
-					
-				if DBGONOFF:print Trans(41), book.Imprint
-
-			# Format is optional => So, there is a specific research
-			if CBFormat:
-				#ALBUM_TAILLE = re.compile(ALBUM_TAILLE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_TAILLE.search(albumUrl, 0)														
-				if nameRegex:
-					taille = nameRegex.group(1)
-					book.Format = taille
-				else:
-					book.Format = "" 
-					
-				if DBGONOFF:print Trans(42), book.Format
-
-			# Album summary is optional => So, there is a specific research
-			if CBSynopsys:
-				#ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_RESUME.search(albumUrl, 0)																		
-				if nameRegex:					
-					resume = strip_tags(nameRegex.group(1)).strip()						
-					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
-					#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
-					if not lDirect and book.Summary != resume and resume:
-						book.Summary = book.Summary + chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-					elif resume and book.Title:
-						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-							
-						if DBGONOFF:print Trans(100)						
-				else:
-					if DBGONOFF:print Trans(101)
-
-			# Info edition			
-			if CBSynopsys:
-				#ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_INFOEDITION.search(albumUrl, 0)														
-				if nameRegex:										
-					if nameRegex.group(1) !=" &nbsp;":						
-						infoedition = strip_tags(nameRegex.group(1)).strip()
-						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
-						if not lDirect:
-							book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
-						else:
-							book.Summary = infoedition
-						if DBGONOFF:print Trans(118) + Trans(119)			
-						
-			# series only formatted
-			if CBSeries:					
-							
-				book.Series = titlize(book.Series)
-						
-				if DBGONOFF:print Trans(9), titlize(book.Series)
-				
-			# Cover Image only for fileless
-			if CBCover and not book.FilePath:
-				#ALBUM_COVER = re.compile(ALBUM_COVER_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_COVER.search(albumUrl, 0)														 
-				if nameRegex:
-					CoverImg = "https:" + nameRegex.group(1)						
-					#request = HttpWebRequest.Create("https://www.bedetheque.com//thb_couv//" + CoverImg)					
-					request = HttpWebRequest.Create(CoverImg)					
-					response = request.GetResponse()
-					response_stream = response.GetResponseStream()
-					retval = Image.FromStream(response_stream)
-					ComicRack.App.SetCustomBookThumbnail(book, retval)
-					if DBGONOFF:print Trans(105), CoverImg
-				
-			# Planches			
-			if not book.FilePath:
-				#ALBUM_PLANCHES = re.compile(ALBUM_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
-				nameRegex = ALBUM_PLANCHES.search(albumUrl, 0)																
-				if nameRegex:
-					if nameRegex.group(1):
-						book.PageCount =  int(nameRegex.group(1).strip())
-					else:
-						book.PageCount =  0
-
-					if DBGONOFF:print Trans(122), book.PageCount
-	except:
-
-		nameRegex = ""
-		cError = debuglog()
-		log_BD("   " + pageUrl + " " + Trans(43), "", 1)
-		return False
-	
 	return True
 
 def parseNames(extractedNames):
@@ -2046,9 +1581,8 @@ def if_else(condition, trueVal, falseVal):
 class ProgressBarDialog(Form):
 	
 	def __init__(self, nMax):
-
-		global aWord, bStopit
 		
+		global aWord, bStopit
 		self.Text = Trans(62)
 		#self.Size = Size(350, 150)
 		self.Size = Size(350, 600)
@@ -2130,7 +1664,7 @@ class ProgressBarDialog(Form):
 def LoadSetting():
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
 	###############################################################
@@ -2311,6 +1845,11 @@ def LoadSetting():
 		FORMATARTICLES = ft(MySettings.Get("FORMATARTICLES"))	
 	except Exception as e:
 		FORMATARTICLES = True
+		
+	try:
+		PopUpEditionForm = ft(MySettings.Get("PopUpEditionForm"))	
+	except Exception as e:
+		PopUpEditionForm = False
 
 	###############################################################
 	
@@ -2323,7 +1862,7 @@ def LoadSetting():
 def SaveSetting():
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 	
 	MySettings = AppSettings()
@@ -2374,6 +1913,7 @@ def SaveSetting():
 	MySettings.Set("TIMEOUTS",  TIMEOUTS) 
 	MySettings.Set("TIMEPOPUP",  TIMEPOPUP)
 	MySettings.Set("FORMATARTICLES", tf(FORMATARTICLES))
+	MySettings.Set("PopUpEditionForm", tf(PopUpEditionForm))
 
 	if CBStop == True:
 		MySettings.Set("CBStop",  "1")	
@@ -2446,7 +1986,7 @@ class BDConfigForm(Form):
 	def __init__(self):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
+		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
 		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
 		self.Name = "BDConfigForm"
@@ -2511,6 +2051,7 @@ class BDConfigForm(Form):
 		self._COUNTFINIE = System.Windows.Forms.CheckBox()
 		self._TITLEIT = System.Windows.Forms.CheckBox()
 		self._FORMATARTICLES = System.Windows.Forms.CheckBox()
+		self._PopUpEditionForm = System.Windows.Forms.CheckBox()
 		self._TIMEOUT = System.Windows.Forms.TextBox()
 		self._TIMEOUTS = System.Windows.Forms.TextBox()
 #modif kiwi
@@ -2560,6 +2101,7 @@ class BDConfigForm(Form):
 		self._tabPage1.Controls.Add(self._COUNTFINIE)
 		self._tabPage1.Controls.Add(self._TITLEIT)
 		self._tabPage1.Controls.Add(self._FORMATARTICLES)		
+		self._tabPage1.Controls.Add(self._PopUpEditionForm)	
 		self._tabPage1.Controls.Add(self._TIMEOUT)
 		self._tabPage1.Controls.Add(self._TIMEOUTS)
 #modif kiwi
@@ -3084,10 +2626,21 @@ class BDConfigForm(Form):
 		self._FORMATARTICLES.UseVisualStyleBackColor = True
 		self._FORMATARTICLES.CheckState = if_else(FORMATARTICLES, CheckState.Checked, CheckState.Unchecked)
 		#
+		# PopUpEditionForm
+		#
+		self._PopUpEditionForm.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._PopUpEditionForm.Location = System.Drawing.Point(320, 216)
+		self._PopUpEditionForm.Name = "PopUpEditionForm"
+		self._PopUpEditionForm.Size = System.Drawing.Size(180, 20)
+		self._PopUpEditionForm.TabIndex = 25
+		self._PopUpEditionForm.Text = Trans(147)
+		self._PopUpEditionForm.UseVisualStyleBackColor = True
+		self._PopUpEditionForm.CheckState = if_else(PopUpEditionForm, CheckState.Unchecked, CheckState.Checked)
+		#
 		# Stop at error scraping
 		#
 		self._CBStop.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._CBStop.Location = System.Drawing.Point(320, 216)
+		self._CBStop.Location = System.Drawing.Point(320, 238)
 		self._CBStop.Name = "CBStop"
 		self._CBStop.Size = System.Drawing.Size(180, 20)
 		self._CBStop.TabIndex = 26
@@ -3105,7 +2658,7 @@ class BDConfigForm(Form):
 		#
 		self._label4.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._label4.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._label4.Location = System.Drawing.Point(320, 258)
+		self._label4.Location = System.Drawing.Point(320, 280)
 		self._label4.Name = "label4"
 		self._label4.Size = System.Drawing.Size(160, 23)
 		self._label4.TabIndex = 99
@@ -3113,7 +2666,7 @@ class BDConfigForm(Form):
 		#
 		# TIMEOUT
 		#
-		self._TIMEOUT.Location = System.Drawing.Point(435, 254)
+		self._TIMEOUT.Location = System.Drawing.Point(435, 280)
 		self._TIMEOUT.Name = "TIMEOUT"
 		self._TIMEOUT.Size = System.Drawing.Size(50, 21)
 		self._TIMEOUT.TabIndex = 27
@@ -3231,7 +2784,7 @@ class BDConfigForm(Form):
 	def button_Click(self, sender, e):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
-		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
+		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
 		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
 
 		if sender.Name.CompareTo(self._OKButton.Name) == 0:
@@ -3283,6 +2836,7 @@ class BDConfigForm(Form):
 			COUNTFINIE = if_else(self._COUNTFINIE.CheckState == CheckState.Checked, True, False)
 			TITLEIT = if_else(self._TITLEIT.CheckState == CheckState.Checked, True, False)
 			FORMATARTICLES = if_else(self._FORMATARTICLES.CheckState == CheckState.Checked, True, False)
+			PopUpEditionForm = if_else(self._PopUpEditionForm.CheckState == CheckState.Checked, False, True)
 #modif kiwi
 			try:
 				if int(self._TIMEOUT.Text) > 0:
@@ -3363,9 +2917,10 @@ def titlize(s, formatArticles = False):
 	
 	if formatArticles and FORMATARTICLES:
 		for article in ARTICLES.split(','):
-			ns = re.sub(r"^(" + article +")\s*(?<=[' ])([^\r\n]*)", r"\2 (\1)", s, 1)
+			Regex = re.compile(r"^(%s)\s*(?<=['\s])([^(\r\n]*)(?!\()\s*([^\r\n]*)" % article)
+			ns = Regex.sub(r"\2 (\1) \3", s, 1)
 			if ns:
-				s = ns
+				s = ns.strip()
 			if DBGONOFF:print "article = " + article + " / ns = " + ns + " / s = " + s
 	
 	if TITLEIT:
@@ -3387,19 +2942,26 @@ def titlize(s, formatArticles = False):
 	else:
 		return s
 
+class FormType():
+	SERIE = 1
+	ALBUM = 2
+	EDITION = 3	
+
 class SeriesForm(Form):
 	
-	global aWord, ListSeries, NewLink, NewSeries
+	global aWord, NewLink, NewSeries	
 	
-	def __init__(self, serie):
+	def __init__(self, serie, listItems, formType = FormType.SERIE):
 		
-		global aWord, ListSeries, NewLink, NewSeries
-
+		global aWord, NewLink, NewSeries
+		
+		self.List = listItems
+		self.formType = formType
 		self.InitializeComponent(serie)
 	
 	def InitializeComponent(self, serie):
 
-		global ListSeries, SeriesSearch, NewLink, NewSeries, TIMEPOPUP, CBStop
+		global SeriesSearch, NewLink, NewSeries, TIMEPOPUP, CBStop
 		
 		self._ListSeries = System.Windows.Forms.ListBox()
 		self._CancelButton = System.Windows.Forms.Button()
@@ -3467,29 +3029,45 @@ class SeriesForm(Form):
 		self.Name = "SeriesForm"
 		self.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide
 		self.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-		self.Text = Trans(132) + serie
+		
+		frmTitle = ""
+		if self.formType == FormType.SERIE: 
+			frmTitle = Trans(132) + serie
+		elif self.formType == FormType.EDITION: 
+			frmTitle = Trans(145) + serie
+		elif self.formType == FormType.ALBUM: 
+			frmTitle = Trans(146) + serie
+		self.Text = frmTitle
 			
 		self.AcceptButton = self._OKButton
 		self.CancelButton = self._CancelButton
 		self.KeyPreview = True
-		
-		for x in range(len(ListSeries)):			
-			if ListSeries[x]:				
-				self._ListSeries.Items.Add("(" + ListSeries[x][2] + ")- " + ListSeries[x][1] + if_else(ListSeries[x][0], "   (", "") + ListSeries[x][0] + if_else(ListSeries[x][0], ")", ""))
+
+		for x in range(len(self.List)):			
+			if self.List[x]:
+				title = ""		
+				if self.formType == FormType.EDITION: 
+					title = self.List[x][1].Title
+				else: 
+					title = self.List[x][1]
+			
+				self._ListSeries.Items.Add("(" + self.List[x][2] + ") - " + title + if_else(self.List[x][0], "   (", "") + self.List[x][0] + if_else(self.List[x][0], ")", ""))
+				# self._ListSeries.Items.Add("(" + self.List[x][2] + ")- " + self.List[x][1] + if_else(self.List[x][0], "   (", "") + self.List[x][0] + if_else(self.List[x][0], ")", ""))
 				#self._ListSeries.Items.Add("(" + ListSeries[x][2] + ")- " + ListSeries[x][1].decode('utf-8') + if_else(ListSeries[x][0], "   (", "") + ListSeries[x][0] + if_else(ListSeries[x][0], ")", ""))
 			#self._ListSeries.Items.soSort()
 
 		#self.ResumeLayout(False)		
 		#self.PerformLayout()
-		self._timer1.Start()
+		if CBStop == "2":
+			self._timer1.Start()
 
 	def button_Click(self, sender, e):
 	
 		global NewLink, NewSeries
 				
-		if sender.Name.CompareTo(self._OKButton.Name) == 0 and ListSeries[self._ListSeries.SelectedIndex][1]: 			
-			NewLink = ListSeries[self._ListSeries.SelectedIndex][0]			
-			NewSeries = ListSeries[self._ListSeries.SelectedIndex][1]			
+		if sender.Name.CompareTo(self._OKButton.Name) == 0 and self.List[self._ListSeries.SelectedIndex][1]: 			
+			NewLink = self.List[self._ListSeries.SelectedIndex][0]
+			NewSeries = self.List[self._ListSeries.SelectedIndex][1]			
 			self.Hide()
 
 	def CloseForm(self, sender, e):
@@ -3499,10 +3077,23 @@ class SeriesForm(Form):
 	def DoubleClick(self, sender, e):
 				
 		global NewLink, NewSeries
-				
-		if ListSeries[self._ListSeries.SelectedIndex][1]:
-			print ListSeries[self._ListSeries.SelectedIndex][1], self._ListSeries.SelectedIndex	
-			NewLink = "https://www.bedetheque.com/" + ListSeries[self._ListSeries.SelectedIndex][0]
+		
+		title = ""
+		link = ""
+		if self.formType == FormType.SERIE: 
+			title = self.List[self._ListSeries.SelectedIndex][1]
+			link = "https://www.bedetheque.com/" + self.List[self._ListSeries.SelectedIndex][0]
+		elif self.formType == FormType.EDITION: 
+			title = self.List[self._ListSeries.SelectedIndex][1].Title + " (" + self.List[self._ListSeries.SelectedIndex][1].A + ")"
+			link = self.List[self._ListSeries.SelectedIndex][1].URL# or self.List[self._ListSeries.SelectedIndex][1].Couv
+		elif self.formType == FormType.ALBUM: 
+			title = self.List[self._ListSeries.SelectedIndex][1]
+			link = self.List[self._ListSeries.SelectedIndex][0]
+					
+		if title:
+			print title, self._ListSeries.SelectedIndex
+			NewLink = link
+			NewSeries = self.List[self._ListSeries.SelectedIndex][1]
 			Start(NewLink)			
 			#NewSeries = ListSeries[self._ListSeries.SelectedIndex][1]			
 			#self.Hide()
@@ -3558,7 +3149,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, dlgName, dlgNumber
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, LinkBD2, Numero, LinkBD2R
+	global CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, LinkBD2, Numero
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
 
 	RetAlb = False
@@ -3570,8 +3161,8 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	RenameSeries = False
 	
 	#FICHE_SERIE_PATTERN = r'<a\sclass=\"back\"\shref=\"(.*?)\">'
-	FICHE_SERIE_PATTERN = r'>album</a>.*?href=\"(.*)\">s.rie\s?:'
-	FICHE_SERIE = re.compile(FICHE_SERIE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+	# FICHE_SERIE_PATTERN = r'>album</a>.*?href=\"(.*)\">s.rie\s?:'
+	# FICHE_SERIE = re.compile(FICHE_SERIE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 	if not books:
 		Result = MessageBox.Show(ComicRack.MainWindow, Trans(1),Trans(2), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
@@ -3585,7 +3176,10 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	cError = False
 	MyBooks = ComicBook()
 	
-	try:
+	try:	
+		f = ProgressBarDialog(books.Count)
+		if books.Count > 1:
+			f.Show(ComicRack.MainWindow)
 		
 		if books:
 			if cLink:
@@ -3593,13 +3187,13 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 			else:
 				MyBooks = books
 				
-			if MyBooks.Count <> 1:
-				return False
-			
-			f = ProgressBarDialog(MyBooks.Count)
-
+			# if MyBooks.Count <> 1:
+				# return False
+				
+			log_BD(Trans(7) + str(MyBooks.Count) +  Trans(8), "\n============ " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + " ===========", 0)
+					
 			for MyBook in MyBooks:
-
+						
 				if cLink:					
 					Numero = ""			
 					serieUrl = re.sub('https://www.bedetheque.com/', '', cLink)
@@ -3607,13 +3201,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 						LinkBD2 = serieUrl
 					
 				else:
-
-					scrape = DirectScrape()
-					result = scrape.ShowDialog()
-
-					if result == DialogResult.Cancel or (LinkBD2 == ""):
-						return False
-				
+					
 					if MyBook.Number:
 						dlgNumber = MyBook.Number
 						Shadow2 = False
@@ -3648,40 +3236,40 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 						dlgAltNumber = dlgNumber[nPos:]
 						dlgNumber = albumNum
 						AlbumNumNum = True
+					
+					if not cLink:
+						f.Update(dlgName + if_else(dlgNumber != "", " - " + dlgNumber, " ") + if_else(dlgAltNumber == '', '', ' AltNo.[' + dlgAltNumber + ']') + " - " + titlize(MyBook.Title), 1, MyBook)
+						f.Refresh()	
+					
+					scrape = DirectScrape()
+					result = scrape.ShowDialog()
 				
-					#f = ProgressBarDialog(MyBooks.Count)
-					f.Show(ComicRack.MainWindow)
-
+					if result == DialogResult.Cancel or (LinkBD2 == ""):
+						return False
+				
 					if LinkBD2:						
 						serieUrl = LinkBD2
-#modif kiwi
-#					serieUrl = re.sub('(https://)?www.bedetheque.com', '', serieUrl)					
-					#LongSerie= re.sub(u'^10000\.html','\_\_10000.html',serieUrl.lower())		
-					#serieUrl = LongSerie
-
 						
-				try:
-					ficheUrl = _read_url(serieUrl, False)
-				except:
-					return False
+				# try:
+					# ficheUrl = _read_url(serieUrl, False)
+				# except:
+					# return False
 
-				fiche = FICHE_SERIE.search(ficheUrl)
-				log_BD(Trans(7) + str(MyBooks.Count) +  Trans(8), "\n============ " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + " ===========", 0)
+				# fiche = FICHE_SERIE.search(ficheUrl)
 
-				if not cLink:
-					f.Update("[" + serieUrl + "] : " + dlgName + if_else(dlgNumber != "", " - " + dlgNumber, " ") + if_else(dlgAltNumber == '', '', ' AltNo.[' + dlgAltNumber + ']') + " - " + titlize(MyBook.Title), 1, book)
-					f.Refresh()				
-	
 				if LinkBD2:
 					if DBGONOFF:print Trans(104), LinkBD2
-	
-				RetVal = True
-				if fiche:					
-					RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
+
+				# if fiche:	
+					# RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
+				RetVal = serieUrl
+				if "serie-" in serieUrl:	
+					serieUrl = serieUrl.lower().replace(".html", u'__10000.html') if "__10000.html" in serieUrl else serieUrl
+					RetVal = parseSerieInfo(MyBook, serieUrl, True)
 																		
 				if RetVal:
 					if LinkBD2:					
-						RetVal = parseAlbumInfoAlt(MyBook, serieUrl, dlgNumber, True)															
+						RetVal = parseAlbumInfo(MyBook, RetVal, dlgNumber, True)															
 
 				if RetVal:
 					if not cLink:
@@ -3749,7 +3337,7 @@ class DirectScrape(Form):
 
 	def InitializeComponent(self):
 
-		global aWord, LinkBD2, LinkBD2R, Numero
+		global aWord, LinkBD2, Numero
 
 		try:
 			# BD
