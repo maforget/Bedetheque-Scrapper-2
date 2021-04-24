@@ -93,6 +93,7 @@ CBCouverture = True
 TIMEOUT = "1000"
 TIMEOUTS = "7"
 TIMEPOPUP = "30"
+PadNumber = "0"
 
 ########################################
 # Nombres auteurs
@@ -271,7 +272,7 @@ def BD_start(books):
 	
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, TIMEOUT, TIMEOUTS, TIMEPOPUP, CBDefault,CBRescrape, CBStop
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, TIMEOUT, TIMEOUTS, TIMEPOPUP, CBDefault,CBRescrape, CBStop, PadNumber
 		
 	aWord = Translate()
 	
@@ -316,7 +317,7 @@ def WorkerThread(books):
 
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBCouverture, CBDefault, CBRescrape, CBStop
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, SUBPATT, COUNTOF, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, SUBPATT, COUNTOF, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 
 	t = Thread(ThreadStart(thread_proc))
 
@@ -895,7 +896,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
 	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
-	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseAlbumInfo", "a)", pageUrl, "b)", num , "c)", lDirect
@@ -1030,6 +1031,9 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			anum = pickedVar.A
 			book.Number = anum if not qnum and anum else qnum#set number to Alt if no number and an Alt Exists
 			book.AlternateNumber = dlgAltNumber if not qnum and anum else anum#Don't change if prev was set to anum, else set to Alt
+			if PadNumber != "0":
+				if isPositiveInt(book.Number): book.Number = str(book.Number).zfill(int(PadNumber))
+				if isPositiveInt(book.AlternateNumber): book.AlternateNumber = str(book.AlternateNumber).zfill(int(PadNumber))
 			if DBGONOFF:print "Num: ", book.Number
 			if DBGONOFF:print "Alt: ", book.AlternateNumber
 		
@@ -1544,6 +1548,13 @@ def sstr(object):
 
 	return str(object)
 
+def isPositiveInt(value):
+
+	try:
+		return int(value) >= 0
+	except:
+		return False
+
 def url_fix(s, charset='utf-8'):
 		
 	if isinstance(s, unicode):
@@ -1664,7 +1675,7 @@ class ProgressBarDialog(Form):
 def LoadSetting():
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
 	###############################################################
@@ -1851,6 +1862,11 @@ def LoadSetting():
 	except Exception as e:
 		PopUpEditionForm = False
 
+	try:
+		PadNumber = MySettings.Get("PadNumber")
+	except Exception as e:
+		PadNumber = "0"
+
 	###############################################################
 	
 	SaveSetting()
@@ -1862,7 +1878,7 @@ def LoadSetting():
 def SaveSetting():
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 	
 	MySettings = AppSettings()
@@ -1914,6 +1930,7 @@ def SaveSetting():
 	MySettings.Set("TIMEPOPUP",  TIMEPOPUP)
 	MySettings.Set("FORMATARTICLES", tf(FORMATARTICLES))
 	MySettings.Set("PopUpEditionForm", tf(PopUpEditionForm))
+	MySettings.Set("PadNumber", PadNumber)
 
 	if CBStop == True:
 		MySettings.Set("CBStop",  "1")	
@@ -1986,7 +2003,7 @@ class BDConfigForm(Form):
 	def __init__(self):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
+		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
 		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
 		self.Name = "BDConfigForm"
@@ -2057,6 +2074,8 @@ class BDConfigForm(Form):
 #modif kiwi
 		self._TIMEPOPUP = System.Windows.Forms.TextBox()
 		self._labelTIMEPOPUP = System.Windows.Forms.Label()
+		self._PadNumber = System.Windows.Forms.TextBox()
+		self._labelPadNumber = System.Windows.Forms.Label()
 		self._CBDefault = System.Windows.Forms.CheckBox()
 		self._CBRescrape = System.Windows.Forms.CheckBox()		
 		self._CBStop = System.Windows.Forms.CheckBox()		
@@ -2107,6 +2126,8 @@ class BDConfigForm(Form):
 #modif kiwi
 		self._tabPage1.Controls.Add(self._TIMEPOPUP)
  		self._tabPage1.Controls.Add(self._labelTIMEPOPUP)
+		self._tabPage1.Controls.Add(self._PadNumber)
+ 		self._tabPage1.Controls.Add(self._labelPadNumber)
 		self._tabPage1.Controls.Add(self._label4)		
 		self._tabPage1.Controls.Add(self._label6)	
 		self._tabPage1.Location = System.Drawing.Point(4, 22)
@@ -2518,7 +2539,7 @@ class BDConfigForm(Form):
 		#
 		self._labelSUBPATT.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._labelSUBPATT.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._labelSUBPATT.Location = System.Drawing.Point(8, 320)
+		self._labelSUBPATT.Location = System.Drawing.Point(8, 324)
 		self._labelSUBPATT.Name = "labelSubPatt"
 		self._labelSUBPATT.Size = System.Drawing.Size(184, 17)
 		self._labelSUBPATT.TabIndex = 100
@@ -2536,7 +2557,7 @@ class BDConfigForm(Form):
 		#
 		self._labelTIMEPOPUP.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._labelTIMEPOPUP.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._labelTIMEPOPUP.Location = System.Drawing.Point(8, 280)
+		self._labelTIMEPOPUP.Location = System.Drawing.Point(8, 266)
 		self._labelTIMEPOPUP.Name = "labelTimePopup"
 		self._labelTIMEPOPUP.Size = System.Drawing.Size(184, 17)
 		self._labelTIMEPOPUP.TabIndex = 102
@@ -2544,7 +2565,7 @@ class BDConfigForm(Form):
 		#
 		# time out popup
 		#
-		self._TIMEPOPUP.Location = System.Drawing.Point(180, 280)
+		self._TIMEPOPUP.Location = System.Drawing.Point(180, 262)
 		self._TIMEPOPUP.Name = "TIMEPOPUP"
 		self._TIMEPOPUP.Size = System.Drawing.Size(50, 20)
 		self._TIMEPOPUP.TabIndex = 103
@@ -2552,6 +2573,26 @@ class BDConfigForm(Form):
 		self._TIMEPOPUP.TextAlign = HorizontalAlignment.Center
 		self._TIMEPOPUP.Text = TIMEPOPUP
  ##############
+		#
+		# label pad number
+		#
+		self._labelPadNumber.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._labelPadNumber.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
+		self._labelPadNumber.Location = System.Drawing.Point(8, 295)
+		self._labelPadNumber.Name = "labelPadNumber"
+		self._labelPadNumber.Size = System.Drawing.Size(184, 23)
+		self._labelPadNumber.TabIndex = 104
+		self._labelPadNumber.Text = Trans(148)
+		#
+		# pad number
+		#
+		self._PadNumber.Location = System.Drawing.Point(180, 291)
+		self._PadNumber.Name = "PadNumber"
+		self._PadNumber.Size = System.Drawing.Size(50, 20)
+		self._PadNumber.TabIndex = 105
+		self._PadNumber.MaxLength = 3
+		self._PadNumber.TextAlign = HorizontalAlignment.Center
+		self._PadNumber.Text = PadNumber
 		#
 		# label2
 		#
@@ -2785,7 +2826,7 @@ class BDConfigForm(Form):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
-		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
+		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber
 
 		if sender.Name.CompareTo(self._OKButton.Name) == 0:
 			SHOWRENLOG = if_else(self._SHOWRENLOG.CheckState == CheckState.Checked, True, False)
@@ -2861,6 +2902,14 @@ class BDConfigForm(Form):
 					TIMEPOPUP = "30"
 			except:
 				TIMEPOPUP = "30"
+
+			try:
+				if int(self._PadNumber.Text) >= 0:
+					PadNumber = self._PadNumber.Text
+				else:
+					PadNumber = "0"
+			except:
+				PadNumber = "0"
 
 			aWord = Translate()
 			log_BD(TIMEOUTS,"",1)
@@ -3107,7 +3156,7 @@ class SeriesForm(Form):
 def ConfigureBD2Quick():
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 	
 	if not LoadSetting():
 		return
@@ -3128,7 +3177,7 @@ def ConfigureBD2(self):
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
-	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 	
 	if not LoadSetting():
 		return
@@ -3150,7 +3199,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, dlgName, dlgNumber
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, LinkBD2, Numero
-	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP
+	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 
 	RetAlb = False
 
