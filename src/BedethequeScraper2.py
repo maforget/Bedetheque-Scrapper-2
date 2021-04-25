@@ -376,12 +376,7 @@ def WorkerThread(books):
 			else:
 				dlgAltNumber = ""
 
-			dlgName = dlgName
-						
-			dlgName = re.sub(r'^(' + ARTICLES.replace(',','|') + ')\s+(.*)', r'\2 (\1)', dlgName)
-			dlgName = re.sub(r'^(' + ARTICLES.lower().replace(',','|') + ')\s+(.*)', r'\2 (\1)', dlgName)
-			dlgName = re.sub(r'^(' + ARTICLES.upper().replace(',','|') + ')\s+(.*)', r'\2 (\1)', dlgName)
-			dlgName = re.sub(r'^(L\')(.*)', r'\2 (\1)', dlgName)
+			dlgName = formatARTICLES(dlgName)
 
 #modif Pitoufos
 			findCara = dlgName.find(SUBPATT)
@@ -2911,17 +2906,23 @@ def Trans(nWord):
 
 	return tText
 
+def formatARTICLES(s):
+
+	global ARTICLES
+	
+	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^(\r\n]*)(?!\()\s*([^\r\n]*)", re.IGNORECASE)
+	ns = Regex.sub(r"\2 (\1) \3", s)
+	if ns:
+		s = ns.strip()
+
+	return s
+
 def titlize(s, formatArticles = False):
 	
 	global TITLEIT, FORMATARTICLES, ARTICLES
 	
 	if formatArticles and FORMATARTICLES:
-		for article in ARTICLES.split(','):
-			Regex = re.compile(r"^(%s)\s*(?<=['\s])([^(\r\n]*)(?!\()\s*([^\r\n]*)" % article)
-			ns = Regex.sub(r"\2 (\1) \3", s, 1)
-			if ns:
-				s = ns.strip()
-			if DBGONOFF:print "article = " + article + " / ns = " + ns + " / s = " + s
+		s = formatARTICLES(dlgName)
 	
 	if TITLEIT:
 		#CharList = '[\.\?\!\(\[]\s\"\'\[\]'		
