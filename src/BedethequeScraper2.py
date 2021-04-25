@@ -315,7 +315,7 @@ def BD_start(books):
 
 def WorkerThread(books):
 
-	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
+	global AlbumNumNum, dlgNumber, dlgName, dlgNameOrig, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBCouverture, CBDefault, CBRescrape, CBStop
 	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, SUBPATT, COUNTOF, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 
@@ -377,6 +377,7 @@ def WorkerThread(books):
 			else:
 				dlgAltNumber = ""
 
+			dlgNameOrig = dlgName
 			dlgName = formatARTICLES(dlgName)
 
 #modif Pitoufos
@@ -411,15 +412,11 @@ def WorkerThread(books):
 					RetAlb = QuickScrapeBD2(books, book, book.Web)
 				
 			if not CBRescrape:
-
 				if DBGONOFF:print Trans(9) + dlgName + "\tNo = [" + albumNum + "]" + if_else(dlgAltNumber == '', '', '\tAltNo. = [' + dlgAltNumber + ']')
-
 				serieUrl = None
-
 				if DBGONOFF:print Trans(10), dlgName
 				
 				RetAlb = False
-
 				serieUrl = SetSerieId(book, dlgName, albumNum, nBooks)	
 				
 				if serieUrl:
@@ -506,7 +503,7 @@ def WorkerThread(books):
 
 def SetSerieId(book, serie, num, nBooksIn):
 
-	global dlgName, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop
+	global dlgName, dlgNameOrig, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop
 	
 	if serie:
 #modif kiwi
@@ -555,7 +552,7 @@ def SetSerieId(book, serie, num, nBooksIn):
 					PickSeries = False
 					
 				ListSeries = list()			
-				urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgName.lower().strip())) +'&RechWhere=0'
+				urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgNameOrig.lower().strip())) +'&RechWhere=0'
 
 				if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
 				
