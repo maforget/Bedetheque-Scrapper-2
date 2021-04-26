@@ -315,7 +315,7 @@ def BD_start(books):
 
 def WorkerThread(books):
 
-	global AlbumNumNum, dlgNumber, dlgName, dlgNameOrig, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
+	global AlbumNumNum, dlgNumber, dlgName, dlgNameClean, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBCouverture, CBDefault, CBRescrape, CBStop
 	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, SUBPATT, COUNTOF, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 
@@ -377,7 +377,7 @@ def WorkerThread(books):
 			else:
 				dlgAltNumber = ""
 
-			dlgNameOrig = dlgName
+			dlgNameClean = cleanARTICLES(dlgName)
 			dlgName = formatARTICLES(dlgName)
 
 #modif Pitoufos
@@ -503,7 +503,7 @@ def WorkerThread(books):
 
 def SetSerieId(book, serie, num, nBooksIn):
 
-	global dlgName, dlgNameOrig, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop
+	global dlgName, dlgNameClean, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop
 	
 	if serie:
 #modif kiwi
@@ -551,8 +551,9 @@ def SetSerieId(book, serie, num, nBooksIn):
 					serie_rech_prev = serie_rech
 					PickSeries = False
 					
-				ListSeries = list()			
-				urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgNameOrig.lower().strip())) +'&RechWhere=0'
+				ListSeries = list()
+				if DBGONOFF:print "Nom de Série pour recherche = " + dlgNameClean				
+				urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgNameClean.lower().strip())) +'&RechWhere=0'
 
 				if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
 				
@@ -1034,7 +1035,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			#nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
 			if nameRegex:
 				series = checkWebChar(nameRegex.group(1).strip())
-				if DBGONOFF: nameRegex.group(1).strip()
+				if DBGONOFF:  print Trans(9) + series
 				
 			if CBTitle:
 				NewTitle = ""		
@@ -2952,11 +2953,24 @@ def Trans(nWord):
 
 	return tText
 
+def cleanARTICLES(s):
+
+	global ARTICLES
+	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^\/\r\n\-\(]*).*", re.IGNORECASE)
+	ns = Regex.sub(r"\2", s)
+	if ns:
+		s = ns.strip()
+	ns2 = re.sub(r"^([^\/\r\n\-\(\:]*).*", r"\1", s, re.IGNORECASE)
+	if ns2:
+		s = ns2.strip()
+
+	return s
+
 def formatARTICLES(s):
 
 	global ARTICLES
-	
-	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^(\r\n]*)(?!\()\s*([^\r\n]*)", re.IGNORECASE)
+	#Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^\(\/\r\n]*)(?!\(|\/)\s*([^\r\n]*)", re.IGNORECASE)
+	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=.*(?:\s-\s))[^\-\r\n]*|[^\(\/\r\n]*)(?!\(|\/|\-)\s*([^\r\n]*)", re.IGNORECASE) #Mettre l'Articles avant le " - "
 	ns = Regex.sub(r"\2 (\1) \3", s)
 	if ns:
 		s = ns.strip()
