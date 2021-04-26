@@ -2968,7 +2968,7 @@ def titlize(s, formatArticles = False):
 	global TITLEIT, FORMATARTICLES, ARTICLES
 	
 	if formatArticles and FORMATARTICLES:
-		s = formatARTICLES(dlgName)
+		s = formatARTICLES(s)
 	
 	if TITLEIT:
 		#CharList = '[\.\?\!\(\[]\s\"\'\[\]'		
