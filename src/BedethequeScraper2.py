@@ -1282,10 +1282,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					if nameRegex.group(1) !=" &nbsp;":						
 						infoedition = strip_tags(nameRegex.group(1)).strip()
 						#infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
-						if not lDirect:
-							book.Summary = book.Summary + chr(10) + chr(10) + Trans(118) + infoedition
-						else:
-							book.Summary = infoedition
+						if infoedition:
+							book.Summary = if_else(book.Summary != "",book.Summary + chr(10) + chr(10) + Trans(118) + infoedition,Trans(118) + infoedition)
 						if DBGONOFF:print Trans(118) + Trans(119)		
 						
 			# series only formatted
