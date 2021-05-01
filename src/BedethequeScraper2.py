@@ -545,7 +545,7 @@ def SetSerieId(book, serie, num, nBooksIn):
 				serie_rech = remove_accents(serie.lower())
 				if serie_rech == serie_rech_prev and PickSeries != False:
 					serie_rech_prev = serie_rech
-					RenameSeries = PickSeries		
+					RenameSeries = PickSeries
 					return PickSeriesLink
 				else:
 					serie_rech_prev = serie_rech
@@ -2954,7 +2954,7 @@ def Trans(nWord):
 def cleanARTICLES(s):
 
 	global ARTICLES
-	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^\/\r\n\-\(]*).*", re.IGNORECASE)
+	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^\/\r\n\-\–\(]*).*", re.IGNORECASE)
 	ns = Regex.sub(r"\2", s)
 	if ns:
 		s = ns.strip()
