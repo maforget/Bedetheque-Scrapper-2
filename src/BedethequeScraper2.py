@@ -2957,7 +2957,7 @@ def cleanARTICLES(s):
 	ns = re.search(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=[^\/\r\n\(\:]*(?:\s-\s))[^\-\r\n]*|(?=[^\/\r\n\(\:]*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*)", s, re.IGNORECASE)
 	if ns:
 		s = ns.group(2).strip()
-	ns2 = re.search(r"^((?=[^\/\r\n\(\:]*(?:\s-\s))[^\-\r\n]*|(?=[^\/\r\n\(\:]*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*)", s, re.IGNORECASE)
+	ns2 = re.search(r"^(.(?=[^\/\r\n\(\:]*(?:\s-\s))[^\-\r\n]*|.(?=[^\/\r\n\(\:]*(?:\s–\s))[^\–\r\n]*|.[^\/\r\n\(\:]*)", s, re.IGNORECASE)
 	if ns2:
 		s = ns2.group(1).strip()
 
