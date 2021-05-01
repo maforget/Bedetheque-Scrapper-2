@@ -2958,7 +2958,7 @@ def cleanARTICLES(s):
 	ns = Regex.sub(r"\2", s)
 	if ns:
 		s = ns.strip()
-	ns2 = re.sub(r"^([^\/\r\n\-\(\:]*).*", r"\1", s, re.IGNORECASE)
+	ns2 = re.sub(r"^([^\/\r\n\-\–\(\:]*).*", r"\1", s, re.IGNORECASE)
 	if ns2:
 		s = ns2.strip()
 
