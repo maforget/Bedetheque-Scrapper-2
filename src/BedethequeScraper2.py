@@ -90,6 +90,7 @@ COUNTOF = True
 COUNTFINIE = True
 TITLEIT = True
 CBCouverture = True
+SerieResumeEverywhere = True
 TIMEOUT = "1000"
 TIMEOUTS = "7"
 TIMEPOPUP = "30"
@@ -671,7 +672,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -742,7 +743,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 				resume = ""
 			
 			resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
-			book.Summary = (checkWebChar(resume)).strip()
+			Serie_Resume = (checkWebChar(resume)).strip()
 			cResume = if_else(resume, Trans(52), Trans(53))
 			if DBGONOFF:print cResume					
 
@@ -887,8 +888,8 @@ class AlbumInfo:
 
 def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
-	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
+	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries, Serie_Resume
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, SerieResumeEverywhere
 	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 	
 	if DBGONOFF:print "=" * 60
@@ -1264,12 +1265,13 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				if nameRegex:					
 					resume = strip_tags(nameRegex.group(1)).strip()						
 					resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
-					#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()					
-					if not lDirect and book.Summary != resume and resume:
-						book.Summary = book.Summary + chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+					#resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
+					PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
+					if Serie_Resume and PrintSerieResume and remove_accents(Serie_Resume) != remove_accents(resume):
+						book.Summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")					
 					elif resume and book.Title:
 						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
-							
+
 						if DBGONOFF:print Trans(100)						
 				else:
 					if DBGONOFF:print Trans(101)
@@ -1666,7 +1668,7 @@ class ProgressBarDialog(Form):
 def LoadSetting():
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber, SerieResumeEverywhere
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
 	###############################################################
@@ -1846,13 +1848,15 @@ def LoadSetting():
 	try:
 		FORMATARTICLES = ft(MySettings.Get("FORMATARTICLES"))	
 	except Exception as e:
-		FORMATARTICLES = True
-		
+		FORMATARTICLES = True	
 	try:
 		PopUpEditionForm = ft(MySettings.Get("PopUpEditionForm"))	
 	except Exception as e:
 		PopUpEditionForm = False
-
+	try:
+		SerieResumeEverywhere = ft(MySettings.Get("SerieResumeEverywhere"))	
+	except Exception as e:
+		SerieResumeEverywhere = True
 	try:
 		PadNumber = MySettings.Get("PadNumber")
 	except Exception as e:
@@ -1869,7 +1873,7 @@ def LoadSetting():
 def SaveSetting():
 
 	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
-	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
+	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber, SerieResumeEverywhere
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 	
 	MySettings = AppSettings()
@@ -1922,6 +1926,7 @@ def SaveSetting():
 	MySettings.Set("FORMATARTICLES", tf(FORMATARTICLES))
 	MySettings.Set("PopUpEditionForm", tf(PopUpEditionForm))
 	MySettings.Set("PadNumber", PadNumber)
+	MySettings.Set("SerieResumeEverywhere", tf(SerieResumeEverywhere))
 
 	if CBStop == True:
 		MySettings.Set("CBStop",  "1")	
@@ -1993,7 +1998,7 @@ class BDConfigForm(Form):
 
 	def __init__(self):
 
-		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
+		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, SerieResumeEverywhere
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
 		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
@@ -2060,6 +2065,7 @@ class BDConfigForm(Form):
 		self._TITLEIT = System.Windows.Forms.CheckBox()
 		self._FORMATARTICLES = System.Windows.Forms.CheckBox()
 		self._PopUpEditionForm = System.Windows.Forms.CheckBox()
+		self._SerieResumeEverywhere = System.Windows.Forms.CheckBox()
 		self._TIMEOUT = System.Windows.Forms.TextBox()
 		self._TIMEOUTS = System.Windows.Forms.TextBox()
 #modif kiwi
@@ -2112,6 +2118,7 @@ class BDConfigForm(Form):
 		self._tabPage1.Controls.Add(self._TITLEIT)
 		self._tabPage1.Controls.Add(self._FORMATARTICLES)		
 		self._tabPage1.Controls.Add(self._PopUpEditionForm)	
+		self._tabPage1.Controls.Add(self._SerieResumeEverywhere)	
 		self._tabPage1.Controls.Add(self._TIMEOUT)
 		self._tabPage1.Controls.Add(self._TIMEOUTS)
 #modif kiwi
@@ -2664,18 +2671,29 @@ class BDConfigForm(Form):
 		self._PopUpEditionForm.Location = System.Drawing.Point(320, 216)
 		self._PopUpEditionForm.Name = "PopUpEditionForm"
 		self._PopUpEditionForm.Size = System.Drawing.Size(180, 20)
-		self._PopUpEditionForm.TabIndex = 25
+		self._PopUpEditionForm.TabIndex = 26
 		self._PopUpEditionForm.Text = Trans(147)
 		self._PopUpEditionForm.UseVisualStyleBackColor = True
 		self._PopUpEditionForm.CheckState = if_else(PopUpEditionForm, CheckState.Unchecked, CheckState.Checked)
 		#
+		# SerieResumeEverywhere
+		#
+		self._SerieResumeEverywhere.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._SerieResumeEverywhere.Location = System.Drawing.Point(320, 238)
+		self._SerieResumeEverywhere.Name = "SerieResumeEverywhere"
+		self._SerieResumeEverywhere.Size = System.Drawing.Size(180, 20)
+		self._SerieResumeEverywhere.TabIndex = 27
+		self._SerieResumeEverywhere.Text = Trans(149)
+		self._SerieResumeEverywhere.UseVisualStyleBackColor = True
+		self._SerieResumeEverywhere.CheckState = if_else(SerieResumeEverywhere, CheckState.Unchecked, CheckState.Checked)
+		#
 		# Stop at error scraping
 		#
 		self._CBStop.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
-		self._CBStop.Location = System.Drawing.Point(320, 238)
+		self._CBStop.Location = System.Drawing.Point(320, 260)
 		self._CBStop.Name = "CBStop"
 		self._CBStop.Size = System.Drawing.Size(180, 20)
-		self._CBStop.TabIndex = 26
+		self._CBStop.TabIndex = 28
 		self._CBStop.Text = Trans(141)
 		self._CBStop.UseVisualStyleBackColor = True
 		self._CBStop.ThreeState = True
@@ -2690,7 +2708,7 @@ class BDConfigForm(Form):
 		#
 		self._label4.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
 		self._label4.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-		self._label4.Location = System.Drawing.Point(320, 280)
+		self._label4.Location = System.Drawing.Point(320, 302)
 		self._label4.Name = "label4"
 		self._label4.Size = System.Drawing.Size(160, 23)
 		self._label4.TabIndex = 99
@@ -2698,10 +2716,10 @@ class BDConfigForm(Form):
 		#
 		# TIMEOUT
 		#
-		self._TIMEOUT.Location = System.Drawing.Point(435, 280)
+		self._TIMEOUT.Location = System.Drawing.Point(435, 302)
 		self._TIMEOUT.Name = "TIMEOUT"
 		self._TIMEOUT.Size = System.Drawing.Size(50, 21)
-		self._TIMEOUT.TabIndex = 27
+		self._TIMEOUT.TabIndex = 29
 		self._TIMEOUT.TextAlign = HorizontalAlignment.Center
 		self._TIMEOUT.MaxLength = 4
 		self._TIMEOUT.Text = TIMEOUT
@@ -2721,7 +2739,7 @@ class BDConfigForm(Form):
 		self._TIMEOUTS.Location = System.Drawing.Point(180, 232)
 		self._TIMEOUTS.Name = "TIMEOUTS"
 		self._TIMEOUTS.Size = System.Drawing.Size(50, 21)
-		self._TIMEOUTS.TabIndex = 28
+		self._TIMEOUTS.TabIndex = 30
 		self._TIMEOUTS.TextAlign = HorizontalAlignment.Center
 		self._TIMEOUTS.MaxLength = 3
 		self._TIMEOUTS.Text = TIMEOUTS
@@ -2816,7 +2834,7 @@ class BDConfigForm(Form):
 	def button_Click(self, sender, e):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
-		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm
+		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, SerieResumeEverywhere
 		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber
 
 		if sender.Name.CompareTo(self._OKButton.Name) == 0:
@@ -2869,6 +2887,7 @@ class BDConfigForm(Form):
 			TITLEIT = if_else(self._TITLEIT.CheckState == CheckState.Checked, True, False)
 			FORMATARTICLES = if_else(self._FORMATARTICLES.CheckState == CheckState.Checked, True, False)
 			PopUpEditionForm = if_else(self._PopUpEditionForm.CheckState == CheckState.Checked, False, True)
+			SerieResumeEverywhere = if_else(self._SerieResumeEverywhere.CheckState == CheckState.Checked, False, True)
 #modif kiwi
 			try:
 				if int(self._TIMEOUT.Text) > 0:
@@ -3155,7 +3174,6 @@ class SeriesForm(Form):
 			#self.Hide()
 			#self.DialogResult = DialogResult.OK
 			#return
-
 			
 #@Key Bedetheque2
 #@Hook ConfigScript
