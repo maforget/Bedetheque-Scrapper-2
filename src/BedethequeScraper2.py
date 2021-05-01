@@ -839,7 +839,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 			n, a, url, title = r.group(1), r.group(2), r.group(3), r.group(4)
 			num = if_else(n,n, if_else(a, a, ""))
 			ListAlbumAll.append([url, num + ". " + title, str(i).zfill(3)])
-			if dlgNumber != "" and (n == dlgNumber or a == dlgNumber) and not lDirect:
+			if dlgNumber != "" and (n == dlgNumber) and not lDirect:
 				ListAlbum.append([url, num + ". " + title, str(i).zfill(3)])
 			i = i + 1
 		
