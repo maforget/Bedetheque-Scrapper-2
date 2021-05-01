@@ -2954,11 +2954,10 @@ def Trans(nWord):
 def cleanARTICLES(s):
 
 	global ARTICLES
-	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^\/\r\n\-\–\(]*).*", re.IGNORECASE)
-	ns = Regex.sub(r"\2", s)
+	ns = re.sub(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=.*(?:\s-\s))[^\-\r\n]*|(?=.*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*).*", r"\2", s, 0, re.IGNORECASE)
 	if ns:
 		s = ns.strip()
-	ns2 = re.sub(r"^([^\/\r\n\-\–\(\:]*).*", r"\1", s, re.IGNORECASE)
+	ns2 = re.sub(r"^((?=.*(?:\s-\s))[^\-\r\n]*|(?=.*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*).*", r"\1", s, re.IGNORECASE)
 	if ns2:
 		s = ns2.strip()
 
