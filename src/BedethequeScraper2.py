@@ -2954,21 +2954,21 @@ def Trans(nWord):
 def cleanARTICLES(s):
 
 	global ARTICLES
-	ns = re.sub(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=.*(?:\s-\s))[^\-\r\n]*|(?=.*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*).*", r"\2", s, 0, re.IGNORECASE)
+	ns = re.search(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=[^\/\r\n\(\:]*(?:\s-\s))[^\-\r\n]*|(?=[^\/\r\n\(\:]*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*)", s, re.IGNORECASE)
 	if ns:
-		s = ns.strip()
-	ns2 = re.sub(r"^((?=.*(?:\s-\s))[^\-\r\n]*|(?=.*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*).*", r"\1", s, re.IGNORECASE)
+		s = ns.group(2).strip()
+		print "ns=" + s
+	ns2 = re.search(r"^((?=[^\/\r\n\(\:]*(?:\s-\s))[^\-\r\n]*|(?=[^\/\r\n\(\:]*(?:\s–\s))[^\–\r\n]*|[^\/\r\n\(\:]*)", s, re.IGNORECASE)
 	if ns2:
-		s = ns2.strip()
+		s = ns2.group(1).strip()
+		print "ns2=" + s
 
 	return s
 
 def formatARTICLES(s):
 
 	global ARTICLES
-	#Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])([^\(\/\r\n]*)(?!\(|\/)\s*([^\r\n]*)", re.IGNORECASE)
-	Regex = re.compile(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=.*(?:\s-\s))[^\-\r\n]*|[^\(\/\r\n]*)(?!\(|\/|\-)\s*([^\r\n]*)", re.IGNORECASE) #Mettre l'Articles avant le " - "
-	ns = Regex.sub(r"\2 (\1) \3", s)
+	ns = re.sub(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=.*(?:\s-\s))[^\-\r\n]*|(?=.*(?:\s–\s))[^\–\r\n]*|[^\(\/\r\n]*)(?!\(|\/|\-|\-)\s*([^\r\n]*)", r"\2 (\1) \3", s, re.IGNORECASE)
 	if ns:
 		s = ns.strip()
 
