@@ -95,6 +95,7 @@ TIMEOUT = "1000"
 TIMEOUTS = "7"
 TIMEPOPUP = "30"
 PadNumber = "0"
+Serie_Resume = ""
 
 ########################################
 # Nombres auteurs
