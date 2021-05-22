@@ -3009,7 +3009,7 @@ def titlize(s, formatArticles = False):
 			else:
 				NewString += s[i:i + 1]
 				
-			if not (s[i:i + 1]).isalnum(): # in CharList:
+			if not (s[i:i + 1]).isalnum() and s[i:i + 2].lower() != "'s": # in CharList:
 				Ucase = True
 			else:				
 				Ucase = False
