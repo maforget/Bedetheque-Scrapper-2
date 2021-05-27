@@ -961,7 +961,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			title = checkWebChar(albumPick.group(4).strip())
 			nfo = albumPick.group(5)
 			a = albumPick.group(3).strip() if isnumeric(dlgNumber) else re.sub(t,'',albumPick.group(3).strip()).strip()
-			url = pageUrl if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
+			url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
 			albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
 			if DBGONOFF:print "Tome)", t, "Alt)", a, "Title)", title
 			
@@ -1014,7 +1014,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			
 			#web
 			if CBWeb == True and not CBRescrape:			
-				book.Web = pickedVar.URL
+				book.Web = pickedVar.URL.replace("#reed", "")
 				if DBGONOFF:print Trans(123), book.Web
 			elif CBWeb == "2" and not CBRescrape:
 				cBelid = re.search(r'\-(\d+).html', pageUrl)
