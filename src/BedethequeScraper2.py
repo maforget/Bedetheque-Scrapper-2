@@ -3039,6 +3039,7 @@ class SeriesForm(Form):
 
 		global SeriesSearch, NewLink, NewSeries, TIMEPOPUP, CBStop
 		
+		self.Load += self.MainForm_Load
 		self._ListSeries = System.Windows.Forms.ListBox()
 		self._CancelButton = System.Windows.Forms.Button()
 		self._OKButton = System.Windows.Forms.Button()
@@ -3175,7 +3176,10 @@ class SeriesForm(Form):
 			#self.Hide()
 			#self.DialogResult = DialogResult.OK
 			#return
-			
+	
+	def MainForm_Load(self, sender, e):
+		self.Left += 365
+		
 #@Key Bedetheque2
 #@Hook ConfigScript
 #@Name Configurer BD2
