@@ -2988,7 +2988,7 @@ def formatARTICLES(s):
 	global ARTICLES
 	ns = re.sub(r"^(" + ARTICLES.replace(',','|') + ")\s*(?<=['\s])((?=[^(]*(?:\s-\s))[^\-\r\n]*|(?=[^(]*(?:\s–\s))[^\–\r\n]*|[^\(\/\r\n]*)(?!\(|\/|\-|\–)\s*([^\r\n]*)", r"\2 (\1) \3", s, re.IGNORECASE)
 	if ns:
-		s = ns.strip()
+		s = Capitalize(ns.strip())
 
 	return s
 
@@ -3017,6 +3017,11 @@ def titlize(s, formatArticles = False):
 		return NewString		
 	else:
 		return s
+
+def Capitalize(s):
+	
+	ns = s[0:1].upper() + s[1:]
+	return ns
 
 class FormType():
 	SERIE = 1
