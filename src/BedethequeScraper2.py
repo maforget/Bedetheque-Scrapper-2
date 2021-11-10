@@ -674,7 +674,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -766,7 +766,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 				SerieState = Trans(54)
 			elif ("One shot" in fin) and (dlgNumber != "One Shot"):
 				book.SeriesComplete = YesNo.Yes
-				if ONESHOTFORMAT: book.Format = "One Shot"
+				if ONESHOTFORMAT and not CBFormat: book.Format = "One Shot"
 				SerieState = Trans(54)
 			elif ("cours" in fin):
 				book.SeriesComplete = YesNo.No
@@ -1874,6 +1874,9 @@ def LoadSetting():
 
 	###############################################################
 	
+	if ONESHOTFORMAT and CBFormat:
+		CBFormat = False
+	
 	SaveSetting()
 
 	aWord = Translate()
@@ -2889,7 +2892,7 @@ class BDConfigForm(Form):
 			CBISBN = if_else(self._CBISBN.CheckState == CheckState.Checked, True, False)
 			CBLanguage = if_else(self._CBLanguage.CheckState == CheckState.Checked, True, False)
 			CBEditor = if_else(self._CBEditor.CheckState == CheckState.Checked, True, False)
-			CBFormat = if_else(self._CBFormat.CheckState == CheckState.Checked, True, False)
+			CBFormat = if_else(self._CBFormat.CheckState == CheckState.Checked, if_else(self._OneShotFormat.CheckState == CheckState.Checked, False, True), False)
 			CBColorist = if_else(self._CBColorist.CheckState == CheckState.Checked, True, False)
 			CBPenciller = if_else(self._CBPenciller.CheckState == CheckState.Checked, True, False)
 			CBWriter = if_else(self._CBWriter.CheckState == CheckState.Checked, True, False)
