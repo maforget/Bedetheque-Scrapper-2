@@ -96,6 +96,7 @@ TIMEOUTS = "7"
 TIMEPOPUP = "30"
 PadNumber = "0"
 Serie_Resume = ""
+ONESHOTFORMAT = False
 
 ########################################
 # Nombres auteurs
@@ -113,7 +114,7 @@ SERIE_LIST_PATTERN = r'<a\shref=\"https\:\/\/www.bedetheque.com\/serie-(.*?)\">.
 SERIE_LIST_CHECK_PATTERN = r's.ries\strouv.{20,60}?La\srecherche.*?\srenvoie\splus\sde\s500\sdonn'
 SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
 
-SERIE_URL_PATTERN = r'<a\shref=\"(.*?)\">\r\n.{50,60}<span\sclass=\"libelle\">%s\s*?</span>'
+SERIE_URL_PATTERN = r'<a\shref=\"(.*?)\">\r\n.{50,60}<span\sclass=\"libelle\">%s</span>'
 
 ALBUM_ID_PATTERN = r'id=\"%s\".*?album-%s(.*?)\.html'
 ALBUM_INFO_PATTERN = r'<meta\sname=\"description\"\scontent="(.*?)\"'
@@ -389,11 +390,11 @@ def WorkerThread(books):
 				totalchar = lenDlgName - findCara
 				dlgName = dlgName[:-totalchar]
 
-			mPos = re.search(r'([.|,|\\|\/|-])', dlgNumber)
+			mPos = re.search(r'([.|,|\\|\/])', dlgNumber)
 			if not isnumeric(dlgNumber):
 				albumNum = dlgNumber
 				AlbumNumNum = False
-			elif isnumeric(dlgNumber) and not re.search(r'[.|,|\\|\/|-]', dlgNumber):
+			elif isnumeric(dlgNumber) and not re.search(r'[.|,|\\|\/]', dlgNumber):
 				dlgNumber = str(int(dlgNumber))
 				albumNum = str(int(dlgNumber))
 				AlbumNumNum = True
@@ -673,7 +674,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -760,8 +761,12 @@ def parseSerieInfo(book, serieUrl, lDirect):
 				fin = ""
 
 #modif kiwi
-			if ("finie" in fin) or ("One shot" in fin) or (dlgNumber == "One Shot"):
+			if ("finie" in fin) or (dlgNumber == "One Shot"):
 				book.SeriesComplete = YesNo.Yes
+				SerieState = Trans(54)
+			elif ("One shot" in fin) and (dlgNumber != "One Shot"):
+				book.SeriesComplete = YesNo.Yes
+				if ONESHOTFORMAT and not CBFormat: book.Format = "One Shot"
 				SerieState = Trans(54)
 			elif ("cours" in fin):
 				book.SeriesComplete = YesNo.No
@@ -953,7 +958,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 		pickedVar = ""
 		picked = False
 		info = albumUrl
-		tome = re.search(r'<h2>\s*(\w*?)<span class="numa">(.*?)</span>.', albumUrl, re.IGNORECASE | re.DOTALL)
+		tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumUrl, re.IGNORECASE | re.DOTALL)
 		t = if_else(tome.group(1), tome.group(1), tome.group(2)) if tome else ""
 		nameRegex = re.compile(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--.+?class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
 		for albumPick in nameRegex.finditer(albumUrl):	
@@ -1668,7 +1673,7 @@ class ProgressBarDialog(Form):
 	
 def LoadSetting():
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber, SerieResumeEverywhere
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 
@@ -1862,8 +1867,15 @@ def LoadSetting():
 		PadNumber = MySettings.Get("PadNumber")
 	except Exception as e:
 		PadNumber = "0"
+	try:
+		ONESHOTFORMAT = ft(MySettings.Get("ONESHOTFORMAT"))	
+	except Exception as e:
+		ONESHOTFORMAT = False
 
 	###############################################################
+	
+	if ONESHOTFORMAT and CBFormat:
+		CBFormat = False
 	
 	SaveSetting()
 
@@ -1873,7 +1885,7 @@ def LoadSetting():
 	
 def SaveSetting():
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber, SerieResumeEverywhere
 	global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
 	
@@ -1928,6 +1940,7 @@ def SaveSetting():
 	MySettings.Set("PopUpEditionForm", tf(PopUpEditionForm))
 	MySettings.Set("PadNumber", PadNumber)
 	MySettings.Set("SerieResumeEverywhere", tf(SerieResumeEverywhere))
+	MySettings.Set("ONESHOTFORMAT", tf(ONESHOTFORMAT))
 
 	if CBStop == True:
 		MySettings.Set("CBStop",  "1")	
@@ -2001,7 +2014,7 @@ class BDConfigForm(Form):
 
 		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, SerieResumeEverywhere
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
-		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
+		global CBLanguage, CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, ONESHOTFORMAT
 
 		self.Name = "BDConfigForm"
 		self.Text = "Bedetheque Scraper 2"
@@ -2067,6 +2080,7 @@ class BDConfigForm(Form):
 		self._FORMATARTICLES = System.Windows.Forms.CheckBox()
 		self._PopUpEditionForm = System.Windows.Forms.CheckBox()
 		self._SerieResumeEverywhere = System.Windows.Forms.CheckBox()
+		self._OneShotFormat = System.Windows.Forms.CheckBox()
 		self._TIMEOUT = System.Windows.Forms.TextBox()
 		self._TIMEOUTS = System.Windows.Forms.TextBox()
 #modif kiwi
@@ -2129,6 +2143,8 @@ class BDConfigForm(Form):
  		self._tabPage1.Controls.Add(self._labelPadNumber)
 		self._tabPage1.Controls.Add(self._label4)		
 		self._tabPage1.Controls.Add(self._label6)	
+		self._tabPage1.Controls.Add(self._CBRescrape)		
+		self._tabPage1.Controls.Add(self._CBStop)	
 		self._tabPage1.Location = System.Drawing.Point(4, 22)
 		self._tabPage1.Name = "tabPage1"
 		self._tabPage1.Padding = System.Windows.Forms.Padding(3)
@@ -2164,9 +2180,8 @@ class BDConfigForm(Form):
 		self._tabPage2.Controls.Add(self._CBWriter)
 		self._tabPage2.Controls.Add(self._CBTitle)
 		self._tabPage2.Controls.Add(self._CBSeries)
-		self._tabPage2.Controls.Add(self._CBDefault)		
-		self._tabPage1.Controls.Add(self._CBRescrape)		
-		self._tabPage1.Controls.Add(self._CBStop)		
+		self._tabPage2.Controls.Add(self._CBDefault)			
+		self._tabPage2.Controls.Add(self._OneShotFormat)		
 		self._tabPage2.Location = System.Drawing.Point(4, 22)
 		self._tabPage2.Name = "tabPage2"
 		self._tabPage2.Padding = System.Windows.Forms.Padding(3)
@@ -2705,6 +2720,17 @@ class BDConfigForm(Form):
 		elif CBStop == "2":
 			self._CBStop.CheckState = CheckState.Indeterminate
 		#
+		# One Shot in Format
+		#
+		self._OneShotFormat.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+		self._OneShotFormat.Location = System.Drawing.Point(16, 331)
+		self._OneShotFormat.Name = "OneShotFormat"
+		self._OneShotFormat.Size = System.Drawing.Size(250, 20)
+		self._OneShotFormat.TabIndex = 29
+		self._OneShotFormat.Text = Trans(150)
+		self._OneShotFormat.UseVisualStyleBackColor = True
+		self._OneShotFormat.CheckState = if_else(ONESHOTFORMAT, CheckState.Checked, CheckState.Unchecked)
+		#
 		# TIMEOUT Label4
 		#
 		self._label4.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
@@ -2834,7 +2860,7 @@ class BDConfigForm(Form):
 
 	def button_Click(self, sender, e):
 
-		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
+		global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ONESHOTFORMAT
 		global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, SerieResumeEverywhere
 		global	CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber
 
@@ -2866,7 +2892,7 @@ class BDConfigForm(Form):
 			CBISBN = if_else(self._CBISBN.CheckState == CheckState.Checked, True, False)
 			CBLanguage = if_else(self._CBLanguage.CheckState == CheckState.Checked, True, False)
 			CBEditor = if_else(self._CBEditor.CheckState == CheckState.Checked, True, False)
-			CBFormat = if_else(self._CBFormat.CheckState == CheckState.Checked, True, False)
+			CBFormat = if_else(self._CBFormat.CheckState == CheckState.Checked, if_else(self._OneShotFormat.CheckState == CheckState.Checked, False, True), False)
 			CBColorist = if_else(self._CBColorist.CheckState == CheckState.Checked, True, False)
 			CBPenciller = if_else(self._CBPenciller.CheckState == CheckState.Checked, True, False)
 			CBWriter = if_else(self._CBWriter.CheckState == CheckState.Checked, True, False)
@@ -2887,6 +2913,7 @@ class BDConfigForm(Form):
 			COUNTFINIE = if_else(self._COUNTFINIE.CheckState == CheckState.Checked, True, False)
 			TITLEIT = if_else(self._TITLEIT.CheckState == CheckState.Checked, True, False)
 			FORMATARTICLES = if_else(self._FORMATARTICLES.CheckState == CheckState.Checked, True, False)
+			ONESHOTFORMAT = if_else(self._OneShotFormat.CheckState == CheckState.Checked, True, False)
 			PopUpEditionForm = if_else(self._PopUpEditionForm.CheckState == CheckState.Checked, False, True)
 			SerieResumeEverywhere = if_else(self._SerieResumeEverywhere.CheckState == CheckState.Checked, False, True)
 #modif kiwi
