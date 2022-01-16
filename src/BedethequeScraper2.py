@@ -114,7 +114,7 @@ SERIE_LIST_PATTERN = r'<a\shref=\"https\:\/\/www.bedetheque.com\/serie-(.*?)\">.
 SERIE_LIST_CHECK_PATTERN = r's.ries\strouv.{20,60}?La\srecherche.*?\srenvoie\splus\sde\s500\sdonn'
 SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
 
-SERIE_URL_PATTERN = r'<a\shref=\"(.*?)\">\r\n.{50,60}<span\sclass=\"libelle\">%s</span>'
+SERIE_URL_PATTERN = r'<a\shref=\"(.*?)\">\r\n.{50,60}<span\sclass=\"libelle\">%s\s*?</span>'
 
 ALBUM_ID_PATTERN = r'id=\"%s\".*?album-%s(.*?)\.html'
 ALBUM_INFO_PATTERN = r'<meta\sname=\"description\"\scontent="(.*?)\"'
