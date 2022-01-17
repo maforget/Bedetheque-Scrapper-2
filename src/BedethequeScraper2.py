@@ -3089,11 +3089,12 @@ class SeriesForm(Form):
 		# ListSeries
 		# 
 		self._ListSeries.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
+		self._ListSeries.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right | System.Windows.Forms.AnchorStyles.Bottom
 		self._ListSeries.FormattingEnabled = True
 		self._ListSeries.ItemHeight = 15
 		self._ListSeries.Location = System.Drawing.Point(8, 8)
 		self._ListSeries.Name = "ListSeries"
-		self._ListSeries.Size = System.Drawing.Size(450, 229)
+		self._ListSeries.Size = System.Drawing.Size(374, 280)
 		self._ListSeries.Sorted = True
 		self._ListSeries.TabIndex = 1
 		self._ListSeries.DoubleClick += self.DoubleClick		
@@ -3101,6 +3102,7 @@ class SeriesForm(Form):
 		# CancelButton
 		# 
 		self._CancelButton.BackColor = System.Drawing.Color.Red
+		self._CancelButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right
 		self._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
 		self._CancelButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
 		self._CancelButton.Location = System.Drawing.Point(301, 290)
@@ -3114,6 +3116,7 @@ class SeriesForm(Form):
 		# OKButton
 		# 
 		self._OKButton.BackColor = System.Drawing.Color.FromArgb(128, 255, 128)
+		self._OKButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left
 		self._OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
 		self._OKButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
 		self._OKButton.ForeColor = System.Drawing.Color.Black
@@ -3128,11 +3131,11 @@ class SeriesForm(Form):
 		
 			
 		self.ClientSize = System.Drawing.Size(390, 325)		
+		self.MinimumSize = System.Drawing.Size(180, 180)
 		self.Controls.Add(self._ListSeries)
 		self.Controls.Add(self._OKButton)
 		self.Controls.Add(self._CancelButton)
 		#self.Controls.Add(self._timer1)
-		self.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
 		self.MaximizeBox = False
 		self.MinimizeBox = False
 		self.Name = "SeriesForm"
