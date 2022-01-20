@@ -23,7 +23,7 @@ If applicable, add screenshots to help explain your problem.
 Indicate which setting you had enabled that might affect your expected output.
 
 **Script Output**
-Please include the Script Output. Add the `-ssc` switch after your path in the ComicRack shortcut to have a Script output window open and copy and paste the output between the `Begin!` and `End!` lines.
+Please include the Script Output. Activate the Internal Debug option and add the `-ssc` switch after your path in the ComicRack shortcut to have a Script output window open and copy and paste the output between the `Begin!` and `End!` lines.
 ```
 Paste script output here
 ````
