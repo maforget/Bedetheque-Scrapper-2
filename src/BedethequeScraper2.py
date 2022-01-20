@@ -3377,7 +3377,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 				# if fiche:	
 					# RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
 				RetVal = serieUrl
-				if "serie-" in serieUrl:	
+				if "/serie-" in serieUrl:	
 					serieUrl = serieUrl.lower().replace(".html", u'__10000.html') if "__10000.html" in serieUrl else serieUrl
 					RetVal = parseSerieInfo(MyBook, serieUrl, True)
 																		
