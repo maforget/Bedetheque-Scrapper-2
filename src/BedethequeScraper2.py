@@ -1277,6 +1277,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 						book.Summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")					
 					elif resume and book.Title:
 						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+					elif resume:
+						book.Summary = resume
 
 						if DBGONOFF:print Trans(100)						
 				else:
