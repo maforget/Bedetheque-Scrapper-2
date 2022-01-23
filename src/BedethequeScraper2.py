@@ -1275,7 +1275,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
 					if Serie_Resume and PrintSerieResume and remove_accents(Serie_Resume) != remove_accents(resume):
 						book.Summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")					
-					elif resume and book.Title:
+					elif resume:
 						book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
 
 						if DBGONOFF:print Trans(100)						
