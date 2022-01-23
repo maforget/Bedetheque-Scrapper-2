@@ -1,5 +1,5 @@
 # Bedetheque Scrapper 2 for ComicRack
-Script that scapes data from Bedetheque.com for ComicRack.
+Script that scrapes data from Bedetheque.com for ComicRack.
 
 ![Bedetheque Scrapper 2 v5 6 Demo](https://user-images.githubusercontent.com/11904426/115951797-b56dbf80-a4b0-11eb-821b-6e97ca2cfca1.gif)
 
