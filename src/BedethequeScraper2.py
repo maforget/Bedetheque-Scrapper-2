@@ -1463,6 +1463,7 @@ def checkRegExp(strIn):
 	strIn = re.sub('\\(', '.', strIn)
 	strIn = re.sub('\\)', '.', strIn)
 	strIn = re.sub('&', '&amp;', strIn)
+	strIn = re.sub('"', '&quot;', strIn)
 	strIn = re.sub('\$', '\\$', strIn)
 	
 	return strIn
