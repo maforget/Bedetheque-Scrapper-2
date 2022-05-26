@@ -3295,7 +3295,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 		nRenamed = 0
 		nIgnored = 0	
 	cError = False
-	MyBooks = ComicBook()
+	MyBooks = []
 	
 	try:	
 		f = ProgressBarDialog(books.Count)
@@ -3304,10 +3304,10 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 		
 		if books:
 			if cLink:
-				MyBooks = book
+				MyBooks.append(book)
 			else:
 				MyBooks = books
-				
+			
 			# if MyBooks.Count <> 1:
 				# return False
 				
