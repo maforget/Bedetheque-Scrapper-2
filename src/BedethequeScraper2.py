@@ -458,9 +458,15 @@ def WorkerThread(books):
 				cPause = Trans(140).replace("%%", str(TIMEOUTS))
 				f.Update(cPause, 0, False)
 				f.Refresh()								
-				t.CurrentThread.Join(int(TIMEOUTS)*1000)
+				for i in range(20*int(TIMEOUTS)):						
+					t.CurrentThread.Join(50)
+					Application.DoEvents()
+					if bStopit:
+						break
 				#f.Update("[" + str(i + 1) + "/" + str(len(books)) + "] : " + dlgName + " - " + dlgNumber + if_else(dlgAltNumber == '', '', ' AltNo.[' + dlgAltNumber + ']') + " - " + titlize(book.Title), 0)
 				#f.Refresh()	
+			if bStopit:
+				break
 
 	except:
 		cError = debuglog()
