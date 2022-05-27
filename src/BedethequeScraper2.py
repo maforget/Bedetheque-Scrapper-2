@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.9"
+VERSION = "5.10"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -3245,7 +3245,7 @@ class SeriesForm(Form):
 		global TimerExpired
 	
 		if DBGONOFF:print "Timer Expired"
-		TimerExpired = True	
+		TimerExpired = True
 		self._timer1.Stop()
 		self.Hide()
 	
