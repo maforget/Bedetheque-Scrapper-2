@@ -3298,15 +3298,15 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 	MyBooks = []
 	
 	try:	
-		f = ProgressBarDialog(books.Count)
-		if books.Count > 1:
-			f.Show(ComicRack.MainWindow)
-		
+
 		if books:
 			if cLink:
 				MyBooks.append(book)
 			else:
 				MyBooks = books
+				f = ProgressBarDialog(books.Count)
+				if books.Count > 1:
+					f.Show(ComicRack.MainWindow)
 			
 			# if MyBooks.Count <> 1:
 				# return False
@@ -3314,12 +3314,11 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 			log_BD(Trans(7) + str(MyBooks.Count) +  Trans(8), "\n============ " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + " ===========", 0)
 					
 			for MyBook in MyBooks:
-						
+		
 				if cLink:					
 					Numero = ""			
-					serieUrl = re.sub('https://www.bedetheque.com/', '', cLink)
-					if re.search(r'album', serieUrl):
-						LinkBD2 = serieUrl
+					serieUrl = cLink
+					LinkBD2 = serieUrl
 					
 				else:
 					
