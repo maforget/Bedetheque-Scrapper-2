@@ -359,7 +359,8 @@ def WorkerThread(books):
 			if DBGONOFF:print "v" * 60
 						
 			if bStopit or (nTIMEDOUT == int(TIMEOUT)):
-				break
+				if bStopit and DBGONOFF:print "Cancelled from WorkerThread Start"
+				return
 			
 			nTIMEDOUT += 1
 			
@@ -408,6 +409,10 @@ def WorkerThread(books):
 			f.Update("[" + str(i + 1) + "/" + str(len(books)) + "] : " + dlgName + " - " + dlgNumber + if_else(dlgAltNumber == '', '', ' AltNo.[' + dlgAltNumber + ']') + " - " + titlize(book.Title), 1, book)
 			f.Refresh()
 			Application.DoEvents()
+
+			if bStopit:
+				if DBGONOFF:print "Cancelled from WorkerThread after Update"
+				return
 			
 			RetAlb = False
 			if CBRescrape:
@@ -421,6 +426,10 @@ def WorkerThread(books):
 				
 				RetAlb = False
 				serieUrl = SetSerieId(book, dlgName, albumNum, nBooks)	
+
+				if bStopit:
+					if DBGONOFF:print "Cancelled from WorkerThread after SetSerieId return"
+					return
 				
 				if serieUrl:
 					RetAlb = True
@@ -437,7 +446,7 @@ def WorkerThread(books):
 					if not RetAlb and not 'revue' in serieUrl:					
 						# reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
 						RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
-						
+			
 			if RetAlb:
 				nRenamed += 1				
 				log_BD("[" + dlgName + "] " + dlgNumber + if_else(dlgAltNumber == '', '', ' AltNo.[' + dlgAltNumber + ']') + " - " + titlize(book.Title), Trans(13), 1)
@@ -462,11 +471,13 @@ def WorkerThread(books):
 					t.CurrentThread.Join(50)
 					Application.DoEvents()
 					if bStopit:
-						break
+						if DBGONOFF:print "Cancelled from WorkerThread TIMEOUT Loop"
+						return
 				#f.Update("[" + str(i + 1) + "/" + str(len(books)) + "] : " + dlgName + " - " + dlgNumber + if_else(dlgAltNumber == '', '', ' AltNo.[' + dlgAltNumber + ']') + " - " + titlize(book.Title), 0)
 				#f.Refresh()	
 			if bStopit:
-				break
+				if DBGONOFF:print "Cancelled from WorkerThread End"
+				return
 
 	except:
 		cError = debuglog()
@@ -512,7 +523,7 @@ def WorkerThread(books):
 
 def SetSerieId(book, serie, num, nBooksIn):
 
-	global dlgName, dlgNameClean, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop
+	global dlgName, dlgNameClean, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop, bStopit
 	
 	if serie:
 #modif kiwi
@@ -533,6 +544,10 @@ def SetSerieId(book, serie, num, nBooksIn):
 		serieUrl = ''
 
 		request = _read_url(urlN.encode('utf-8'), False)
+
+		if bStopit:
+			if DBGONOFF:print "Cancelled from SetSerieId after letter page return"
+			return ''
 		
 		if request:
 
@@ -567,6 +582,10 @@ def SetSerieId(book, serie, num, nBooksIn):
 				if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
 				
 				request = _read_url(urlN.encode('utf-8'), False)
+
+				if bStopit:
+					if DBGONOFF:print "Cancelled from SetSerieId after Search return"
+					return ''
 								
 				#SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)				
 				if SERIE_LIST_CHECK.search(request):
@@ -633,7 +652,7 @@ def SetSerieId(book, serie, num, nBooksIn):
 						if DBGONOFF:print Trans(142) + checkRegExp(serie) + "]"						
 						log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
 						return	''							
-		
+
 	except:
 
 		cError = debuglog()
@@ -659,6 +678,10 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 	LINK_ALBUM = False
 
 	albumUrl = parseSerieInfo(book, serieUrl, False)
+
+	if bStopit:
+		if DBGONOFF:print "Cancelled from SetAlbumInformation"
+		return False
 	
 	if albumUrl and not 'revue' in serieUrl:
 		if DBGONOFF:print Trans(26), albumUrl
@@ -680,7 +703,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat, bStopit
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -693,6 +716,10 @@ def parseSerieInfo(book, serieUrl, lDirect):
 	albumURL = ''
 	
 	#LongSerie= re.sub(u'^_10000\.html','\_\_10000.html',serieUrl.lower())
+
+	if bStopit:
+		if DBGONOFF:print "Cancelled from parseSerieInfo Start"
+		return False
 		
 	try:
 		request = _read_url(serieUrl, lDirect)
@@ -702,6 +729,9 @@ def parseSerieInfo(book, serieUrl, lDirect):
 		log_BD("   " + serieUrl + " " + Trans(43), "", 1)
 		return False
 
+	if bStopit:
+		if DBGONOFF:print "Cancelled from parseSerieInfo after _read_url return"
+		return False
 
 	SerieInfoRegex = SERIE_HEADER.search(request)
 	if SerieInfoRegex:
@@ -900,7 +930,7 @@ class AlbumInfo:
 
 def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
-	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries, Serie_Resume
+	global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries, Serie_Resume, bStopit
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, SerieResumeEverywhere
 	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 	
@@ -910,7 +940,15 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 	
 	AlbumBDThequeNum = ""
 	
-	albumUrl = _read_url(pageUrl, False)							
+	if bStopit:
+		if DBGONOFF:print "Cancelled from parseAlbumInfo Start"
+		return False
+
+	albumUrl = _read_url(pageUrl, False)	
+	
+	if bStopit:
+		if DBGONOFF:print "Cancelled from parseAlbumInfo after _read_url return"
+		return False
 	
 	#identify the album n. in BDTHQ
 	cBDNum = False
@@ -1096,7 +1134,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 						scenaristes = nameRegex.group(1).strip()
 						book.Writer = parseNames(scenaristes)
 						log_BD(parseNames(scenaristes),"",1)                        
-  
+
 					else:
 						book.Writer = ""					
 				if DBGONOFF:print Trans(30), book.Writer
@@ -1115,7 +1153,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 					if nameRegex:
 						dessinateurs = nameRegex.group(1).strip()				
 						book.Penciller = parseNames(dessinateurs)
-  
+
 					else:
 						book.Penciller = ""
 					
@@ -1331,7 +1369,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 							book.PageCount =  0
 
 						if DBGONOFF:print Trans(122), book.PageCount
-				
+
 	except:
 		nameRegex = ""
 		cError = debuglog()
@@ -1371,9 +1409,13 @@ def parseNames(extractedNames):
 
 def _read_url(url, bSingle):
 
-	global dlgName, dlgNumber, dlgAltNumber, aWord
+	global dlgName, dlgNumber, dlgAltNumber, aWord, bStopit
 	
 	page = ''
+	if bStopit:
+		if DBGONOFF:print "Cancelled from _read_url Start"
+		return page
+
 	#headers = { 'User-Agent' : 'Mozilla/5.0'}
 	##headers = { 'User-Agent' : 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)', 'Accept-Encoding':'gzip, deflate','Accept':'text/html, application/xhtml+xml, */*','Accept-Language':'en-GB,it-IT;q=0.8,it;q=0.6,en-US;q=0.4,en;q=0.2'}
 	if not bSingle and re.search("https://www.bedetheque.com/", url, re.IGNORECASE):
@@ -1421,6 +1463,9 @@ def _read_url(url, bSingle):
 		a = webresponse.Cookies	
 
 		Application.DoEvents()
+		if bStopit:
+			if DBGONOFF:print "Cancelled from _read_url End"
+			return page
 
 		inStream = webresponse.GetResponseStream()		
 		encode = System.Text.Encoding.GetEncoding("utf-8")
@@ -1654,6 +1699,7 @@ class ProgressBarDialog(Form):
 		self.Controls.Add(self.cover)
 
 	def Update(self, cText, nInc = 1, book = False):
+
 		Application.DoEvents()
 		self.traitement.Text = "\n" + cText
 		if nInc == 1: 
@@ -1676,6 +1722,7 @@ class ProgressBarDialog(Form):
 
 		Application.DoEvents()
 		if sender.Name.CompareTo(self.cancel.Name) == 0:
+			if DBGONOFF:print "Cancel button pressed"
 			bStopit = True
 	
 def LoadSetting():
@@ -1826,7 +1873,7 @@ def LoadSetting():
 		ARTICLES = MySettings.Get("ARTICLES")
 	except Exception as e:
 		ARTICLES = "Le,La,Les,L',The"
- 	try:
+	try:
 		SUBPATT = MySettings.Get("SUBPATT")
 	except Exception as e:
 		SUBPATT = " - - "   	
@@ -1935,7 +1982,7 @@ def SaveSetting():
 	MySettings.Set("CBDefault",  tf(CBDefault))	
 	MySettings.Set("CBRescrape",  tf(CBRescrape))	
 	MySettings.Set("ARTICLES",  ARTICLES)
- 	MySettings.Set("SUBPATT",  SUBPATT)   
+	MySettings.Set("SUBPATT",  SUBPATT)   
 	MySettings.Set("COUNTOF",  tf(COUNTOF))	
 	MySettings.Set("CBCouverture",  tf(CBCouverture))	
 	MySettings.Set("COUNTFINIE",  tf(COUNTFINIE))	
@@ -2145,9 +2192,9 @@ class BDConfigForm(Form):
 		self._tabPage1.Controls.Add(self._TIMEOUTS)
 #modif kiwi
 		self._tabPage1.Controls.Add(self._TIMEPOPUP)
- 		self._tabPage1.Controls.Add(self._labelTIMEPOPUP)
+		self._tabPage1.Controls.Add(self._labelTIMEPOPUP)
 		self._tabPage1.Controls.Add(self._PadNumber)
- 		self._tabPage1.Controls.Add(self._labelPadNumber)
+		self._tabPage1.Controls.Add(self._labelPadNumber)
 		self._tabPage1.Controls.Add(self._label4)		
 		self._tabPage1.Controls.Add(self._label6)	
 		self._tabPage1.Controls.Add(self._CBRescrape)		
