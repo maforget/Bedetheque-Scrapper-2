@@ -3245,7 +3245,8 @@ class SeriesForm(Form):
 		global TimerExpired
 	
 		if DBGONOFF:print "Timer Expired"
-		TimerExpired = True		
+		TimerExpired = True	
+		self._timer1.Stop()
 		self.Hide()
 	
 	def DoubleClick(self, sender, e):
