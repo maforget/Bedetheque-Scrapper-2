@@ -701,7 +701,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat, bStopit, SkipAlbum
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat, bStopit, SkipAlbum, TimerExpired
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -896,9 +896,13 @@ def parseSerieInfo(book, serieUrl, lDirect):
 				result = pickAnAlbum.ShowDialog()
 				
 				if result == DialogResult.Cancel:
-					albumURL = False
-					SkipAlbum = True
-					if DBGONOFF:print "---> Appuyer sur Cancel, ignorons ce livre"
+					if TimerExpired:
+						albumURL = ListAlbum[0][0]
+						if DBGONOFF:print "---> Le temps est expiré, choix du 1er item"
+					else:
+						albumURL = False
+						SkipAlbum = True
+						if DBGONOFF:print "---> Appuyer sur Cancel, ignorons ce livre"
 				else:
 					albumURL = NewLink
 			else:
@@ -3122,7 +3126,7 @@ class SeriesForm(Form):
 	
 	def InitializeComponent(self, serie):
 
-		global SeriesSearch, NewLink, NewSeries, TIMEPOPUP, CBStop
+		global SeriesSearch, NewLink, NewSeries, TIMEPOPUP, CBStop, TimerExpired
 		
 		self.Load += self.MainForm_Load
 		self._ListSeries = System.Windows.Forms.ListBox()
@@ -3131,6 +3135,7 @@ class SeriesForm(Form):
 		#self._SearchSeries = System.Windows.Forms.TextBox()
 		#self._labelSearch = System.Windows.Forms.Label()
 		if CBStop == "2":
+			TimerExpired = False
 			self._timer1 = System.Windows.Forms.Timer()
 #modif kiwi
 			self._timer1.Interval = int(TIMEPOPUP) * 1000
@@ -3236,8 +3241,12 @@ class SeriesForm(Form):
 			self.Hide()
 
 	def CloseForm(self, sender, e):
+
+		global TimerExpired
 	
-			self.Hide()
+		if DBGONOFF:print "Timer Expired"
+		TimerExpired = True		
+		self.Hide()
 	
 	def DoubleClick(self, sender, e):
 				
