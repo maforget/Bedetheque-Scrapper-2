@@ -318,7 +318,7 @@ def BD_start(books):
 
 def WorkerThread(books):
 
-	global AlbumNumNum, dlgNumber, dlgName, dlgNameClean, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord
+	global AlbumNumNum, dlgNumber, dlgName, dlgNameClean, nRenamed, nIgnored, dlgAltNumber, bError, SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, SkipAlbum
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBCouverture, CBDefault, CBRescrape, CBStop
 	global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, bStopit, ARTICLES, SUBPATT, COUNTOF, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, Shadow1, Shadow2, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
 
@@ -442,8 +442,9 @@ def WorkerThread(books):
 						if DBGONOFF:print Trans(12) + albumNum + "]", if_else(dlgAltNumber == '', '', ' - AltNo. [' + dlgAltNumber + ']')
 
 					RetAlb = SetAlbumInformation(book, serieUrl, dlgName, albumNum)
-				
-					if not RetAlb and not 'revue' in serieUrl:					
+
+					#SkipAlbum utlisez seulement lorsque l'on appuye sur Annuler dans la fenetre pour choisir l'album ParseSerieInfo
+					if not SkipAlbum and not RetAlb and not 'revue' in serieUrl:					
 						# reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
 						RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
 			
@@ -703,7 +704,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 
 def parseSerieInfo(book, serieUrl, lDirect):
 
-	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat, bStopit
+	global AlbumNumNum, dlgNumber, dlgAltNumber, dlgName, aWord, RenameSeries, NewLink, NewSeries, Serie_Resume, ONESHOTFORMAT, CBFormat, bStopit, SkipAlbum
 	
 	if DBGONOFF:print "=" * 60
 	if DBGONOFF:print "parseSerieInfo", "a)", serieUrl, "b)", lDirect
@@ -712,7 +713,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 	#SERIE_HEADER = re.compile(SERIE_HEADER_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 	SERIE_QSERIE = re.compile(SERIE_QSERIE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 	
-	
+	SkipAlbum = False
 	albumURL = ''
 	
 	#LongSerie= re.sub(u'^_10000\.html','\_\_10000.html',serieUrl.lower())
@@ -898,8 +899,9 @@ def parseSerieInfo(book, serieUrl, lDirect):
 				result = pickAnAlbum.ShowDialog()
 				
 				if result == DialogResult.Cancel:
-					albumURL = ListAlbum[0][0]	
-					if DBGONOFF:print "---> Appuie sur Cancel, choix du 1er item"
+					albumURL = False
+					SkipAlbum = True
+					if DBGONOFF:print "---> Appuyer sur Cancel, ignorons ce livre"
 				else:
 					albumURL = NewLink
 			else:
