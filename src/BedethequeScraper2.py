@@ -686,10 +686,6 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 	
 	if albumUrl and not 'revue' in serieUrl:
 		if DBGONOFF:print Trans(26), albumUrl
-	else:
-		if DBGONOFF:print Trans(26), Trans(25)
-
-	if albumUrl and not 'revue' in serieUrl:
 		if not parseAlbumInfo(book, albumUrl, num):
 			return False
 		return True
@@ -698,6 +694,7 @@ def SetAlbumInformation(book, serieUrl, serie, num):
 		return albumUrl
 
 	else:
+		if DBGONOFF:print Trans(26), Trans(25)
 		if DBGONOFF:print Trans(27) + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo.' + dlgAltNumber) + "\n"
 		log_BD("   [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo.' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(28), 1)
 		return False
