@@ -1007,7 +1007,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 		info = albumUrl
 		tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumUrl, re.IGNORECASE | re.DOTALL)
 		t = if_else(tome.group(1), tome.group(1), tome.group(2)) if tome else ""
-		nameRegex = re.compile(r'class="couv">.+?<img.+?src="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--.+?class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
+		nameRegex = re.compile(r'class="couv">.+?href="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--.+?class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
 		for albumPick in nameRegex.finditer(albumUrl):	
 			couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', albumPick.group(1)) if albumPick.group(1) else "" #get higher resolution image
 			title = checkWebChar(albumPick.group(4).strip())
