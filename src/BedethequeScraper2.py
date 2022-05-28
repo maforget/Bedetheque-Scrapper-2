@@ -97,6 +97,7 @@ TIMEPOPUP = "30"
 PadNumber = "0"
 Serie_Resume = ""
 ONESHOTFORMAT = False
+bStopit = False
 
 ########################################
 # Nombres auteurs
@@ -342,7 +343,6 @@ def WorkerThread(books):
 		log_BD(Trans(7) + str(nOrigBooks) +  Trans(8), "\n============ " + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + " ===========", 0)
 
 		i = 0
-		bStopit = False
 		
 		if DBGONOFF:print chr(10) + "=" * 25 + "- Begin! -" + "=" * 25 + chr(10)
 
@@ -3324,7 +3324,7 @@ def ConfigureBD2(self):
 #@Key QuickScrapeBD2
 def QuickScrapeBD2(books, book = "", cLink = False):
 
-	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, dlgName, dlgNumber
+	global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, dlgName, dlgNumber, bStopit
 	global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,	CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop
 	global CBLanguage,	CBEditor, CBFormat,	CBColorist,	CBPenciller, CBWriter, CBTitle, CBSeries, LinkBD2, Numero
 	global AlbumNumNum, dlgNumber, dlgName, nRenamed, nIgnored, dlgAltNumber, ARTICLES, SUBPATT, COUNTOF, Shadow1, Shadow2, RenameSeries, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, PadNumber
