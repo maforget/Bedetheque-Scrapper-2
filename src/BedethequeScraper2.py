@@ -1648,6 +1648,7 @@ class ProgressBarDialog(Form):
 	def __init__(self, nMax):
 		
 		global aWord, bStopit
+		bStopit = False
 		self.Text = Trans(62)
 		#self.Size = Size(350, 150)
 		self.Size = Size(350, 600)
