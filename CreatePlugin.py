@@ -2,7 +2,7 @@ import os
 import zipfile
 
 def zip_files(list_files, out_name):    
-    with zipfile.ZipFile(out_name, "w") as archive:
+    with zipfile.ZipFile(out_name, "w", zipfile.ZIP_DEFLATED) as archive:
         for filename in list_files:
             name = os.path.basename(filename)
             archive.write(filename, name)
