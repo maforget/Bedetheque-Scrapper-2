@@ -196,7 +196,7 @@ ALBUM_COLOR_MULTI_AUTHOR = re.compile(ALBUM_COLOR_MULTI_AUTHOR_PATTERN, re.IGNOR
 ALBUM_COLOR_MULTI_AUTHOR_NAMES_PATTERN = r'\">(.*?)</'
 ALBUM_COLOR_MULTI_AUTHOR_NAMES = re.compile(ALBUM_COLOR_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
-ALBUM_COLOR_PATTERN = r'<label>Couleurs\s:</label>.*?>(.*?)<'
+ALBUM_COLOR_PATTERN = r'<label>Couleurs\s:</label>.*?">(.*?)<'
 ALBUM_COLOR = re.compile(ALBUM_COLOR_PATTERN,  re.IGNORECASE | re.MULTILINE | re.DOTALL)	
 
 ALBUM_COUVERT_MULTI_AUTHOR_PATTERN = r'<label>couverture\s:</label>.*?(?=\">)(.*?)<label>[^\&]'
