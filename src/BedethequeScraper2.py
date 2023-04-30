@@ -1006,13 +1006,15 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 		picked = False
 		info = albumUrl
 		tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumUrl, re.IGNORECASE | re.DOTALL)
+		#if no tome take alt number from top of the page
 		t = if_else(tome.group(1), tome.group(1), tome.group(2)) if tome else ""
+		#nameRegex groups (inside editions): group#1 => cover, group#2 => tome, group#3 => alt, group#4 => titre, group#5 => info (artists table), group#6 => url anchor
 		nameRegex = re.compile(r'class="couv">.+?href="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--.+?class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
 		for albumPick in nameRegex.finditer(albumUrl):	
 			couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', albumPick.group(1)) if albumPick.group(1) else "" #get higher resolution image
 			title = checkWebChar(albumPick.group(4).strip())
 			nfo = albumPick.group(5)
-			a = albumPick.group(3).strip() if isnumeric(dlgNumber) else re.sub(t,'',albumPick.group(3).strip()).strip()
+			# a is altNumber
 			a = albumPick.group(3).strip() if isnumeric(dlgNumber) else checkWebChar(re.sub(t,'',albumPick.group(3).strip()).strip())
 			url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
 			albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
@@ -1026,14 +1028,18 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			if DBGONOFF:print "---> Seulement 1 item dans la liste"	
 		elif len(ListAlbum) > 1:			
 			for f in ListAlbum:
+				#iterate over editions and if AltNumber matches auto choose it.
 				if dlgAltNumber != "" and f[1].A == dlgAltNumber:
 					pickedVar = f[1]
 					picked = True
 					break
 			
+			#set that the already picked edition from above wasn't chosen when the option to choose is enabled in config, so we will have the chance to pick it later.
 			if PopUpEditionForm:
 				picked = False
 			
+			#show the choose editions form when the option is enabled and the edition wasn't already chosen earlier based on the AltNumber from the book.
+			#NewLink (first element from the ListAlbum, in this case the var "a") & NewSeries (object AlbumInfo) are global value that are set when ok is clicked on the form
 			if PopUpEditionForm and (CBStop == True or CBStop == "2") and not picked:
 				NewLink = ""
 				NewSeries = ""	
