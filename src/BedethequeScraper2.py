@@ -1231,7 +1231,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 				nameRegex = ALBUM_EDITEUR.search(info, 0)
 				if nameRegex:
 					#editeur = parseNames(nameRegex.group(1).decode('utf-8'))
-					editeur = parseNames(nameRegex.group(1))
+					editeur = parseNames(nameRegex.group(1)).strip()
 					book.Publisher = editeur
 				else:
 					book.Publisher = ""
