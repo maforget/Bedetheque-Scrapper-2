@@ -1007,7 +1007,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 		info = albumUrl
 		tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumUrl, re.IGNORECASE | re.DOTALL)
 		#if no tome take alt number from top of the page
-		t = if_else(tome.group(1), tome.group(1), tome.group(2)) if tome else ""
+		t = if_else(tome.group(1), tome.group(1), checkWebChar(tome.group(2).strip())) if tome else ""
 		#nameRegex groups (inside editions): group#1 => cover, group#2 => tome, group#3 => alt, group#4 => titre, group#5 => info (artists table), group#6 => url anchor
 		nameRegex = re.compile(r'class="couv">.+?href="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<!--.+?class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
 		for albumPick in nameRegex.finditer(albumUrl):	
@@ -1015,7 +1015,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			title = checkWebChar(albumPick.group(4).strip())
 			nfo = albumPick.group(5)
 			# a is altNumber
-			a = albumPick.group(3).strip() if isnumeric(dlgNumber) else checkWebChar(re.sub(t,'',albumPick.group(3).strip()).strip())
+			a = checkWebChar(albumPick.group(3).strip() if isnumeric(dlgNumber) else re.sub(t,'',albumPick.group(3).strip()).strip())
 			url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
 			albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
 			if DBGONOFF:print "Tome)", t, "Alt)", a, "Title)", title
