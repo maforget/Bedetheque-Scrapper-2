@@ -1101,7 +1101,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 			if CBTitle:
 				NewTitle = ""		
 				try:
-					NewTitle = titlize(strip_tags(pickedVar.Title))
+					NewTitle = titlize(pickedVar.Title)
 				except:
 					NewTitle = pickedVar.Title
 				
