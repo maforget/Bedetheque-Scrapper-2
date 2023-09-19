@@ -1,0 +1,50 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Release
+
+# Controls when the workflow will run
+on:    
+  workflow_dispatch:
+      inputs:
+        version:
+          description: 'Version'
+          required: true
+          type: string
+          default: 'X.Y{.Z}'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v3
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      # Runs a single command using the runners shell
+      - name: Run Python script
+        id: get_filepath
+        run: |
+          echo "file_path=$(python CreatePlugin.py)" >> $GITHUB_OUTPUT
+          # echo "::set-output name=file_path::$(python CreatePlugin.py)"
+          
+      - name: Update Nightly Release
+        uses: ncipollo/release-action@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: ${{ steps.get_filepath.outputs.file_path }}
+          allowUpdates: false
+          artifactErrorsFailBuild: true
+          draft: true
+          prerelease: false
+          commit: ${{ github.ref_name }}
+          tag: 'v${{ github.event.inputs.version }}'
