@@ -1415,7 +1415,7 @@ def parseNames(extractedNames):
 			names = ''
 		names = re.sub(',&nbsp;,', r', ', names)
 
-	return checkWebChar(names[1:len(names)]).strip(",")
+	return checkWebChar(names[1:len(names)]).strip().strip(",")
 
 def _read_url(url, bSingle):
 
