@@ -35,7 +35,15 @@ jobs:
         id: get_filepath
         run: |
           echo "file_path=$(python CreatePlugin.py)" >> $GITHUB_OUTPUT
-          # echo "::set-output name=file_path::$(python CreatePlugin.py)"
+
+      - name: Zipping files
+        uses: montudor/action-zip@v1.0.0
+        with:
+          args: zip -q -j -r dir.zip src
+
+      - name: Rename to crplugin
+        run: |
+          mv dir.zip '${{ steps.get_filepath.outputs.file_path }}'
           
       - name: Update Nightly Release
         uses: ncipollo/release-action@main
