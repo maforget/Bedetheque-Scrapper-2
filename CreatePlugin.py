@@ -81,4 +81,4 @@ def get_plugin_name():
 if __name__ == '__main__':
     name = get_plugin_name()
     files = get_package_files()
-    zip_files(files, name)
+    #zip_files(files, name)
