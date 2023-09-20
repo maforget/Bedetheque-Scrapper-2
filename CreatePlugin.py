@@ -50,7 +50,9 @@ def get_package_files():
     path = find_path("Package.ini")
     package_dir = os.path.dirname(path)
     files = enumerate_files(package_dir, topOnly=True)
+    DebugPrint(files, "Enumerated")
     ignore = get_ignore(package_dir)
+    DebugPrint(ignore, "Ignoring")
     package_files = []
     
     for f in files:
@@ -78,7 +80,12 @@ def get_plugin_name():
     print(out_name)
     return out_name
 
+def DebugPrint(list, action):
+    for name in list:
+        print(f"{action} file: \"{name}\"")
+
 if __name__ == '__main__':
     name = get_plugin_name()
     files = get_package_files()
     zip_files(files, name)
+    DebugPrint(files, "Zipped")
