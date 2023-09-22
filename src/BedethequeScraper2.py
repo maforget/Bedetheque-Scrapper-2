@@ -3241,7 +3241,7 @@ class SeriesForm(Form):
     def fillList(self, ):
         self._ListSeries.Items.Clear()
         del self.list_filtered_index[:]
-        filter = self._Filter.Text.lower()
+        filter = self._Filter.Text.strip().lower()
         for x in range(len(self.List)):            
             if self.List[x]:
                 title = ""        
