@@ -3250,9 +3250,10 @@ class SeriesForm(Form):
                 else: 
                     title = self.List[x][1]
                 
-                if filter and filter not in title.lower():
+                display = "(" + self.List[x][2] + ") - " + title + if_else(self.List[x][0], "   (", "") + self.List[x][0] + if_else(self.List[x][0], ")", "")
+                if filter and filter not in display.lower():
                     continue
-                self._ListSeries.Items.Add("(" + self.List[x][2] + ") - " + title + if_else(self.List[x][0], "   (", "") + self.List[x][0] + if_else(self.List[x][0], ")", ""))
+                self._ListSeries.Items.Add(display)
                 self.list_filtered_index.append(x)
                 # self._ListSeries.Items.Add("(" + self.List[x][2] + ")- " + self.List[x][1] + if_else(self.List[x][0], "   (", "") + self.List[x][0] + if_else(self.List[x][0], ")", ""))
                 #self._ListSeries.Items.Add("(" + ListSeries[x][2] + ")- " + ListSeries[x][1].decode('utf-8') + if_else(ListSeries[x][0], "   (", "") + ListSeries[x][0] + if_else(ListSeries[x][0], ")", ""))
