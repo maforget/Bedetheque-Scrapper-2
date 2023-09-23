@@ -3141,6 +3141,7 @@ class SeriesForm(Form):
         self._ListSeries = System.Windows.Forms.ListBox()
         self._CancelButton = System.Windows.Forms.Button()
         self._OKButton = System.Windows.Forms.Button()
+        self._ClearButton = System.Windows.Forms.Button()
         #self._SearchSeries = System.Windows.Forms.TextBox()
         #self._labelSearch = System.Windows.Forms.Label()
         if CBStop == "2":
@@ -3163,7 +3164,7 @@ class SeriesForm(Form):
         self._ListSeries.Name = "ListSeries"
         self._ListSeries.Size = System.Drawing.Size(374, 258)
         self._ListSeries.Sorted = True
-        self._ListSeries.TabIndex = 1
+        self._ListSeries.TabIndex = 3
         self._ListSeries.DoubleClick += self.DoubleClick        
         # 
         # CancelButton
@@ -3175,7 +3176,7 @@ class SeriesForm(Form):
         self._CancelButton.Location = System.Drawing.Point(301, 290)
         self._CancelButton.Name = "CancelButton"
         self._CancelButton.Size = System.Drawing.Size(75, 30)
-        self._CancelButton.TabIndex = 2
+        self._CancelButton.TabIndex = 4
         self._CancelButton.Text = Trans(93)
         self._CancelButton.UseVisualStyleBackColor = False
         self._CancelButton.DialogResult = DialogResult.Cancel
@@ -3190,27 +3191,40 @@ class SeriesForm(Form):
         self._OKButton.Location = System.Drawing.Point(8, 290)
         self._OKButton.Name = "OKButton"
         self._OKButton.Size = System.Drawing.Size(75, 30)
-        self._OKButton.TabIndex = 3
+        self._OKButton.TabIndex = 5
         self._OKButton.Text = Trans(92)
         self._OKButton.UseVisualStyleBackColor = False
         self._OKButton.Click += self.button_Click
         self._OKButton.DialogResult = DialogResult.OK
         
         self._Filter = System.Windows.Forms.TextBox()
-        self._Filter.Location = System.Drawing.Point(8, 8)
+        self._Filter.Location = System.Drawing.Point(30, 8)
         self._Filter.Name = "Filter"
         self._Filter.Size = System.Drawing.Size(374, 20)
         self._Filter.TabIndex = 1
         self._Filter.Text = ""
         self._Filter.TextChanged += self.onTextChanged
         self._Filter.WordWrap = False
-            
+        # 
+        # ClearButton
+        # 
+        self._ClearButton.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left
+        self._ClearButton.Font = System.Drawing.Font("Microsoft Sans Serif", 8, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
+        self._ClearButton.Location = System.Drawing.Point(8, 8)
+        self._ClearButton.Name = "ClearButton"
+        self._ClearButton.Size = System.Drawing.Size(20, 20)
+        self._ClearButton.TabIndex = 2
+        self._ClearButton.Text = "X"
+        self._ClearButton.UseVisualStyleBackColor = True
+        self._ClearButton.Click += self.ClearButton_Click
+        
         self.ClientSize = System.Drawing.Size(390, 325)        
         self.MinimumSize = System.Drawing.Size(180, 180)
         self.Controls.Add(self._Filter)
         self.Controls.Add(self._ListSeries)
         self.Controls.Add(self._OKButton)
         self.Controls.Add(self._CancelButton)
+        self.Controls.Add(self._ClearButton)
         #self.Controls.Add(self._timer1)
         self.MaximizeBox = False
         self.MinimizeBox = False
@@ -3271,6 +3285,11 @@ class SeriesForm(Form):
             NewLink = self.List[sel][0]
             NewSeries = self.List[sel][1]
             self.Hide()
+
+    def ClearButton_Click(self, sender, e):
+        self._Filter.Text = ""
+        self.fillList()
+        self._Filter.Focus()
 
     def CloseForm(self, sender, e):
 
