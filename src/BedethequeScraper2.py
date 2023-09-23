@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.15 Beta1"
+VERSION = "5.16"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
