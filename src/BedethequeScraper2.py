@@ -771,11 +771,11 @@ def parseSerieInfo(book, serieUrl, lDirect):
             REVUE_LIST_ALL_ALT = re.findall(r'<a name="(.+?)">.+?class="titre".{1,100}?#(.+?)\..+?', request, re.IGNORECASE | re.DOTALL | re.MULTILINE)
             for revueNum in REVUE_LIST_ALL_ALT:
                 full_url = serieUrl + "#" + revueNum[0] if "www.bedetheque.com" in serieUrl.lower() else "https://www.bedetheque.com/" + serieUrl + "#" + revueNum[0]
-                ListAlbum.append([full_url, "Num: " + revueNum[1].strip(), str(i).zfill(3)])
+                ListAlbum.append([full_url, "Num: " + revueNum[1].strip(), str(i).zfill(5)])
                 i = i + 1
         else:
             for albumPick in REVUE_LIST_ALL:
-                ListAlbum.append([albumPick[0], "Num: " + albumPick[1].strip(), str(i).zfill(3)])
+                ListAlbum.append([albumPick[0], "Num: " + albumPick[1].strip(), str(i).zfill(5)])
                 i = i + 1
 
         matchedAlbum = next((x for x in ListAlbum if x[1] == dlgNumber), None) #find num in list
