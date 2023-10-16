@@ -777,7 +777,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
             for albumPick in REVUE_LIST_ALL:
                 ListAlbum.append([albumPick[0], "Num: " + albumPick[1].strip(), str(i).zfill(5)])
                 i = i + 1
-
+       
         matchedAlbum = next((x for x in ListAlbum if x[1] == "Num: " + dlgNumber), None) #find num in list
         if matchedAlbum is not None and not lDirect:
             albumURL = matchedAlbum[0]
@@ -1045,7 +1045,7 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
                         if DBGONOFF:print Trans(9), titlize(book.Series)
             except:
                 pass
-            
+        
         #Title
         if CBTitle:
             nameRegex = re.search(r'<h3 class="titre".+?</span>(.+?)</h3>', Entete, re.IGNORECASE | re.DOTALL | re.MULTILINE)
@@ -3720,9 +3720,9 @@ def QuickScrapeBD2(books, book = "", cLink = False):
                 # if fiche:    
                     # RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
                 RetVal = serieUrl
-                if "/serie-" in serieUrl:    
-                    serieUrl = serieUrl.lower().replace(".html", u'__10000.html') if "__10000.html" in serieUrl else serieUrl                   
-                RetVal = parseSerieInfo(MyBook, serieUrl, True)
+                if "/serie-" in serieUrl or 'revue-' in serieUrl: 
+                    serieUrl = serieUrl if "__10000.html" in serieUrl or 'revue-' in serieUrl else serieUrl.lower().replace(".html", u'__10000.html')                   
+                    RetVal = parseSerieInfo(MyBook, serieUrl, True)
                                                                                        
                 if RetVal and not 'revue-' in serieUrl:
                     if LinkBD2:                    
