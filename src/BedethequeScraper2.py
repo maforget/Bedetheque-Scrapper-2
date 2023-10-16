@@ -1038,6 +1038,13 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
             except:
                 pass
             
+        #Title
+        if CBTitle:
+            nameRegex = re.search(r'<h3 class="titre".+?</span>(.+?)</h3>', Entete, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+            if nameRegex: 
+                book.Title = titlize(nameRegex.group(1).strip())
+            if DBGONOFF:print Trans(29), book.Title
+                
         #genre
         if CBGenre:        
             book.Genre = "Revue"
