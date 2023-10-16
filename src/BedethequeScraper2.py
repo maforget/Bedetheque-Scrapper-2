@@ -270,7 +270,31 @@ ALBUM_QNUM = re.compile(ALBUM_QNUM_PATTERN, re.IGNORECASE)
 
 ALBUM_QTITLE_PATTERN = r'titre.*?%s<span.*?name\">(.*?)<'
 ########################################
+# Info Revues
+REVUE_LIST_PATTERN = r'<a\shref=\"https\:\/\/www.bedetheque.com\/revue-(.*?)\">.*?libelle\">(.*?)\r'
 
+REVUE_LIST_EXISTS_PATTERN = r'<h3>\d{1,3} revues trouvées</h3>'
+REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOTALL)
+
+REVUE_LIST_CHECK_PATTERN = r'<h1>Revues</h1>.*?La\srecherche\seffectu.*?\srenvoie\splus\sde\s.*?<h1>S.*?ries<'
+REVUE_LIST_CHECK = re.compile(REVUE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
+
+REVUE_CALC_PATTERN = r'<option\svalue=\"(.{1,160}?)\">%s</'
+
+REVUE_HEADER_PATTERN = r'class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.{1,600}?class="titre".{1,100}?#(%s)\..+?)<a name='
+REVUE_HEADER_PATTERN_ALT = r'<a name="%s">.+?class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.+?class="titre".{1,100}?#(.+?)\..+?)<a name='
+
+REVUE_RESUME_PATTERN = r'<em>Sommaire.*?</em>(.*?)</p'
+REVUE_RESUME = re.compile(REVUE_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+
+REVUE_PLANCHES_PATTERN = r'>Nb\sPages\s:\s??</label>(.*?)<'
+REVUE_PLANCHES = re.compile(REVUE_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+
+REVUE_DEPOT_PATTERN = r'<label>Parution\s:s??</label>(.*?)</'
+REVUE_DEPOT = re.compile(REVUE_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+
+REVUE_PERIOD_PATTERN = r'<label>P.riodicit.\s:\s??</label>(.*?)</'
+REVUE_PERIOD = re.compile(REVUE_PERIOD_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 def BD_start(books):
     
@@ -433,8 +457,9 @@ def WorkerThread(books):
                 
                 if serieUrl:
                     RetAlb = True
-                    LongSerie= serieUrl.lower().replace(".html", u'__10000.html')
-                    serieUrl = LongSerie            
+                    if not 'revue-' in serieUrl: 
+                        LongSerie= serieUrl.lower().replace(".html", u'__10000.html')
+                        serieUrl = LongSerie            
 
                     if AlbumNumNum:
                         if DBGONOFF:print Trans(11), albumNum + "]", if_else(dlgAltNumber == '', '', ' - AltNo.: ' + dlgAltNumber)
@@ -444,7 +469,7 @@ def WorkerThread(books):
                     RetAlb = SetAlbumInformation(book, serieUrl, dlgName, albumNum)
 
                     #SkipAlbum utlisez seulement lorsque l'on appuye sur Annuler dans la fenetre pour choisir l'album ParseSerieInfo
-                    if not SkipAlbum and not RetAlb and not 'revue' in serieUrl:                    
+                    if not SkipAlbum and not RetAlb and not 'revue-' in serieUrl:                    
                         # reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
                         RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
             
@@ -589,7 +614,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                     return ''
                                 
                 #SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)                
-                if SERIE_LIST_CHECK.search(request):
+                if SERIE_LIST_CHECK.search(request) or REVUE_LIST_CHECK.search(request):
                     Result = MessageBox.Show(ComicRack.MainWindow, Trans(114) + '[' + titlize(book.Series) + '] !', Trans(2), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
                     if DBGONOFF:print Trans(114) + '[' + titlize(book.Series) + '] !'
                     return ''
@@ -598,8 +623,13 @@ def SetSerieId(book, serie, num, nBooksIn):
                 RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
                 for seriepick in RegCompile.finditer(request):                        
                     ListSeries.append(["serie-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])                        
-                    i = i + 1                                            
-                    
+                    i = i + 1  
+                
+                RegCompile = re.compile(REVUE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
+                if REVUE_LIST_EXISTS.search(request):
+                    for seriepick in RegCompile.finditer(request):
+                        ListSeries.append(["revue-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])  
+                        i = i + 1
 
                 ListSeries.sort(key=operator.itemgetter(2))
 
@@ -607,7 +637,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                     if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
                     if DBGONOFF:print Trans(111) + (ListSeries[0][1])
                     log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                    log_BD(Trans(111), "[" + ListSeries[0][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\serie-" + ListSeries[0][0] + ")", 1)
+                    log_BD(Trans(111), "[" + ListSeries[0][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[0][0] + ")", 1)
                     RenameSeries = ListSeries[0][1]                    
                     return ListSeries[0][0]
 
@@ -625,7 +655,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                             if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
                             if DBGONOFF:print Trans(111) + (ListSeries[nItem][1])
                             log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                            log_BD(Trans(111), "[" + ListSeries[nItem][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\serie-" + ListSeries[nItem][0] + ")", 1)
+                            log_BD(Trans(111), "[" + ListSeries[nItem][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[nItem][0] + ")", 1)
                             RenameSeries = ListSeries[nItem][1]                    
                             return ListSeries[nItem][0]
                         # Pick a series
@@ -684,13 +714,13 @@ def SetAlbumInformation(book, serieUrl, serie, num):
         if DBGONOFF:print "Cancelled from SetAlbumInformation"
         return False
     
-    if albumUrl and not 'revue' in serieUrl:
+    if albumUrl and not 'revue-' in serieUrl:
         if DBGONOFF:print Trans(26), albumUrl
         if not parseAlbumInfo(book, albumUrl, num):
             return False
         return True
 
-    elif 'revue' in serieUrl:
+    elif 'revue-' in serieUrl:
         return albumUrl
 
     else:
@@ -731,196 +761,381 @@ def parseSerieInfo(book, serieUrl, lDirect):
         if DBGONOFF:print "Cancelled from parseSerieInfo after _read_url return"
         return False
 
-    SerieInfoRegex = SERIE_HEADER.search(request)
-    if SerieInfoRegex:
+    if 'revue-' in serieUrl:
+        REVUE_CALC = re.compile(REVUE_CALC_PATTERN % dlgNumber, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+        nameRegex = REVUE_CALC.search(request)
+        if nameRegex and not lDirect:
+            albumURL = nameRegex.group(1)
+        elif lDirect and '#' in serieUrl:
+            albumURL = serieUrl
+        else:
+            i = 1
+            ListAlbum = list()
+            REVUE_LIST = re.compile(r"<option\svalue=\"(https://www\.bedetheque\.com/revue-[^>]+?)\">(.{1,5}?)</option>", re.IGNORECASE | re.DOTALL | re.MULTILINE )
+            for albumPick in REVUE_LIST.finditer(request):
+                ListAlbum.append([albumPick.group(1), "Num: " + albumPick.group(2).strip(), str(i).zfill(3)])
+                i = i + 1
+            
+            albumURL = AlbumChooser(ListAlbum)
+            
+        if not albumURL:  
+            return ""
 
-        #Entete = SerieInfoRegex.group(1)
-        Entete = request
+        request = _read_url(albumURL, False)
+        
+        ID = albumURL.split('#')[1] if '#' in albumURL else '' 
+        if ID:
+            REVUE_HEADER = re.compile(REVUE_HEADER_PATTERN_ALT % ID, re.IGNORECASE | re.MULTILINE | re.DOTALL)   
+        else:
+            REVUE_HEADER = re.compile(REVUE_HEADER_PATTERN % dlgNumber, re.IGNORECASE | re.MULTILINE | re.DOTALL) 
+            
+        SerieInfoRegex = REVUE_HEADER.search(request)
+        if SerieInfoRegex:
+            RetVal = parseRevueInfo(book, SerieInfoRegex, albumURL)
+            return RetVal
+        else:
+            return ""
+    
+    else:
+        SerieInfoRegex = SERIE_HEADER.search(request)
+        if SerieInfoRegex:
+
+            #Entete = SerieInfoRegex.group(1)
+            Entete = request
+        
+            if RenameSeries:
+                if CBSeries:
+                    book.Series = titlize(RenameSeries)
+        
+            #Series if Quickscrape and empty name
+            qserie = ""
+            if lDirect and not book.Series:
+                nameRegex = SERIE_QSERIE.search(Entete)
+                if nameRegex:
+                    qserie = checkWebChar(nameRegex.group(1).strip())            
+                    #qserie = checkWebChar(nameRegex.group(1).decode('utf-8'))        
+                    if CBSeries:    
+                        book.Series = titlize(qserie)
+                        if DBGONOFF:print Trans(9), qserie
+                else:
+                    albumURL = False
+                    return
+
+            #genre
+            if CBGenre:
+                nameRegex = SERIE_GENRE.search(Entete)
+                if nameRegex:
+                    genre = checkWebChar(nameRegex.group(1).strip())
+                    #genre = checkWebChar(nameRegex.group('genre').decode('utf-8'))
+                else:
+                    genre = ""
+                if genre != "":
+                    book.Genre = genre
+                elif genre == "" and 'revue-' in serieUrl:
+                    book.Genre = "Revue"                                                                
+                if DBGONOFF:print Trans(51), book.Genre
+
+            #Resume
+            if CBSynopsys:                                
+                nameRegex = SERIE_RESUME.search(checkWebChar(Entete.replace("\r\n","")), 0)
+                if nameRegex:
+                    resume = strip_tags(nameRegex.group(1)).strip()
+                    #resume = strip_tags(nameRegex.group('resume')).decode('utf-8').strip()
+                else:
+                    resume = ""
+            
+                resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
+                Serie_Resume = (checkWebChar(resume)).strip()
+                cResume = if_else(resume, Trans(52), Trans(53))
+                if DBGONOFF:print cResume                    
+
+            #fini
+            if CBStatus:
+                SerieState = ""
+                nameRegex = SERIE_STATUS.search(Entete)
+                if nameRegex:
+                    fin = checkWebChar(nameRegex.group(1).strip())
+                    log_BD(fin, Trans(25), 1)
+                    #fin = checkWebChar(nameRegex.group('fin').decode('utf-8'))
+                else:
+                    fin = ""
+
+    #modif kiwi
+                if ("finie" in fin) or (dlgNumber == "One Shot"):
+                    book.SeriesComplete = YesNo.Yes
+                    SerieState = Trans(54)
+                elif ("One shot" in fin) and (dlgNumber != "One Shot"):
+                    book.SeriesComplete = YesNo.Yes
+                    if ONESHOTFORMAT and not CBFormat: book.Format = "One Shot"
+                    SerieState = Trans(54)
+                elif ("cours" in fin):
+                    book.SeriesComplete = YesNo.No
+                    SerieState = Trans(55)
+                else:
+                    book.SeriesComplete = YesNo.Unknown
+                    SerieState = Trans(56)
+
+                if DBGONOFF:print Trans(57) + SerieState + if_else(dlgNumber == "One Shot", " (One Shot)", "")
+
+            # Language
+            if CBLanguage:
+                nameRegex = SERIE_LANGUE.search(Entete)
+                dLang = {"Fr": "fr", "Al": "de", "An": "en", "It":"it", "Es":"es", "Ne":"du", "Po":"pt", "Ja":"ja"}
+                if nameRegex:
+                    langue = nameRegex.group(1).strip()
+                    if DBGONOFF:print Trans(36), langue[:2]
+                    book.LanguageISO = dLang[langue[:2]]    
+            
+            #Default Values
+            if not CBDefault:
+                book.EnableProposed = YesNo.No
+                if DBGONOFF:print Trans(136), "No"
+
+            SerieInfoRegex = SERIE_HEADER2.search(request)
+            if SerieInfoRegex:
+                Entete2 = SerieInfoRegex.group(1)
+
+                #Notes-Rating
+                #if CBRating:
+                #    nameRegex = SERIE_NOTE.search(Entete)
+                #    if nameRegex:
+                #        note = nameRegex.group('note')
+                #    else:
+                #        note = "0.0"
+
+                #    book.CommunityRating = float(note) / 2
+                #    if DBGONOFF:print Trans(58) + str(float(note) / 2)
+            
+                # Number of...
+                if CBCount and not lDirect:            
+                    
+                    count = 0
+                    cCountText = ""
+                    if not COUNTOF:                
+                        nameRegex = SERIE_COUNT.search(Entete2)
+                        if nameRegex and AlbumNumNum:
+                            count = checkWebChar(nameRegex.group(1))
+                            book.Count = int(count)
+                            cCountText = str(int(count))                
+                        else:                    
+                            book.Count = -1
+                            cCountText = "---"
+                    elif COUNTFINIE and book.SeriesComplete == YesNo.No:                
+                        book.Count = -1
+                        cCountText = "---"
+                    else:                
+                        nameRegex = SERIE_COUNT_REAL.search(request)                
+                        if nameRegex:                            
+                            for numof in SERIE_COUNTOF.finditer(nameRegex.group(1)):                        
+                                if isnumeric(numof.group(1)) and int(numof.group(1)) > count:
+                                    count = int(numof.group(1))
+                            if count > 0 and AlbumNumNum:                        
+                                book.Count = int(count)    
+                                cCountText = str(int(count))
+                        else:                    
+                            book.Count = -1
+                            cCountText = "---"
+                
+                    if DBGONOFF:print Trans(59) + if_else(dlgNumber == "One Shot", "1", cCountText)
+        
+            Regex = re.compile(r'<label>([^<]*?)<span\sclass=\"numa\">(.*?)</span.*?<a\shref=\"(.*?)".*?title=.+?\">(.+?)</', re.IGNORECASE | re.DOTALL)
+                        
+            i = 0
+            ListAlbum, ListAlbumAll = list(), list()
+            for r in Regex.finditer(request):
+                n, a, url, title = r.group(1), r.group(2), r.group(3), r.group(4)
+                num = if_else(n,n, if_else(a, a, ""))
+                ListAlbumAll.append([url, num + ". " + title, str(i).zfill(3)])
+                if dlgNumber != "" and (num == dlgNumber) and not lDirect:
+                    ListAlbum.append([url, num + ". " + title, str(i).zfill(3)])
+                i = i + 1
+        
+            if len(ListAlbum) == 0: 
+                ListAlbum = ListAlbumAll
+        
+            albumURL = AlbumChooser(ListAlbum)
+            if not albumURL:
+                #Rien trouvé il ce peux qu'il n'est pas de liste sur le coté, surement 1 seul item
+                Regex = re.compile(r'class="titre"\shref="(.+?)".+?<span class="numa">.*?</span>.+?', re.IGNORECASE | re.DOTALL)
+                r = Regex.search(request)
+                if r:
+                    albumURL = r.group(1)
+                    if DBGONOFF:print "---> Numéro n'existe pas dans la liste, choix du 1er item"
+                else:
+                    return ""
+
+    return albumURL
+
+"""
+ListAlbum elements: 
+    1st is the URL
+    2nd is the title
+"""
+def AlbumChooser(ListAlbum):
+    
+    global CBStop, dlgNumber, NewLink, TimerExpired
+    
+    albumURL = ""
+    if DBGONOFF:print "Nbr. d'item dans la Liste Album est de: " + str(len(ListAlbum))
+    if len(ListAlbum) > 1:
+        if (CBStop == True or CBStop == "2"):
+            NewLink = ""
+            NewSeries = ""                                    
+            pickAnAlbum = SeriesForm(dlgNumber, ListAlbum, FormType.ALBUM)
+            result = pickAnAlbum.ShowDialog()
+                
+            if result == DialogResult.Cancel:
+                if TimerExpired:
+                    albumURL = ListAlbum[0][0]
+                    if DBGONOFF:print "---> Le temps est expiré, choix du 1er item"
+                else:
+                    albumURL = False
+                    SkipAlbum = True
+                    if DBGONOFF:print "---> Appuyer sur Cancel, ignorons ce livre"
+            else:
+                albumURL = NewLink
+        else:
+            albumURL = ListAlbum[0][0]
+            if DBGONOFF:print "---> Plus d'un item mais l'option pause scrape est désactivé, choix du 1er item"
+    elif len(ListAlbum) == 1:
+        albumURL = ListAlbum[0][0]
+        if DBGONOFF:print "---> Seulement 1 item dans la liste"    
+        
+    return albumURL
+       
+def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
+
+    global aWord, RenameSeries, dlgNumber, dlgAltNumber, CBelid
+    
+    if DBGONOFF:print "=" * 60
+    if DBGONOFF:print "parseRevueInfo", "a)", serieUrl, "b)", Numero
+    if DBGONOFF:print "=" * 60
+    try:
+        
+        Entete = SerieInfoRegex.group(1)
+        Numero = SerieInfoRegex.group(3) if not Numero else Numero
         
         if RenameSeries:
             if CBSeries:
                 book.Series = titlize(RenameSeries)
-        
-        #Series if Quickscrape and empty name
-        qserie = ""
-        if lDirect and not book.Series:
-            nameRegex = SERIE_QSERIE.search(Entete)
-            if nameRegex:
-                qserie = checkWebChar(nameRegex.group(1).strip())            
-                #qserie = checkWebChar(nameRegex.group(1).decode('utf-8'))        
-                if CBSeries:    
-                    book.Series = titlize(qserie)
-                    if DBGONOFF:print Trans(9), qserie
-            else:
-                albumURL = False
-                return
+        else:
+            if CBSeries:
+                book.Series = titlize(book.Series)
 
+        if Numero:
+            try:
+                book.Number = Numero
+                if DBGONOFF:print Trans(115), book.Number
+            except:
+                book.Number = ""
+            
+        if serie:
+            try:                  
+                if serie.group(1):
+                    if CBSeries:
+                        book.Series = titlize(serie.group(1))
+                        if DBGONOFF:print Trans(9), titlize(book.Series)
+            except:
+                pass
+            
         #genre
-        if CBGenre:
-            nameRegex = SERIE_GENRE.search(Entete)
-            if nameRegex:
-                genre = checkWebChar(nameRegex.group(1).strip())
-                #genre = checkWebChar(nameRegex.group('genre').decode('utf-8'))
-            else:
-                genre = ""
-            if genre != "":
-                book.Genre = genre
-            elif genre == "" and 'revue' in serieUrl:
-                book.Genre = "Revue"                                                                
+        if CBGenre:        
+            book.Genre = "Revue"
             if DBGONOFF:print Trans(51), book.Genre
 
         #Resume
-        if CBSynopsys:                                
-            nameRegex = SERIE_RESUME.search(checkWebChar(Entete.replace("\r\n","")), 0)
+        if CBSynopsys:
+            nameRegex = REVUE_RESUME.search(Entete)
             if nameRegex:
+                #resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
                 resume = strip_tags(nameRegex.group(1)).strip()
-                #resume = strip_tags(nameRegex.group('resume')).decode('utf-8').strip()
             else:
                 resume = ""
-            
-            resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
-            Serie_Resume = (checkWebChar(resume)).strip()
+            book.Summary = (checkWebChar(resume)).strip()
             cResume = if_else(resume, Trans(52), Trans(53))
-            if DBGONOFF:print cResume                    
-
-        #fini
-        if CBStatus:
-            SerieState = ""
-            nameRegex = SERIE_STATUS.search(Entete)
+            if DBGONOFF:print cResume
+        
+        #Notes-Rating
+        if CBRating:
+            nameRegex = SERIE_NOTE.search(Entete)
             if nameRegex:
-                fin = checkWebChar(nameRegex.group(1).strip())
-                log_BD(fin, Trans(25), 1)
-                #fin = checkWebChar(nameRegex.group('fin').decode('utf-8'))
+                note = nameRegex.group('note')
             else:
-                fin = ""
+                note = "0.0"
 
-#modif kiwi
-            if ("finie" in fin) or (dlgNumber == "One Shot"):
-                book.SeriesComplete = YesNo.Yes
-                SerieState = Trans(54)
-            elif ("One shot" in fin) and (dlgNumber != "One Shot"):
-                book.SeriesComplete = YesNo.Yes
-                if ONESHOTFORMAT and not CBFormat: book.Format = "One Shot"
-                SerieState = Trans(54)
-            elif ("cours" in fin):
-                book.SeriesComplete = YesNo.No
-                SerieState = Trans(55)
-            else:
-                book.SeriesComplete = YesNo.Unknown
-                SerieState = Trans(56)
-
-            if DBGONOFF:print Trans(57) + SerieState + if_else(dlgNumber == "One Shot", " (One Shot)", "")
-
-        # Language
-        if CBLanguage:
-            nameRegex = SERIE_LANGUE.search(Entete)
-            dLang = {"Fr": "fr", "Al": "de", "An": "en", "It":"it", "Es":"es", "Ne":"du", "Po":"pt", "Ja":"ja"}
+            book.CommunityRating = float(note)
+            if DBGONOFF:print Trans(58) + str(float(note))
+    
+        #Couverture
+        # Cover Image only for fileless
+        if CBCover and not book.FilePath:
+            CoverImg = SerieInfoRegex.group(2)
+            request = HttpWebRequest.Create(CoverImg)
+            response = request.GetResponse()
+            response_stream = response.GetResponseStream()
+            retval = Image.FromStream(response_stream)
+            ComicRack.App.SetCustomBookThumbnail(book, retval)
+            if DBGONOFF:print Trans(105), CoverImg
+    
+        #Parution
+        if CBPrinted:
+            #REVUE_DEPOT = re.compile(REVUE_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+            nameRegex = REVUE_DEPOT.search(Entete, 0)
             if nameRegex:
-                langue = nameRegex.group(1).strip()
-                if DBGONOFF:print Trans(36), langue[:2]
-                book.LanguageISO = dLang[langue[:2]]    
-            
-        #Default Values
-        if not CBDefault:
-            book.EnableProposed = YesNo.No
-            if DBGONOFF:print Trans(136), "No"
-
-        SerieInfoRegex = SERIE_HEADER2.search(request)
-        if SerieInfoRegex:
-            Entete2 = SerieInfoRegex.group(1)
-
-            #Notes-Rating
-            #if CBRating:
-            #    nameRegex = SERIE_NOTE.search(Entete)
-            #    if nameRegex:
-            #        note = nameRegex.group('note')
-            #    else:
-            #        note = "0.0"
-
-            #    book.CommunityRating = float(note) / 2
-            #    if DBGONOFF:print Trans(58) + str(float(note) / 2)
-            
-            # Number of...
-            if CBCount and not lDirect:            
-                    
-                count = 0
-                cCountText = ""
-                if not COUNTOF:                
-                    nameRegex = SERIE_COUNT.search(Entete2)
-                    if nameRegex and AlbumNumNum:
-                        count = checkWebChar(nameRegex.group(1))
-                        book.Count = int(count)
-                        cCountText = str(int(count))                
-                    else:                    
-                        book.Count = -1
-                        cCountText = "---"
-                elif COUNTFINIE and book.SeriesComplete == YesNo.No:                
-                    book.Count = -1
-                    cCountText = "---"
-                else:                
-                    nameRegex = SERIE_COUNT_REAL.search(request)                
-                    if nameRegex:                            
-                        for numof in SERIE_COUNTOF.finditer(nameRegex.group(1)):                        
-                            if isnumeric(numof.group(1)) and int(numof.group(1)) > count:
-                                count = int(numof.group(1))
-                        if count > 0 and AlbumNumNum:                        
-                            book.Count = int(count)    
-                            cCountText = str(int(count))
-                    else:                    
-                        book.Count = -1
-                        cCountText = "---"
-                
-                if DBGONOFF:print Trans(59) + if_else(dlgNumber == "One Shot", "1", cCountText)
-        
-        Regex = re.compile(r'<label>([^<]*?)<span\sclass=\"numa\">(.*?)</span.*?<a\shref=\"(.*?)".*?title=.+?\">(.+?)</', re.IGNORECASE | re.DOTALL)
-                        
-        i = 0
-        ListAlbum, ListAlbumAll = list(), list()
-        for r in Regex.finditer(request):
-            n, a, url, title = r.group(1), r.group(2), r.group(3), r.group(4)
-            num = if_else(n,n, if_else(a, a, ""))
-            ListAlbumAll.append([url, num + ". " + title, str(i).zfill(3)])
-            if dlgNumber != "" and (num == dlgNumber) and not lDirect:
-                ListAlbum.append([url, num + ". " + title, str(i).zfill(3)])
-            i = i + 1
-        
-        if len(ListAlbum) == 0: 
-            ListAlbum = ListAlbumAll
-        
-        if DBGONOFF:print "Nbr. d'item dans la Liste Album est de: " + str(len(ListAlbum))
-        if len(ListAlbum) > 1:
-            if (CBStop == True or CBStop == "2"):
-                NewLink = ""
-                NewSeries = ""                                    
-                pickAnAlbum = SeriesForm(dlgNumber, ListAlbum, FormType.ALBUM)
-                result = pickAnAlbum.ShowDialog()
-                
-                if result == DialogResult.Cancel:
-                    if TimerExpired:
-                        albumURL = ListAlbum[0][0]
-                        if DBGONOFF:print "---> Le temps est expiré, choix du 1er item"
-                    else:
-                        albumURL = False
-                        SkipAlbum = True
-                        if DBGONOFF:print "---> Appuyer sur Cancel, ignorons ce livre"
+                if nameRegex.group(1) != '-':
+                    book.Month = int(nameRegex.group(1)[3:5])
+                    book.Year = int(nameRegex.group(1)[6:10])
+                    if DBGONOFF:print Trans(34), str(book.Month) + "/" + str(book.Year)
                 else:
-                    albumURL = NewLink
+                    book.Month = -1
+                    book.Year = -1
             else:
-                albumURL = ListAlbum[0][0]
-                if DBGONOFF:print "---> Plus d'un item mais l'option pause scrape est désactivé, choix du 1er item"
-        elif len(ListAlbum) == 1:
-            albumURL = ListAlbum[0][0]
-            if DBGONOFF:print "---> Seulement 1 item dans la liste"    
-        else:
-            Regex = re.compile(r'class="titre"\shref="(.+?)".+?<span class="numa">.*?</span>.+?', re.IGNORECASE | re.DOTALL)#Rien trouvé il ce peux qu'il n'est pas de liste sur le coté, surement 1 seul item
-            r = Regex.search(request)
-            if r:
-                albumURL = r.group(1)
-                if DBGONOFF:print "---> Numéro n'existe pas dans la liste, choix du 1er item"
+                book.Month = -1
+                book.Year = -1
+    
+        #Editeur
+        if CBEditor:
+            #ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
+            nameRegex = ALBUM_EDITEUR.search(Entete, 0)
+            if nameRegex:
+                editeur = parseNames(nameRegex.group(1))
+                #editeur = parseNames(nameRegex.group(1).decode('utf-8'))
+                book.Publisher = editeur
             else:
-                return False
+                book.Publisher = ""
+                    
+            if DBGONOFF:print Trans(35), book.Publisher
+        
+        # Planches            
+        if not book.FilePath:
+            #REVUE_PLANCHES = re.compile(REVUE_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
+            nameRegex = REVUE_PLANCHES.search(Entete, 0)                                                                
+            if nameRegex:
+                book.PageCount = int(nameRegex.group(1).strip())
+                if DBGONOFF:print Trans(122), int(nameRegex.group(1))
 
-    return albumURL
+        #Periodicité
+        if CBFormat:
+            #REVUE_PERIOD = re.compile(REVUE_PERIOD_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
+            nameRegex = REVUE_PERIOD.search(Entete, 0)                                                                
+            if nameRegex:
+                book.Format = nameRegex.group(1).strip()
+                if DBGONOFF:print Trans(131), nameRegex.group(1)
+
+        #Always set Language to french
+        if CBLanguage and not book.LanguageISO:
+            book.LanguageISO = "fr"
+
+        #web
+        if CBWeb == True and not CBRescrape:            
+            book.Web = serieUrl
+            if DBGONOFF:print Trans(123), book.Web
+                        
+        return True
+
+    except:
+
+        return False
 
 class AlbumInfo:
     def __init__ (self, n, a, title, info, couv, url):
@@ -930,7 +1145,7 @@ class AlbumInfo:
         self.Title = title
         self.Info = info    
         self.URL = url
-
+        
 def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
     global dlgAltNumber, aWord, RenameSeries, dlgName, dlgNumber, CBelid, NewLink, NewSeries, Serie_Resume, bStopit
@@ -3491,10 +3706,10 @@ def QuickScrapeBD2(books, book = "", cLink = False):
                     # RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
                 RetVal = serieUrl
                 if "/serie-" in serieUrl:    
-                    serieUrl = serieUrl.lower().replace(".html", u'__10000.html') if "__10000.html" in serieUrl else serieUrl
-                    RetVal = parseSerieInfo(MyBook, serieUrl, True)
-                                                                        
-                if RetVal:
+                    serieUrl = serieUrl.lower().replace(".html", u'__10000.html') if "__10000.html" in serieUrl else serieUrl                   
+                RetVal = parseSerieInfo(MyBook, serieUrl, True)
+                                                                                       
+                if RetVal and not 'revue-' in serieUrl:
                     if LinkBD2:                    
                         RetVal = parseAlbumInfo(MyBook, RetVal, dlgNumber, True)                                                            
 
