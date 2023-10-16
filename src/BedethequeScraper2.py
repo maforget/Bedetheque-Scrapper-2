@@ -778,7 +778,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
                 ListAlbum.append([albumPick[0], "Num: " + albumPick[1].strip(), str(i).zfill(5)])
                 i = i + 1
 
-        matchedAlbum = next((x for x in ListAlbum if x[1] == dlgNumber), None) #find num in list
+        matchedAlbum = next((x for x in ListAlbum if x[1] == "Num: " + dlgNumber), None) #find num in list
         if matchedAlbum is not None and not lDirect:
             albumURL = matchedAlbum[0]
         elif lDirect and '#' in serieUrl:
