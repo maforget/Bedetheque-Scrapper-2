@@ -98,6 +98,7 @@ PadNumber = "0"
 Serie_Resume = ""
 ONESHOTFORMAT = False
 bStopit = False
+AlwaysChooseSerie = False
 
 ########################################
 # Nombres auteurs
@@ -549,7 +550,7 @@ def WorkerThread(books):
 
 def SetSerieId(book, serie, num, nBooksIn):
 
-    global dlgName, dlgNameClean, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop, bStopit
+    global dlgName, dlgNameClean, dlgAltNumber, aWord, ListSeries, NewLink, NewSeries, RenameSeries, PickSeries, PickSeriesLink, serie_rech_prev, CBStop, bStopit, AlwaysChooseSerie
     
     if serie:
 #modif kiwi
@@ -561,7 +562,7 @@ def SetSerieId(book, serie, num, nBooksIn):
         return ""
 
     
-    urlN = "/bandes_dessinees_" + letter + ".html"
+    urlN = "/bandes_dessinees_" + letter + ".html"     
     
     RenameSeries = False
     
@@ -569,120 +570,120 @@ def SetSerieId(book, serie, num, nBooksIn):
 
         serieUrl = ''
 
+        if DBGONOFF:print "AlwaysChooseSerie: " + str(AlwaysChooseSerie)
+        if not AlwaysChooseSerie:
+            request = _read_url(urlN.encode('utf-8'), False)
+            
+            if bStopit:
+                if DBGONOFF:print "Cancelled from SetSerieId after letter page return"
+                return ''
+            
+            if request:
+                RegCompile = re.compile(SERIE_URL_PATTERN % checkRegExp(serie.strip()),  re.IGNORECASE)
+                nameRegex = RegCompile.search(request)
+                
+                if nameRegex:  
+                    
+                    serieUrl = nameRegex.group(1)
+                    if not ".html" in serieUrl:serieUrl += ".html"
+                    
+                    if DBGONOFF:print Trans(23) + serieUrl
+                    return serieUrl
+
+#modif kiwi
+        serie_rech = remove_accents(serie.lower())
+        if serie_rech == serie_rech_prev and PickSeries != False:
+            serie_rech_prev = serie_rech
+            RenameSeries = PickSeries
+            return PickSeriesLink
+        else:
+            serie_rech_prev = serie_rech
+            PickSeries = False
+                    
+        ListSeries = list()
+        if DBGONOFF:print "Nom de Série pour recherche = " + dlgNameClean                
+        urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgNameClean.lower().strip())) +'&RechWhere=0'
+
+        if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
+                
         request = _read_url(urlN.encode('utf-8'), False)
 
         if bStopit:
-            if DBGONOFF:print "Cancelled from SetSerieId after letter page return"
+            if DBGONOFF:print "Cancelled from SetSerieId after Search return"
             return ''
-        
-        if request:
-
-            #serie = serie.encode('utf-8')            
-            
-            RegCompile = re.compile(SERIE_URL_PATTERN % checkRegExp(serie.strip()),  re.IGNORECASE)
-            nameRegex = RegCompile.search(request)
-                
-            if nameRegex:
-                
-                serieUrl = nameRegex.group(1)
-                if not ".html" in serieUrl:serieUrl += ".html"
-
-                if DBGONOFF:print Trans(23) + serieUrl
-
-            else:
-
-#modif kiwi
-                serie_rech = remove_accents(serie.lower())
-                if serie_rech == serie_rech_prev and PickSeries != False:
-                    serie_rech_prev = serie_rech
-                    RenameSeries = PickSeries
-                    return PickSeriesLink
-                else:
-                    serie_rech_prev = serie_rech
-                    PickSeries = False
-                    
-                ListSeries = list()
-                if DBGONOFF:print "Nom de Série pour recherche = " + dlgNameClean                
-                urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgNameClean.lower().strip())) +'&RechWhere=0'
-
-                if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
-                
-                request = _read_url(urlN.encode('utf-8'), False)
-
-                if bStopit:
-                    if DBGONOFF:print "Cancelled from SetSerieId after Search return"
-                    return ''
                                 
-                #SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)                
-                if SERIE_LIST_CHECK.search(request) or REVUE_LIST_CHECK.search(request):
-                    Result = MessageBox.Show(ComicRack.MainWindow, Trans(114) + '[' + titlize(book.Series) + '] !', Trans(2), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
-                    if DBGONOFF:print Trans(114) + '[' + titlize(book.Series) + '] !'
-                    return ''
+        #SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)                
+        if SERIE_LIST_CHECK.search(request) or REVUE_LIST_CHECK.search(request):
+            Result = MessageBox.Show(ComicRack.MainWindow, Trans(114) + '[' + titlize(book.Series) + '] !', Trans(2), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
+            if DBGONOFF:print Trans(114) + '[' + titlize(book.Series) + '] !'
+            return ''
                 
-                i = 1
-                RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
-                for seriepick in RegCompile.finditer(request):                        
-                    ListSeries.append(["serie-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])                        
-                    i = i + 1  
+        i = 1
+        RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
+        for seriepick in RegCompile.finditer(request):                        
+            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])                        
+            i = i + 1  
                 
-                RegCompile = re.compile(REVUE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
-                if REVUE_LIST_EXISTS.search(request):
-                    for seriepick in RegCompile.finditer(request):
-                        ListSeries.append(["revue-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])  
-                        i = i + 1
+        RegCompile = re.compile(REVUE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
+        if REVUE_LIST_EXISTS.search(request):
+            for seriepick in RegCompile.finditer(request):
+                ListSeries.append(["revue-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])  
+                i = i + 1
 
-                ListSeries.sort(key=operator.itemgetter(2))
+        ListSeries.sort(key=operator.itemgetter(2))
 
-                if len(ListSeries) == 1:
-                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
-                    if DBGONOFF:print Trans(111) + (ListSeries[0][1])
-                    log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                    log_BD(Trans(111), "[" + ListSeries[0][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[0][0] + ")", 1)
-                    RenameSeries = ListSeries[0][1]                    
-                    return ListSeries[0][0]
+        if len(ListSeries) == 1:
+            if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
+            if DBGONOFF:print Trans(111) + (ListSeries[0][1])
+            log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
+            log_BD(Trans(111), "[" + ListSeries[0][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[0][0] + ")", 1)
+            RenameSeries = ListSeries[0][1]                    
+            return ListSeries[0][0]
 
-                elif len(ListSeries) > 1:    
-                    if (CBStop == True or CBStop == "2") or nBooksIn == 1:                
-                        lUnique = False
-                        for i in range(len(ListSeries)):                        
- #modif kiwi
-                            if remove_accents(ListSeries[i][1].lower()) == remove_accents(dlgName.lower().strip()):
-                                lUnique = True
-                                nItem = i
-                            if remove_accents(ListSeries[i][1].lower()) == remove_accents(dlgName.lower().strip()) and re.search(r'\(.{4,}?\)', ListSeries[i][1].lower()):
-                                lUnique = False
-                        if lUnique:
-                            if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
-                            if DBGONOFF:print Trans(111) + (ListSeries[nItem][1])
-                            log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                            log_BD(Trans(111), "[" + ListSeries[nItem][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[nItem][0] + ")", 1)
-                            RenameSeries = ListSeries[nItem][1]                    
-                            return ListSeries[nItem][0]
-                        # Pick a series
-                        NewLink = ''
-                        NewSeries = ''                                    
-                        a = ListSeries
-                        pickAseries = SeriesForm(serie, ListSeries, FormType.SERIE)
-                        result = pickAseries.ShowDialog()
-                    
-                        if result == DialogResult.Cancel:
-                            if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]"                        
-                            log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                            return    ''                    
-                        else:
-                            if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]"                        
-                            if DBGONOFF:print Trans(111) + (NewSeries)                        
-                            log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                            log_BD(Trans(111), "[" + NewSeries + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + NewLink + ")", 1)
-                            RenameSeries = NewSeries                        
+        elif len(ListSeries) > 1:    
+            if (CBStop == True or CBStop == "2") or nBooksIn == 1:                
+                lUnique = False
+                for i in range(len(ListSeries)):                        
 #modif kiwi
-                            PickSeries    = RenameSeries
-                            PickSeriesLink = NewLink                        
-                            return NewLink
-                    else:
-                        if DBGONOFF:print Trans(142) + checkRegExp(serie) + "]"                        
-                        log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
-                        return    ''                            
+                    if remove_accents(ListSeries[i][1].lower()) == remove_accents(dlgName.lower().strip()):
+                        lUnique = True
+                        nItem = i
+                    if remove_accents(ListSeries[i][1].lower()) == remove_accents(dlgName.lower().strip()) and re.search(r'\(.{4,}?\)', ListSeries[i][1].lower()):
+                        lUnique = False
+                    if AlwaysChooseSerie:
+                        lUnique = False
+                if lUnique:
+                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
+                    if DBGONOFF:print Trans(111) + (ListSeries[nItem][1])
+                    log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
+                    log_BD(Trans(111), "[" + ListSeries[nItem][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[nItem][0] + ")", 1)
+                    RenameSeries = ListSeries[nItem][1]                    
+                    return ListSeries[nItem][0]
+                # Pick a series
+                NewLink = ''
+                NewSeries = ''                                    
+                a = ListSeries
+                pickAseries = SeriesForm(serie, ListSeries, FormType.SERIE)
+                result = pickAseries.ShowDialog()
+                    
+                if result == DialogResult.Cancel:
+                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]"                        
+                    log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
+                    return    ''                    
+                else:
+                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]"                        
+                    if DBGONOFF:print Trans(111) + (NewSeries)                        
+                    log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
+                    log_BD(Trans(111), "[" + NewSeries + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + NewLink + ")", 1)
+                    RenameSeries = NewSeries                        
+#modif kiwi
+                    PickSeries    = RenameSeries
+                    PickSeriesLink = NewLink                        
+                    return NewLink
+            else:
+                if DBGONOFF:print Trans(142) + checkRegExp(serie) + "]"                        
+                log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
+                return    ''                            
 
     except:
 
@@ -1970,7 +1971,7 @@ def LoadSetting():
 
     global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
     global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,    CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber, SerieResumeEverywhere
-    global    CBLanguage,    CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
+    global    CBLanguage,    CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, AlwaysChooseSerie
 
     ###############################################################
     # Config read #
@@ -2166,6 +2167,10 @@ def LoadSetting():
         ONESHOTFORMAT = ft(MySettings.Get("ONESHOTFORMAT"))    
     except Exception as e:
         ONESHOTFORMAT = False
+    try:
+        AlwaysChooseSerie = ft(MySettings.Get("AlwaysChooseSerie"))
+    except Exception as e:
+        AlwaysChooseSerie = False
 
     ###############################################################
     
@@ -2182,7 +2187,7 @@ def SaveSetting():
 
     global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
     global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,    CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber, SerieResumeEverywhere
-    global    CBLanguage,    CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture
+    global    CBLanguage,    CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, AlwaysChooseSerie
     
     MySettings = AppSettings()
     
@@ -2235,6 +2240,7 @@ def SaveSetting():
     MySettings.Set("PopUpEditionForm", tf(PopUpEditionForm))
     MySettings.Set("PadNumber", PadNumber)
     MySettings.Set("SerieResumeEverywhere", tf(SerieResumeEverywhere))
+    MySettings.Set("AlwaysChooseSerie", tf(AlwaysChooseSerie))
     MySettings.Set("ONESHOTFORMAT", tf(ONESHOTFORMAT))
 
     if CBStop == True:
@@ -2309,7 +2315,7 @@ class BDConfigForm(Form):
 
         global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, SerieResumeEverywhere
         global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,    CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, PadNumber
-        global CBLanguage, CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, ONESHOTFORMAT
+        global CBLanguage, CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, ONESHOTFORMAT, AlwaysChooseSerie
 
         self.Name = "BDConfigForm"
         self.Text = "Bedetheque Scraper 2"
@@ -2375,6 +2381,7 @@ class BDConfigForm(Form):
         self._FORMATARTICLES = System.Windows.Forms.CheckBox()
         self._PopUpEditionForm = System.Windows.Forms.CheckBox()
         self._SerieResumeEverywhere = System.Windows.Forms.CheckBox()
+        self._AlwaysChooseSerie = System.Windows.Forms.CheckBox()
         self._OneShotFormat = System.Windows.Forms.CheckBox()
         self._TIMEOUT = System.Windows.Forms.TextBox()
         self._TIMEOUTS = System.Windows.Forms.TextBox()
@@ -2429,6 +2436,7 @@ class BDConfigForm(Form):
         self._tabPage1.Controls.Add(self._FORMATARTICLES)        
         self._tabPage1.Controls.Add(self._PopUpEditionForm)    
         self._tabPage1.Controls.Add(self._SerieResumeEverywhere)    
+        self._tabPage1.Controls.Add(self._AlwaysChooseSerie)    
         self._tabPage1.Controls.Add(self._TIMEOUT)
         self._tabPage1.Controls.Add(self._TIMEOUTS)
 #modif kiwi
@@ -3015,6 +3023,17 @@ class BDConfigForm(Form):
         elif CBStop == "2":
             self._CBStop.CheckState = CheckState.Indeterminate
         #
+        # AlwaysChooseSerie
+        #
+        self._AlwaysChooseSerie.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
+        self._AlwaysChooseSerie.Location = System.Drawing.Point(320, 282)
+        self._AlwaysChooseSerie.Name = "AlwaysChooseSerie"
+        self._AlwaysChooseSerie.Size = System.Drawing.Size(180, 20)
+        self._AlwaysChooseSerie.TabIndex = 28
+        self._AlwaysChooseSerie.Text = Trans(151)
+        self._AlwaysChooseSerie.UseVisualStyleBackColor = True
+        self._AlwaysChooseSerie.CheckState = if_else(AlwaysChooseSerie, CheckState.Checked, CheckState.Unchecked)
+        #
         # One Shot in Format
         #
         self._OneShotFormat.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
@@ -3030,7 +3049,7 @@ class BDConfigForm(Form):
         #
         self._label4.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
         self._label4.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        self._label4.Location = System.Drawing.Point(320, 302)
+        self._label4.Location = System.Drawing.Point(320, 324)
         self._label4.Name = "label4"
         self._label4.Size = System.Drawing.Size(160, 23)
         self._label4.TabIndex = 99
@@ -3038,7 +3057,7 @@ class BDConfigForm(Form):
         #
         # TIMEOUT
         #
-        self._TIMEOUT.Location = System.Drawing.Point(435, 302)
+        self._TIMEOUT.Location = System.Drawing.Point(435, 324)
         self._TIMEOUT.Name = "TIMEOUT"
         self._TIMEOUT.Size = System.Drawing.Size(50, 21)
         self._TIMEOUT.TabIndex = 29
@@ -3157,7 +3176,7 @@ class BDConfigForm(Form):
 
         global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ONESHOTFORMAT
         global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys,    CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, CBStop, PopUpEditionForm, SerieResumeEverywhere
-        global    CBLanguage,    CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber
+        global    CBLanguage,    CBEditor, CBFormat,    CBColorist,    CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber, AlwaysChooseSerie
 
         if sender.Name.CompareTo(self._OKButton.Name) == 0:
             SHOWRENLOG = if_else(self._SHOWRENLOG.CheckState == CheckState.Checked, True, False)
@@ -3211,6 +3230,7 @@ class BDConfigForm(Form):
             ONESHOTFORMAT = if_else(self._OneShotFormat.CheckState == CheckState.Checked, True, False)
             PopUpEditionForm = if_else(self._PopUpEditionForm.CheckState == CheckState.Checked, False, True)
             SerieResumeEverywhere = if_else(self._SerieResumeEverywhere.CheckState == CheckState.Checked, False, True)
+            AlwaysChooseSerie = if_else(self._AlwaysChooseSerie.CheckState == CheckState.Checked, True, False)
 #modif kiwi
             try:
                 if int(self._TIMEOUT.Text) > 0:
