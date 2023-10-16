@@ -985,7 +985,7 @@ def AlbumChooser(ListAlbum):
             result = pickAnAlbum.ShowDialog()
                 
             if result == DialogResult.Cancel:
-                if TimerExpired:
+                if CBStop == "2" and TimerExpired:
                     albumURL = ListAlbum[0][0]
                     if DBGONOFF:print "---> Le temps est expiré, choix du 1er item"
                 else:
