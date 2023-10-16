@@ -762,20 +762,28 @@ def parseSerieInfo(book, serieUrl, lDirect):
         return False
 
     if 'revue-' in serieUrl:
-        REVUE_CALC = re.compile(REVUE_CALC_PATTERN % dlgNumber, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-        nameRegex = REVUE_CALC.search(request)
-        if nameRegex and not lDirect:
-            albumURL = nameRegex.group(1)
+        i = 1
+        ListAlbum = list()
+        REVUE_LIST_ALL = re.findall(r"<option\svalue=\"(https://www\.bedetheque\.com/revue-[^>]+?)\">(.{1,5}?)</option>", request, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+        
+        #When only 1 page
+        if not REVUE_LIST_ALL or len(REVUE_LIST_ALL) == 0:
+            REVUE_LIST_ALL_ALT = re.findall(r'<a name="(.+?)">.+?class="titre".{1,100}?#(.+?)\..+?', request, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+            for revueNum in REVUE_LIST_ALL_ALT:
+                full_url = serieUrl + "#" + revueNum[0] if "www.bedetheque.com" in serieUrl.lower() else "https://www.bedetheque.com/" + serieUrl + "#" + revueNum[0]
+                ListAlbum.append([full_url, "Num: " + revueNum[1].strip(), str(i).zfill(3)])
+                i = i + 1
+        else:
+            for albumPick in REVUE_LIST_ALL:
+                ListAlbum.append([albumPick[0], "Num: " + albumPick[1].strip(), str(i).zfill(3)])
+                i = i + 1
+
+        matchedAlbum = next((x for x in ListAlbum if x[1] == dlgNumber), None) #find num in list
+        if matchedAlbum is not None and not lDirect:
+            albumURL = matchedAlbum[0]
         elif lDirect and '#' in serieUrl:
             albumURL = serieUrl
         else:
-            i = 1
-            ListAlbum = list()
-            REVUE_LIST = re.compile(r"<option\svalue=\"(https://www\.bedetheque\.com/revue-[^>]+?)\">(.{1,5}?)</option>", re.IGNORECASE | re.DOTALL | re.MULTILINE )
-            for albumPick in REVUE_LIST.finditer(request):
-                ListAlbum.append([albumPick.group(1), "Num: " + albumPick.group(2).strip(), str(i).zfill(3)])
-                i = i + 1
-            
             albumURL = AlbumChooser(ListAlbum)
             
         if not albumURL:  
