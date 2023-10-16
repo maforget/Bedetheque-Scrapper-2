@@ -281,8 +281,8 @@ REVUE_LIST_CHECK = re.compile(REVUE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTAL
 
 REVUE_CALC_PATTERN = r'<option\svalue=\"(.{1,160}?)\">%s</'
 
-REVUE_HEADER_PATTERN = r'class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.{1,600}?class="titre".{1,100}?#(%s)\..+?)<a name='
-REVUE_HEADER_PATTERN_ALT = r'<a name="%s">.+?class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.+?class="titre".{1,100}?#(.+?)\..+?)<a name='
+REVUE_HEADER_PATTERN = r'class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.{1,600}?class="titre".{1,100}?#(%s)\..+?class="autres".+?)</li>'
+REVUE_HEADER_PATTERN_ALT = r'<a name="%s">.+?class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.+?class="titre".{1,100}?#(.+?)\..+?class="autres".+?)</li>'
 
 REVUE_RESUME_PATTERN = r'<em>Sommaire.*?</em>(.*?)</p'
 REVUE_RESUME = re.compile(REVUE_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
