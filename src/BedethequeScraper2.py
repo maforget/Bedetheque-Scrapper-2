@@ -618,19 +618,19 @@ def SetSerieId(book, serie, num, nBooksIn):
         i = 1
         RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
         for seriepick in RegCompile.finditer(request):                        
-            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])                        
+            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2)).replace("</span>","")), str(i).zfill(3)])                        
             i = i + 1  
                 
         RegCompile = re.compile(REVUE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
         if REVUE_LIST_EXISTS.search(request):
             for seriepick in RegCompile.finditer(request):
-                ListSeries.append(["revue-" + seriepick.group(1), strip_tags(seriepick.group(2)).replace("</span>",""), str(i).zfill(3)])  
+                ListSeries.append(["revue-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2)).replace("</span>","")), str(i).zfill(3)])  
                 i = i + 1
 
         ListSeries.sort(key=operator.itemgetter(2))
 
         if len(ListSeries) == 1 and not AlwaysChooseSerie:
-            if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
+            if DBGONOFF:print Trans(24) + checkWebChar(serie) + "]" 
             if DBGONOFF:print Trans(111) + (ListSeries[0][1])
             log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
             log_BD(Trans(111), "[" + ListSeries[0][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[0][0] + ")", 1)
@@ -650,7 +650,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                     if AlwaysChooseSerie:
                         lUnique = False
                 if lUnique:
-                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
+                    if DBGONOFF:print Trans(24) + checkWebChar(serie) + "]" 
                     if DBGONOFF:print Trans(111) + (ListSeries[nItem][1])
                     log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
                     log_BD(Trans(111), "[" + ListSeries[nItem][1] + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + ListSeries[nItem][0] + ")", 1)
@@ -664,11 +664,11 @@ def SetSerieId(book, serie, num, nBooksIn):
                 result = pickAseries.ShowDialog()
                     
                 if result == DialogResult.Cancel:
-                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]"                        
+                    if DBGONOFF:print Trans(24) + checkWebChar(serie) + "]"                        
                     log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
                     return    ''                    
                 else:
-                    if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]"                        
+                    if DBGONOFF:print Trans(24) + checkWebChar(serie) + "]"                        
                     if DBGONOFF:print Trans(111) + (NewSeries)                        
                     log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
                     log_BD(Trans(111), "[" + NewSeries + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com\\" + NewLink + ")", 1)
@@ -678,7 +678,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                     PickSeriesLink = NewLink                        
                     return NewLink
             else:
-                if DBGONOFF:print Trans(142) + checkRegExp(serie) + "]"                        
+                if DBGONOFF:print Trans(142) + checkWebChar(serie) + "]"                        
                 log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
                 return    ''                            
 
