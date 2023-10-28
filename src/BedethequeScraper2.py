@@ -450,7 +450,7 @@ def WorkerThread(books):
                 if DBGONOFF:print Trans(10), dlgName
                 
                 RetAlb = False
-                serieUrl = SetSerieId(book, dlgName, albumNum, nBooks)    
+                serieUrl = GetFullURL(SetSerieId(book, dlgName, albumNum, nBooks))
 
                 if bStopit:
                     if DBGONOFF:print "Cancelled from WorkerThread after SetSerieId return"
@@ -691,6 +691,12 @@ def SetSerieId(book, serie, num, nBooksIn):
         log_BD("** Error [" + serie + "] " + num + " - " + titlize(book.Title), cError, 1)
 
     return serieUrl
+
+def GetFullURL(url):
+    if re.search("https://www.bedetheque.com/", url, re.IGNORECASE):
+        return url
+    else:
+        return "https://www.bedetheque.com/" + url
 
 #modif kiwi
 def remove_accents(raw_text):
@@ -3725,7 +3731,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
                         return False
                 
                     if LinkBD2:                        
-                        serieUrl = LinkBD2
+                        serieUrl = GetFullURL(LinkBD2)
                         
                 # try:
                     # ficheUrl = _read_url(serieUrl, False)
