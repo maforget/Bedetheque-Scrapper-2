@@ -458,7 +458,7 @@ def WorkerThread(books):
                 
                 if serieUrl:
                     RetAlb = True
-                    if not 'revue-' in serieUrl: 
+                    if not '/revue-' in serieUrl: 
                         LongSerie= serieUrl.lower().replace(".html", u'__10000.html')
                         serieUrl = LongSerie            
 
@@ -470,7 +470,7 @@ def WorkerThread(books):
                     RetAlb = SetAlbumInformation(book, serieUrl, dlgName, albumNum)
 
                     #SkipAlbum utlisez seulement lorsque l'on appuye sur Annuler dans la fenetre pour choisir l'album ParseSerieInfo
-                    if not SkipAlbum and not RetAlb and not 'revue-' in serieUrl:                    
+                    if not SkipAlbum and not RetAlb and not '/revue-' in serieUrl:                    
                         # reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
                         RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
             
@@ -721,13 +721,13 @@ def SetAlbumInformation(book, serieUrl, serie, num):
         if DBGONOFF:print "Cancelled from SetAlbumInformation"
         return False
     
-    if albumUrl and not 'revue-' in serieUrl:
+    if albumUrl and not '/revue-' in serieUrl:
         if DBGONOFF:print Trans(26), albumUrl
         if not parseAlbumInfo(book, albumUrl, num):
             return False
         return True
 
-    elif 'revue-' in serieUrl:
+    elif '/revue-' in serieUrl:
         return albumUrl
 
     else:
@@ -768,7 +768,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
         if DBGONOFF:print "Cancelled from parseSerieInfo after _read_url return"
         return False
 
-    if 'revue-' in serieUrl:
+    if '/revue-' in serieUrl:
         i = 1
         ListAlbum = list()
         REVUE_LIST_ALL = re.findall(r"<option\svalue=\"(https://www\.bedetheque\.com/revue-[^>]+?)\">(.{1,5}?)</option>", request, re.IGNORECASE | re.DOTALL | re.MULTILINE)
@@ -846,7 +846,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
                     genre = ""
                 if genre != "":
                     book.Genre = genre
-                elif genre == "" and 'revue-' in serieUrl:
+                elif genre == "" and '/revue-' in serieUrl:
                     book.Genre = "Revue"                                                                
                 if DBGONOFF:print Trans(51), book.Genre
 
@@ -950,7 +950,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
                         else:                    
                             book.Count = -1
                             cCountText = "---"
-                
+            
                     if DBGONOFF:print Trans(59) + if_else(dlgNumber == "One Shot", "1", cCountText)
         
             Regex = re.compile(r'<label>([^<]*?)<span\sclass=\"numa\">(.*?)</span.*?<a\shref=\"(.*?)".*?title=.+?\">(.+?)</', re.IGNORECASE | re.DOTALL)
@@ -3746,11 +3746,11 @@ def QuickScrapeBD2(books, book = "", cLink = False):
                 # if fiche:    
                     # RetVal = parseSerieInfo(MyBook, fiche.group(1), True)
                 RetVal = serieUrl
-                if "/serie-" in serieUrl or 'revue-' in serieUrl: 
-                    serieUrl = serieUrl if "__10000.html" in serieUrl or 'revue-' in serieUrl else serieUrl.lower().replace(".html", u'__10000.html')                   
+                if "/serie-" in serieUrl or '/revue-' in serieUrl: 
+                    serieUrl = serieUrl if "__10000.html" in serieUrl or '/revue-' in serieUrl else serieUrl.lower().replace(".html", u'__10000.html')                   
                     RetVal = parseSerieInfo(MyBook, serieUrl, True)
                                                                                        
-                if RetVal and not 'revue-' in serieUrl:
+                if RetVal and not '/revue-' in serieUrl:
                     if LinkBD2:                    
                         RetVal = parseAlbumInfo(MyBook, RetVal, dlgNumber, True)                                                            
 
