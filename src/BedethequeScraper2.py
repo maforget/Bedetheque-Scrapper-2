@@ -599,7 +599,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                     
         ListSeries = list()
         if DBGONOFF:print "Nom de Série pour recherche = " + dlgNameClean                
-        urlN = '/search/tout?RechTexte=' + url_fix(remove_accents(dlgNameClean.lower().strip())) +'&RechWhere=0'
+        urlN = '/search/tout?RechTexte=' + remove_accents(dlgNameClean.lower().strip()) +'&RechWhere=0'
 
         if DBGONOFF:print Trans(113), 'www.bedetheque.com' + urlN
                 
