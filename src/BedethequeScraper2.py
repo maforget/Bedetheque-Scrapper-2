@@ -145,9 +145,6 @@ SERIE_COUNT_REAL = re.compile(SERIE_COUNT_REAL_PATTERN, re.IGNORECASE | re.MULTI
 SERIE_COUNTOF_PATTERN = r'<label>(.*?)<span'
 SERIE_COUNTOF = re.compile(SERIE_COUNTOF_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)                    
 
-SERIE_HEADER_PATTERN = r'<div(.+?)<h3>D.tail\sdes'
-SERIE_HEADER = re.compile(SERIE_HEADER_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
-
 SERIE_HEADER2_PATTERN = r'<h3(.+?)</p'
 SERIE_HEADER2 = re.compile(SERIE_HEADER2_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
 
@@ -812,10 +809,8 @@ def parseSerieInfo(book, serieUrl, lDirect):
             return ""
     
     else:
-        SerieInfoRegex = SERIE_HEADER.search(request)
-        if SerieInfoRegex:
+        if request:
 
-            #Entete = SerieInfoRegex.group(1)
             Entete = request
         
             if RenameSeries:
