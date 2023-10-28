@@ -690,10 +690,13 @@ def SetSerieId(book, serie, num, nBooksIn):
     return serieUrl
 
 def GetFullURL(url):
-    if re.search("https://www.bedetheque.com/", url, re.IGNORECASE):
-        return url
+    if url:
+        if re.search("https://www.bedetheque.com/", url, re.IGNORECASE):
+            return url
+        else:
+            return "https://www.bedetheque.com/" + url
     else:
-        return "https://www.bedetheque.com/" + url
+        return ''
 
 #modif kiwi
 def remove_accents(raw_text):
