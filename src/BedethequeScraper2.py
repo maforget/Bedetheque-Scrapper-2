@@ -637,7 +637,7 @@ def SetSerieId(book, serie, num, nBooksIn):
             RenameSeries = ListSeries[0][1]                    
             return ListSeries[0][0]
 
-        elif len(ListSeries) > 1:    
+        elif len(ListSeries) > 1 or AlwaysChooseSerie:    
             if (CBStop == True or CBStop == "2") or nBooksIn == 1:                
                 lUnique = False
                 for i in range(len(ListSeries)):                        
