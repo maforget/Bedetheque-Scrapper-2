@@ -632,7 +632,7 @@ def SetSerieId(book, serie, num, nBooksIn):
 
         ListSeries.sort(key=operator.itemgetter(2))
 
-        if len(ListSeries) == 1:
+        if len(ListSeries) == 1 and not AlwaysChooseSerie:
             if DBGONOFF:print Trans(24) + checkRegExp(serie) + "]" 
             if DBGONOFF:print Trans(111) + (ListSeries[0][1])
             log_BD("** [" + serie + "] " + num + if_else(dlgAltNumber == '', '', ' AltNo. ' + dlgAltNumber) + " - " + titlize(book.Title) + " (www.bedetheque.com" + serieUrl + ")", Trans(25), 1)
