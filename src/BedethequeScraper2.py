@@ -618,7 +618,7 @@ def SetSerieId(book, serie, num, nBooksIn):
         i = 1
         RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
         for seriepick in RegCompile.finditer(request):                        
-            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2)).replace("</span>","")), str(i).zfill(3)])                        
+            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2)).replace("</span>","")), str(i).zfill(3)])
             i = i + 1  
                 
         RegCompile = re.compile(REVUE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
@@ -637,7 +637,7 @@ def SetSerieId(book, serie, num, nBooksIn):
             RenameSeries = ListSeries[0][1]                    
             return ListSeries[0][0]
 
-        elif len(ListSeries) > 1 or AlwaysChooseSerie:    
+        elif len(ListSeries) > 1 or (AlwaysChooseSerie and len(ListSeries) >= 1) :    
             if (CBStop == True or CBStop == "2") or nBooksIn == 1:                
                 lUnique = False
                 for i in range(len(ListSeries)):                        
