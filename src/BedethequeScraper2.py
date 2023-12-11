@@ -771,7 +771,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
     if '/revue-' in serieUrl:
         i = 1
         ListAlbum = list()
-        REVUE_LIST_ALL = re.findall(r"<option\svalue=\"(https://www\.bedetheque\.com/revue-[^>]+?)\">(.{1,5}?)</option>", request, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+        REVUE_LIST_ALL = re.findall(r"<option\svalue=\"(https://www\.bedetheque\.com/revue-[^>]+?)\">(.+?)</option>", request, re.IGNORECASE | re.DOTALL | re.MULTILINE)
         
         #When only 1 page
         if not REVUE_LIST_ALL or len(REVUE_LIST_ALL) == 0:
