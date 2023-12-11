@@ -271,7 +271,7 @@ ALBUM_QTITLE_PATTERN = r'titre.*?%s<span.*?name\">(.*?)<'
 # Info Revues
 REVUE_LIST_PATTERN = r'<a\shref=\"https\:\/\/www.bedetheque.com\/revue-(.*?)\">.*?libelle\">(.*?)\r'
 
-REVUE_LIST_EXISTS_PATTERN = r'<h3>\d{1,3} revues trouvées</h3>'
+REVUE_LIST_EXISTS_PATTERN = r'<h3>\d{1,3} revue\w?? trouvée\w??</h3>'
 REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOTALL)
 
 REVUE_LIST_CHECK_PATTERN = r'<h1>Revues</h1>.*?La\srecherche\seffectu.*?\srenvoie\splus\sde\s.*?<h1>S.*?ries<'
