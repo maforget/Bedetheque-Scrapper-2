@@ -1559,23 +1559,23 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             # Album summary is optional => So, there is a specific research
             if CBSynopsys:
                 #ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
-                nameRegex = ALBUM_RESUME.search(albumUrl, 0)                                                                        
+                summary = ""
+                nameRegex = ALBUM_RESUME.search(albumUrl, 0)     
                 if nameRegex:                    
                     resume = strip_tags(nameRegex.group(1)).strip()                        
                     resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
                     #resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
                     PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
                     if Serie_Resume and PrintSerieResume and remove_accents(Serie_Resume) != remove_accents(resume):
-                        book.Summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")                    
+                        summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")                    
                     elif resume:
-                        book.Summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
+                        summary = if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume
 
                         if DBGONOFF:print Trans(100)                        
                 else:
                     if DBGONOFF:print Trans(101)
 
             # Info edition            
-            if CBSynopsys:
                 #ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
                 nameRegex = ALBUM_INFOEDITION.search(info, 0)                                                        
                 if nameRegex:                                        
@@ -1583,8 +1583,12 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                         infoedition = strip_tags(nameRegex.group(1)).strip()
                         #infoedition = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
                         if infoedition:
-                            book.Summary = if_else(book.Summary != "",book.Summary + chr(10) + chr(10) + Trans(118) + infoedition,Trans(118) + infoedition)
-                        if DBGONOFF:print Trans(118) + Trans(119)        
+                            summary = if_else(summary != "",summary + chr(10) + chr(10) + Trans(118) + infoedition,Trans(118) + infoedition)
+                        if DBGONOFF:print Trans(118) + Trans(119)  
+                        
+                #Send Summary to book
+                if summary:
+                    book.Summary = summary
                         
             # series only formatted
             if CBSeries:                                                    
