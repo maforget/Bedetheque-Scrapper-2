@@ -618,13 +618,13 @@ def SetSerieId(book, serie, num, nBooksIn):
         i = 1
         RegCompile = re.compile(SERIE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
         for seriepick in RegCompile.finditer(request):                        
-            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2)).replace("</span>","")), str(i).zfill(3)])
+            ListSeries.append(["serie-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2))), str(i).zfill(3)])
             i = i + 1  
                 
         RegCompile = re.compile(REVUE_LIST_PATTERN, re.IGNORECASE | re.DOTALL )
         if REVUE_LIST_EXISTS.search(request):
             for seriepick in RegCompile.finditer(request):
-                ListSeries.append(["revue-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2)).replace("</span>","")), str(i).zfill(3)])  
+                ListSeries.append(["revue-" + seriepick.group(1), strip_tags(checkWebChar(seriepick.group(2))), str(i).zfill(3)])  
                 i = i + 1
 
         ListSeries.sort(key=operator.itemgetter(2))
@@ -1785,9 +1785,10 @@ class MLStripper(HTMLParser):
 
 def strip_tags(html):
     try:
-        s = MLStripper()
-        s.feed(html)
-        return s.Set_data()
+        # s = MLStripper()
+        # s.feed(html)
+        # return s.Set_data()
+        return re.sub("<[^<>]+?>", "", html, re.IGNORECASE | re.DOTALL | re.MULTILINE)
     except:
         return html
 
