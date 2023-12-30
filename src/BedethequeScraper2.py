@@ -1918,6 +1918,7 @@ class ProgressBarDialog(Form):
         self.cover = PictureBox()
 
         self.traitement.Location = Point(20, 5)
+        self.traitement.UseMnemonic = False
         self.traitement.Name = "traitement"
         self.traitement.Size = Size(300, 50)
         self.traitement.Text = ""
