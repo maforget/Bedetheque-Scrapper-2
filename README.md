@@ -1,3 +1,5 @@
+### You should consider using [ComicRack Community Edition](https://github.com/maforget/ComicRackCE). And if you can please contribute to the project.
+
 # Bedetheque Scrapper 2 for ComicRack
 Script that scrapes data from Bedetheque.com for ComicRack.
 
