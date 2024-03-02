@@ -1253,7 +1253,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             title = checkWebChar(albumPick.group(4).strip())
             nfo = albumPick.group(5)
             # a is altNumber
-            a = checkWebChar(albumPick.group(3).strip() if isnumeric(t) else re.sub(t,'',albumPick.group(3).strip()).strip())
+            a = checkWebChar(albumPick.group(3).strip() if isnumeric(t) else albumPick.group(3).strip().replace(t,'',1).strip())
             url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
             albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
             if DBGONOFF:print "Tome)", t, "Alt)", a, "Title)", title
