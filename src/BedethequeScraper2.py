@@ -1331,10 +1331,11 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         
             series = book.Series
             nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
-            #nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
+            nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
             if nameRegex:
+                seriesFormat = checkWebChar(nameRegex2.group(1).strip())
                 series = checkWebChar(nameRegex.group(1).strip())
-                if DBGONOFF:  print Trans(9) + series
+                if DBGONOFF:  print Trans(9) + series + ' // Formaté: ' + seriesFormat
                 
             if CBTitle:
                 NewTitle = ""        
@@ -1562,7 +1563,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                 summary = ""
                 nameRegex = ALBUM_RESUME.search(albumUrl, 0)     
                 if nameRegex:                    
-                    resume = strip_tags(nameRegex.group(1)).strip()                        
+                    resume = strip_tags(nameRegex.group(1)).strip()
                     resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
                     #resume = strip_tags(nameRegex.group(1)).decode('utf-8').strip()
                     PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
@@ -1590,9 +1591,10 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                 if summary:
                     book.Summary = summary
                         
-            # series only formatted
-            if CBSeries:                                                    
-                book.Series = titlize(series, True)                            
+            # series
+            if CBSeries:
+                formatted = seriesFormat if seriesFormat else titlize(series, True)
+                book.Series = formatted if FORMATARTICLES else series                         
                 if DBGONOFF:print Trans(9), book.Series
             
             # Cover Image only for fileless
