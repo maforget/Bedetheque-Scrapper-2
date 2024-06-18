@@ -50,7 +50,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "5.18"
+VERSION = "5.19"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
@@ -1593,8 +1593,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                         
             # series
             if CBSeries:
-                formatted = seriesFormat if seriesFormat else titlize(series, True)
-                book.Series = formatted if FORMATARTICLES else series                         
+                formatted = titlize(seriesFormat, False) if seriesFormat else titlize(series, True)
+                book.Series = formatted if FORMATARTICLES else titlize(series, False)                         
                 if DBGONOFF:print Trans(9), book.Series
             
             # Cover Image only for fileless
