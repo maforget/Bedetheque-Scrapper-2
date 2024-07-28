@@ -1129,8 +1129,9 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
             #REVUE_PLANCHES = re.compile(REVUE_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)    
             nameRegex = REVUE_PLANCHES.search(Entete, 0)
             if nameRegex:
-                book.PageCount = int(nameRegex.group(1).strip())
-                if DBGONOFF:print Trans(122), int(nameRegex.group(1))
+                pages = nameRegex.group(1).strip()
+                book.PageCount = int(pages) if isnumeric(pages) else -1
+                if DBGONOFF:print Trans(122), pages
 
         #Periodicité
         if CBFormat:
