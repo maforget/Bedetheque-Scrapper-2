@@ -82,7 +82,7 @@ CBTitle = True
 CBSeries = True
 CBDefault = False
 CBRescrape = False
-AllowUserChoice = True
+AllowUserChoice = "2"
 PopUpEditionForm = False
 ARTICLES = "Le,La,Les,L',The"
 FORMATARTICLES = True
@@ -2046,7 +2046,7 @@ def LoadSetting():
     try:
         AllowUserChoice = ft(MySettings.Get("CBStop"))
     except Exception as e:
-        AllowUserChoice = True
+        AllowUserChoice = "2"
     try:
         ARTICLES = MySettings.Get("ARTICLES")
     except Exception as e:
@@ -2118,9 +2118,6 @@ def LoadSetting():
         CBWeb = True
         ShortWebLink = True
 
-    if AllowUserChoice == 2:
-        AllowUserChoice = True
-
     SaveSetting()
 
     aWord = Translate()
@@ -2176,7 +2173,12 @@ def SaveSetting():
     MySettings.Set("SerieResumeEverywhere", tf(SerieResumeEverywhere))
     MySettings.Set("AlwaysChooseSerie", tf(AlwaysChooseSerie))
     MySettings.Set("ONESHOTFORMAT", tf(ONESHOTFORMAT))
-    MySettings.Set("CBStop", tf(AllowUserChoice))
+    if AllowUserChoice == True:
+        MySettings.Set("CBStop",  "1")
+    elif AllowUserChoice == False:
+        MySettings.Set("CBStop",  "0")
+    elif AllowUserChoice == "2":
+        MySettings.Set("CBStop",  "2")
 
     MySettings.Save((__file__[:-len('BedethequeScraper2.py')] + "App.Config"))
 
@@ -2263,7 +2265,7 @@ class BDConfigForm(Form):
             [
                 ('Series', {'label': Trans(71), 'state': if_else(CBSeries, CheckState.Checked, CheckState.Unchecked)}),
                 ('Title', {'label': Trans(72), 'state': if_else(CBTitle, CheckState.Checked, CheckState.Unchecked)}),
-                ('Writer', {'label': Trans(76), 'state': if_else(CBWriter, CheckState.Checked, CheckState.Unchecked)}),
+                ('Writer', {'label': Trans(73), 'state': if_else(CBWriter, CheckState.Checked, CheckState.Unchecked)}),
                 ('Penciller', {'label': Trans(74), 'state': if_else(CBPenciller, CheckState.Checked, CheckState.Unchecked)}),
                 ('Colorist', {'label': Trans(75), 'state': if_else(CBColorist, CheckState.Checked, CheckState.Unchecked)}),
                 ('Letterer', {'label': Trans(76), 'state': if_else(CBLetterer, CheckState.Checked, CheckState.Unchecked)}),
@@ -2317,7 +2319,7 @@ class BDConfigForm(Form):
         self._TIMEOUT = System.Windows.Forms.TextBox()
         self._TIMEOUTS = System.Windows.Forms.TextBox()
         self._TIMEPOPUP = System.Windows.Forms.TextBox()
-        self._labelTIMEPOPUP = System.Windows.Forms.Label()
+        self._labelTIMEPOPUP = System.Windows.Forms.CheckBox()
         self._PadNumber = System.Windows.Forms.TextBox()
         self._labelPadNumber = System.Windows.Forms.Label()
         self._CBRescrape = System.Windows.Forms.CheckBox()
@@ -2357,10 +2359,8 @@ class BDConfigForm(Form):
         self._tabPage1.Controls.Add(self._AlwaysChooseSerie)
         self._tabPage1.Controls.Add(self._TIMEOUT)
         self._tabPage1.Controls.Add(self._TIMEOUTS)
-        self._tabPage1.Controls.Add(self._TIMEPOPUP)
-        self._tabPage1.Controls.Add(self._labelTIMEPOPUP)
-        self._tabPage1.Controls.Add(self._PadNumber)
-        self._tabPage1.Controls.Add(self._labelPadNumber)
+        self._labelChoice.Controls.Add(self._TIMEPOPUP)
+        self._labelChoice.Controls.Add(self._labelTIMEPOPUP)
         self._tabPage1.Controls.Add(self._labelTIMEOUT)
         self._tabPage1.Controls.Add(self._labelTIMEOUTS)
         self._tabPage1.Controls.Add(self._CBRescrape)
@@ -2391,6 +2391,8 @@ class BDConfigForm(Form):
         self._tabPage2.Controls.Add(self._SerieResumeEverywhere)
         self._tabPage2.Controls.Add(self._SUBPATT)
         self._tabPage2.Controls.Add(self._labelSUBPATT)
+        self._tabPage2.Controls.Add(self._PadNumber)
+        self._tabPage2.Controls.Add(self._labelPadNumber)
         self._tabPage2.Location = System.Drawing.Point(4, 22)
         self._tabPage2.Name = "tabPage2"
         self._tabPage2.Padding = System.Windows.Forms.Padding(3)
@@ -2502,9 +2504,9 @@ class BDConfigForm(Form):
         #
         self._ButtonCheckNone.BackColor = System.Drawing.Color.FromArgb(255, 192, 128)
         self._ButtonCheckNone.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
-        self._ButtonCheckNone.Location = System.Drawing.Point(8, 308)
+        self._ButtonCheckNone.Location = System.Drawing.Point(8, 300)
         self._ButtonCheckNone.Name = "ButtonCheckNone"
-        self._ButtonCheckNone.Size = System.Drawing.Size(120, 20)
+        self._ButtonCheckNone.Size = System.Drawing.Size(120, 28)
         self._ButtonCheckNone.TabIndex = 53
         self._ButtonCheckNone.Text = Trans(94)
         self._ButtonCheckNone.UseVisualStyleBackColor = False
@@ -2515,9 +2517,9 @@ class BDConfigForm(Form):
         #
         self._ButtonCheckAll.BackColor = System.Drawing.Color.FromArgb(255, 192, 128)
         self._ButtonCheckAll.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
-        self._ButtonCheckAll.Location = System.Drawing.Point(132, 308)
+        self._ButtonCheckAll.Location = System.Drawing.Point(132, 300)
         self._ButtonCheckAll.Name = "ButtonCheckAll"
-        self._ButtonCheckAll.Size = System.Drawing.Size(120, 20)
+        self._ButtonCheckAll.Size = System.Drawing.Size(120, 28)
         self._ButtonCheckAll.TabIndex = 52
         self._ButtonCheckAll.Text = Trans(117)
         self._ButtonCheckAll.UseVisualStyleBackColor = False
@@ -2552,7 +2554,7 @@ class BDConfigForm(Form):
         self._DBGLOGMAX.Size = System.Drawing.Size(40, 23)
         self._DBGLOGMAX.TabIndex = 4
         self._DBGLOGMAX.TextAlign = HorizontalAlignment.Center
-        self._DBGLOGMAX.Text = str(int(DBGLOGMAX / 1024 / 1024))
+        self._DBGLOGMAX.Text = "{:.2f}".format(float(DBGLOGMAX) / (1024 * 1024))
         #
         # labelArticles
         #
@@ -2588,23 +2590,25 @@ class BDConfigForm(Form):
         self._SUBPATT.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
         self._SUBPATT.Location = System.Drawing.Point(480, 206)
         self._SUBPATT.Name = "PATTSUB"
-        self._SUBPATT.Size = System.Drawing.Size(116, 20)
+        self._SUBPATT.Size = System.Drawing.Size(116, 24)
         self._SUBPATT.TabIndex = 101
         self._SUBPATT.Text = SUBPATT
         #
-        # label time out popup
+        # CB time out popup
         #
         self._labelTIMEPOPUP.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
         self._labelTIMEPOPUP.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        self._labelTIMEPOPUP.Location = System.Drawing.Point(320, 246)
+        self._labelTIMEPOPUP.Location = System.Drawing.Point(16, 52)
         self._labelTIMEPOPUP.Name = "labelTimePopup"
-        self._labelTIMEPOPUP.Size = System.Drawing.Size(200, 23)
+        self._labelTIMEPOPUP.Size = System.Drawing.Size(310, 23)
         self._labelTIMEPOPUP.TabIndex = 102
+        self._labelTIMEPOPUP.UseVisualStyleBackColor = True
         self._labelTIMEPOPUP.Text = Trans(44)
+        self._labelTIMEPOPUP.CheckState = if_else(AllowUserChoice == "2", CheckState.Checked, CheckState.Unchecked)
         #
         # time out popup
         #
-        self._TIMEPOPUP.Location = System.Drawing.Point(550, 244)
+        self._TIMEPOPUP.Location = System.Drawing.Point(330, 54)
         self._TIMEPOPUP.Name = "TIMEPOPUP"
         self._TIMEPOPUP.Size = System.Drawing.Size(40, 20)
         self._TIMEPOPUP.TabIndex = 103
@@ -2616,19 +2620,19 @@ class BDConfigForm(Form):
         #
         self._labelPadNumber.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
         self._labelPadNumber.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        self._labelPadNumber.Location = System.Drawing.Point(8, 274)
+        self._labelPadNumber.Location = System.Drawing.Point(268, 240)
         self._labelPadNumber.Name = "labelPadNumber"
-        self._labelPadNumber.Size = System.Drawing.Size(260, 23)
+        self._labelPadNumber.Size = System.Drawing.Size(300, 24)
         self._labelPadNumber.TabIndex = 104
         self._labelPadNumber.Text = Trans(148)
         #
         # pad number
         #
-        self._PadNumber.Location = System.Drawing.Point(268, 272)
+        self._PadNumber.Location = System.Drawing.Point(572, 238)
         self._PadNumber.Name = "PadNumber"
-        self._PadNumber.Size = System.Drawing.Size(40, 20)
+        self._PadNumber.Size = System.Drawing.Size(20, 24)
         self._PadNumber.TabIndex = 105
-        self._PadNumber.MaxLength = 3
+        self._PadNumber.MaxLength = 1
         self._PadNumber.TextAlign = HorizontalAlignment.Center
         self._PadNumber.Text = PadNumber
         #
@@ -2649,12 +2653,12 @@ class BDConfigForm(Form):
         self._RENLOGMAX.Size = System.Drawing.Size(40, 23)
         self._RENLOGMAX.TabIndex = 5
         self._RENLOGMAX.TextAlign = HorizontalAlignment.Center
-        self._RENLOGMAX.Text = str(int(RENLOGMAX / 1024 / 1024))
+        self._RENLOGMAX.Text = "{:.2f}".format(float(RENLOGMAX) / (1024 * 1024))
         #
         # CBRescrape
         #
         self._CBRescrape.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
-        self._CBRescrape.Location = System.Drawing.Point(8, 302)
+        self._CBRescrape.Location = System.Drawing.Point(8, 310)
         self._CBRescrape.Name = "CBRescrape"
         self._CBRescrape.Size = System.Drawing.Size(400, 20)
         self._CBRescrape.TabIndex = 21
@@ -2733,14 +2737,14 @@ class BDConfigForm(Form):
         self._labelChoice.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
         self._labelChoice.Location = System.Drawing.Point(8, 192)
         self._labelChoice.Name = "labelChoice"
-        self._labelChoice.Size = System.Drawing.Size(420, 40)
+        self._labelChoice.Size = System.Drawing.Size(590, 82)
         self._labelChoice.Text = Trans(141)
         self._labelChoice.Tag = "Label"
         #
         # radioChoiceSkip (no user choice allowed)
         #
         self._radioChoiceSkip.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
-        self._radioChoiceSkip.Location = System.Drawing.Point(16, 16)
+        self._radioChoiceSkip.Location = System.Drawing.Point(16, 20)
         self._radioChoiceSkip.Name = "radioChoiceSkip"
         self._radioChoiceSkip.Size = System.Drawing.Size(200, 24)
         self._radioChoiceSkip.Text = Trans(45)
@@ -2749,7 +2753,7 @@ class BDConfigForm(Form):
         # radioChoiceUser (no user choice allowed)
         #
         self._radioChoiceUser.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
-        self._radioChoiceUser.Location = System.Drawing.Point(220, 16)
+        self._radioChoiceUser.Location = System.Drawing.Point(220, 20)
         self._radioChoiceUser.Name = "radioChoiceUser"
         self._radioChoiceUser.Size = System.Drawing.Size(200, 24)
         self._radioChoiceUser.Text = Trans(46)
@@ -2787,7 +2791,7 @@ class BDConfigForm(Form):
         #
         self._labelTIMEOUT.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
         self._labelTIMEOUT.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        self._labelTIMEOUT.Location = System.Drawing.Point(320, 274)
+        self._labelTIMEOUT.Location = System.Drawing.Point(320, 282)
         self._labelTIMEOUT.Name = "labelTIMEOUT"
         self._labelTIMEOUT.Size = System.Drawing.Size(200, 23)
         self._labelTIMEOUT.TabIndex = 99
@@ -2795,7 +2799,7 @@ class BDConfigForm(Form):
         #
         # TIMEOUT
         #
-        self._TIMEOUT.Location = System.Drawing.Point(550, 272)
+        self._TIMEOUT.Location = System.Drawing.Point(550, 280)
         self._TIMEOUT.Name = "TIMEOUT"
         self._TIMEOUT.Size = System.Drawing.Size(40, 20)
         self._TIMEOUT.TabIndex = 29
@@ -2807,7 +2811,7 @@ class BDConfigForm(Form):
         #
         self._labelTIMEOUTS.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
         self._labelTIMEOUTS.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        self._labelTIMEOUTS.Location = System.Drawing.Point(8, 246)
+        self._labelTIMEOUTS.Location = System.Drawing.Point(8, 282)
         self._labelTIMEOUTS.Name = "labelTIMEOUTS"
         self._labelTIMEOUTS.Size = System.Drawing.Size(260, 23)
         self._labelTIMEOUTS.TabIndex = 99
@@ -2815,7 +2819,7 @@ class BDConfigForm(Form):
         #
         # TIMEOUTS
         #
-        self._TIMEOUTS.Location = System.Drawing.Point(268, 244)
+        self._TIMEOUTS.Location = System.Drawing.Point(268, 280)
         self._TIMEOUTS.Name = "TIMEOUTS"
         self._TIMEOUTS.Size = System.Drawing.Size(40, 20)
         self._TIMEOUTS.TabIndex = 30
@@ -2942,8 +2946,8 @@ class BDConfigForm(Form):
             SHOWRENLOG = if_else(self._SHOWRENLOG.CheckState == CheckState.Checked, True, False)
             SHOWDBGLOG = if_else(self._SHOWDBGLOG.CheckState == CheckState.Checked, True, False)
             DBGONOFF = if_else(self._DBGONOFF.CheckState == CheckState.Checked, True, False)
-            DBGLOGMAX = int(self._DBGLOGMAX.Text)*1024*1024
-            RENLOGMAX = int(self._RENLOGMAX.Text)*1024*1024
+            DBGLOGMAX = int(float(self._DBGLOGMAX.Text)*1024*1024)
+            RENLOGMAX = int(float(self._RENLOGMAX.Text)*1024*1024)
             LANGENFR = if_else(self._radioENG.Checked,"EN", "FR")
             TBTags = self._TBTags.Text
             ShortWebLink = if_else(self._ShortWebLink.CheckState == CheckState.Checked, True, False)
@@ -2956,7 +2960,7 @@ class BDConfigForm(Form):
             CBCount = if_else(self._scrapedData['Count']['state'] == CheckState.Checked, True, False)
             CBSynopsys = if_else(self._scrapedData['Synopsys']['state'] == CheckState.Checked, True, False)
             CBImprint = if_else(self._scrapedData['Imprint']['state'] == CheckState.Checked, True, False)
-            CBLetterer = if_else(self._scrapedData['Web']['state'] == CheckState.Checked, True, False)
+            CBLetterer = if_else(self._scrapedData['Letterer']['state'] == CheckState.Checked, True, False)
             CBPrinted = if_else(self._scrapedData['Printed']['state'] == CheckState.Checked, True, False)
             CBRating = if_else(self._scrapedData['Rating']['state'] == CheckState.Checked, True, False)
             CBISBN = if_else(self._scrapedData['ISBN']['state'] == CheckState.Checked, True, False)
@@ -2971,6 +2975,13 @@ class BDConfigForm(Form):
             CBDefault = if_else(self._CBDefault.CheckState == CheckState.Checked, True, False)
             CBRescrape = if_else(self._CBRescrape.CheckState == CheckState.Checked, True, False)
             AllowUserChoice = if_else(self._radioChoiceUser.Checked, True, False)
+            if self._radioChoiceUser.Checked:
+                if self._labelTIMEPOPUP.CheckState == CheckState.Checked:
+                    AllowUserChoice = "2"
+                else:
+                    AllowUserChoice = True
+            else:
+                AllowUserChoice = False
 
             ARTICLES = self._ARTICLES.Text
             SUBPATT = self._SUBPATT.Text
@@ -3021,23 +3032,11 @@ class BDConfigForm(Form):
         elif sender.Name.CompareTo(self._ButtonCheckNone.Name) == 0:
             for index in range(self._ScrapedDataCheckedListBox.Items.Count):
                 self._ScrapedDataCheckedListBox.SetItemCheckState(index, CheckState.Unchecked)
-                if index == self._scrapedData.keys().index('Web'):
-                    self._ScrapedDataCheckedListBox.SetItemCheckState(index, CheckState.Unchecked)
         elif sender.Name.CompareTo(self._ButtonCheckAll.Name) == 0:
             for index in range(self._ScrapedDataCheckedListBox.Items.Count):
                 self._ScrapedDataCheckedListBox.SetItemCheckState(index, CheckState.Checked)
-                if index == self._scrapedData.keys().index('Web'):
-                    self._ScrapedDataCheckedListBox.SetItemCheckState(index, CheckState.Checked)
 
     def ScrapedDataCheckedListBox_CheckItem(self, sender, e):
-        # Override behavior for some checkbox for example if we want a threestate checkbox
-        # if e.Index == self._scrapedData.keys().index('Web'):
-            # if e.CurrentValue == CheckState.Checked:
-            #     e.NewValue = CheckState.Indeterminate
-            # elif e.CurrentValue == CheckState.Indeterminate:
-            #     e.NewValue = CheckState.Unchecked
-            # else:
-            #     e.NewValue = CheckState.Checked
         self._scrapedData[self._scrapedData.keys()[e.Index]]['state'] = e.NewValue
 
 def Translate():
@@ -3144,7 +3143,7 @@ class SeriesForm(Form):
         self._OKButton = System.Windows.Forms.Button()
         self._ClearButton = System.Windows.Forms.Button()
 
-        if AllowUserChoice and TIMEPOPUP != "0":
+        if AllowUserChoice == "2":
             TimerExpired = False
             self._timer1 = System.Windows.Forms.Timer()
             self._timer1.Interval = int(TIMEPOPUP) * 1000
@@ -3249,7 +3248,7 @@ class SeriesForm(Form):
         # Adjust DPI scaling in this form
         HighDpiHelper.AdjustControlImagesDpiScale(self)
 
-        if AllowUserChoice and TIMEPOPUP != "0":
+        if AllowUserChoice == "2":
             self._timer1.Start()
 
     def fillList(self, ):
