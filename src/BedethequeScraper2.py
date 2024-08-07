@@ -77,6 +77,7 @@ CBEditor = True
 CBFormat = True
 CBColorist = True
 CBPenciller = True
+CBInker = True
 CBWriter = True
 CBTitle = True
 CBSeries = True
@@ -92,6 +93,7 @@ COUNTFINIE = True
 TITLEIT = True
 CBCouverture = True
 SerieResumeEverywhere = True
+AcceptGenericArtists = True
 TIMEOUT = "1000"
 TIMEOUTS = "7"
 TIMEPOPUP = "30"
@@ -105,10 +107,6 @@ AlwaysChooseSerie = False
 # Nombres auteurs
 LAST_FIRST_NAMES_PATTERN = r'(?P<name>[^,]*?), (?P<firstname>[^,]*?)$'
 LAST_FIRST_NAMES = re.compile(LAST_FIRST_NAMES_PATTERN)
-
-RAW_STR_PATTERN = r'(?P<deb><[^>]+>?)'
-RAW_STR = re.compile(RAW_STR_PATTERN)
-########################################
 
 ########################################
 # Info Serie
@@ -164,51 +162,30 @@ ALBUM_TITLE_PATTERN = r'itemprop="url"\shref="%s"\stitle="(.*?)">'
 ALBUM_EVAL_PATTERN = r'ratingValue">(.*?)<'
 ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
+ALBUM_MULTI_AUTHOR_NAMES_PATTERN = r'">(.*?)</'
+ALBUM_MULTI_AUTHOR_NAMES = re.compile(ALBUM_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_SCENAR_MULTI_AUTHOR_PATTERN = r'<label>sc.*?nario\s:</label>.*?(?=">)(.*?)<label>[^&]' #Dessin'
+ALBUM_SCENAR_MULTI_AUTHOR_PATTERN = r'<label>sc.*?nario\s:</label>(.*?)<label>[^&]'
 ALBUM_SCENAR_MULTI_AUTHOR = re.compile(ALBUM_SCENAR_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_SCENAR_MULTI_AUTHOR_NAMES_PATTERN = r'">(.*?)</'
-ALBUM_SCENAR_MULTI_AUTHOR_NAMES = re.compile(ALBUM_SCENAR_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN = r'label>storyboard\s:.*?itemprop.*?">(.*?)<'
+# Storyboard artists (i.e https://www.bedetheque.com/BD-Aio-Zitelli-Tome-1-Recits-de-guerre-14-18-215576.html)
+ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN = r'label>storyboard\s:</label>(.*?)<label>[^&]'
 ALBUM_STORYBOARD_MULTI_AUTHOR = re.compile(ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES_PATTERN = r'<label>.*?">(.*?)</a'
-ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES = re.compile(ALBUM_STORYBOARD_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_SCENAR_PATTERN = r'<label>sc.*?nario\s:</label>.*?>(.*?)<'
-ALBUM_SCENAR = re.compile(ALBUM_SCENAR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_DESSIN_MULTI_AUTHOR_PATTERN = r'<label>dessin\s:</label>.*?(?=">)(.*?)<label>[^&]'
+ALBUM_DESSIN_MULTI_AUTHOR_PATTERN = r'<label>dessin\s:</label>(.*?)<label>[^&]'
 ALBUM_DESSIN_MULTI_AUTHOR = re.compile(ALBUM_DESSIN_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_DESSIN_MULTI_AUTHOR_NAMES_PATTERN = r'">(.*?)</'
-ALBUM_DESSIN_MULTI_AUTHOR_NAMES = re.compile(ALBUM_DESSIN_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_DESSIN_PATTERN = r'<label>dessin\s:</label>.*?>(.*?)<'
-ALBUM_DESSIN = re.compile(ALBUM_DESSIN_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_COLOR_MULTI_AUTHOR_PATTERN = r'<label>couleurs\s:</label>.*?(?=">)(.*?)<label>[^&]'
+ALBUM_COLOR_MULTI_AUTHOR_PATTERN = r'<label>couleurs\s:</label>(.*?)<label>[^&]'
 ALBUM_COLOR_MULTI_AUTHOR = re.compile(ALBUM_COLOR_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COLOR_MULTI_AUTHOR_NAMES_PATTERN = r'">(.*?)</'
-ALBUM_COLOR_MULTI_AUTHOR_NAMES = re.compile(ALBUM_COLOR_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_COLOR_PATTERN = r'<label>Couleurs\s:</label>.*?">(.*?)<'
-ALBUM_COLOR = re.compile(ALBUM_COLOR_PATTERN,  re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_COUVERT_MULTI_AUTHOR_PATTERN = r'<label>couverture\s:</label>.*?(?=">)(.*?)<label>[^&]'
+ALBUM_COUVERT_MULTI_AUTHOR_PATTERN = r'<label>couverture\s:</label>(.*?)<label>[^&]'
 ALBUM_COUVERT_MULTI_AUTHOR = re.compile(ALBUM_COUVERT_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COUVERT_MULTI_AUTHOR_NAMES_PATTERN = r'">(.*?)</'
-ALBUM_COUVERT_MULTI_AUTHOR_NAMES = re.compile(ALBUM_COUVERT_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+ALBUM_LETTRAGE_MULTI_AUTHOR_PATTERN = r'<label>lettrage\s:</label>(.*?)<label>[^&]'
+ALBUM_LETTRAGE_MULTI_AUTHOR = re.compile(ALBUM_LETTRAGE_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COUVERT_PATTERN = r'<label>couverture\s:</label>.*?>(.*?)<'
-ALBUM_COUVERT = re.compile(ALBUM_COUVERT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_LETTRAGE_PATTERN = r'<label>Lettrage\s:\s?</label>.*?">(.+?)</'
-ALBUM_LETTRAGE = re.compile(ALBUM_LETTRAGE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+ALBUM_INKER_MULTI_AUTHOR_PATTERN = r'<label>encrage\s:</label>(.*?)<label>[^&]'
+ALBUM_INKER_MULTI_AUTHOR = re.compile(ALBUM_INKER_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_DEPOT_PATTERN = r'<label>D.pot L.gal\s:\s?</label>(?P<month>[\d|-]{0,2})/?(?P<year>[\d]{2,4})?'
 ALBUM_DEPOT = re.compile(ALBUM_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
@@ -479,7 +456,7 @@ def WorkerThread(books):
                 cPause = Trans(140).replace("%%", str(TIMEOUTS))
                 f.Update(cPause, 0, False)
                 f.Refresh()
-                for i in range(20*int(TIMEOUTS)):
+                for ii in range(20*int(TIMEOUTS)):
                     t.CurrentThread.Join(50)
                     Application.DoEvents()
                     if bStopit:
@@ -1085,7 +1062,7 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
         if CBEditor:
             nameRegex = ALBUM_EDITEUR.search(Entete, 0)
             if nameRegex:
-                editeur = parseNames(nameRegex.group(1))
+                editeur = parseName(nameRegex.group(1))
                 book.Publisher = editeur
             else:
                 book.Publisher = ""
@@ -1319,105 +1296,26 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                 book.Tags = TBTags
 
             if CBWriter:
-                nameRegex = ALBUM_SCENAR_MULTI_AUTHOR.search(info, 0)
-                if nameRegex:
-                    scenaristes = ""
-                    thisscen = ""
-                    for scenar_multi in ALBUM_SCENAR_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
-                        thisscen = parseNames(scenar_multi.group(1).strip())
-                        if thisscen not in scenaristes:
-                            scenaristes = scenaristes + thisscen + ", "
-
-                    thisscen = ""
-                    for scenar_multi in ALBUM_STORYBOARD_MULTI_AUTHOR.finditer(info, 0):
-                        thisscen = parseNames(scenar_multi.group(1).strip())
-                        if thisscen not in scenaristes:
-                            scenaristes = scenaristes + thisscen + ", "
-
-                    book.Writer = scenaristes[:-2]
-
-                else:
-
-                    nameRegex = ALBUM_SCENAR.search(info, 0)
-                    if nameRegex:
-                        scenaristes = nameRegex.group(1).strip()
-                        book.Writer = parseNames(scenaristes)
-                        log_BD(parseNames(scenaristes),"",1)
-
-                    else:
-                        book.Writer = ""
-                if DBGONOFF:print Trans(30), book.Writer
+                book.Writer = getGenericBookArtists([ALBUM_SCENAR_MULTI_AUTHOR, ALBUM_STORYBOARD_MULTI_AUTHOR], info, Trans(30))
 
             if CBPenciller:
-                nameRegex = ALBUM_DESSIN_MULTI_AUTHOR.search(info, 0)
-                if nameRegex:
-                    dessinateurs = ""
-                    for dessin_multi in ALBUM_DESSIN_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
-                        dessinateurs = dessinateurs + parseNames(dessin_multi.group(1).strip()) + ", "
-
-                    book.Penciller = dessinateurs[:-2]
-
-                else:
-                    nameRegex = ALBUM_DESSIN.search(info, 0)
-                    if nameRegex:
-                        dessinateurs = nameRegex.group(1).strip()
-                        book.Penciller = parseNames(dessinateurs)
-
-                    else:
-                        book.Penciller = ""
-
-                if DBGONOFF:print Trans(31), book.Penciller
+                book.Penciller = getGenericBookArtists([ALBUM_DESSIN_MULTI_AUTHOR], info, Trans(31))
 
             if CBColorist:
-                cColorNote = ""
-                nameRegex = ALBUM_COLOR_MULTI_AUTHOR.search(info, 0)
-                cColorist = ""
-                if nameRegex:
-                    for color_multi in ALBUM_COLOR_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
-                        cColorist = cColorist + parseNames(color_multi.group(1).strip()) + ", "
-
-                    book.Colorist = cColorist[:-2]
-                    cColorist = cColorist[:-2]
-
-                else:
-                    nameRegex = ALBUM_COLOR.search(info, 0)
-                    if nameRegex:
-                        coloristes = nameRegex.group(1).strip()
-                        cColorist = parseNames(coloristes)
-                        if re.search("<.*?>", cColorist):
-                            book.Colorist = ""
-                            cColorNote = Trans(32)
-                        else:
-                            book.Colorist = cColorist
-                    else:
-                        book.Colorist = ""
-
-                if DBGONOFF:print Trans(33), cColorist , cColorNote
-
+                book.Colorist = getGenericBookArtists([ALBUM_COLOR_MULTI_AUTHOR], info, Trans(33))
+                if '<N&B>' in book.Colorist:
+                    book.BlackAndWhite = YesNo.Yes
+                elif book.Colorist:
+                    book.BlackAndWhite = YesNo.No
+            
             if CBCouverture:
-                nameRegex = ALBUM_COUVERT_MULTI_AUTHOR.search(info, 0)
-                cCoverNote = ""
-                if nameRegex:
-                    for cover_multi in ALBUM_COUVERT_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
-                        cCoverNote = cCoverNote + parseNames(cover_multi.group(1).strip()) + ", "
+                book.CoverArtist = getGenericBookArtists([ALBUM_COUVERT_MULTI_AUTHOR], info, Trans(121))
 
-                    book.CoverArtist = cCoverNote[:-2]
-                    cCoverNote = ""
+            if CBLetterer:
+                book.Letterer = getGenericBookArtists([ALBUM_LETTRAGE_MULTI_AUTHOR], info, Trans(38))
 
-                else:
-                    nameRegex = ALBUM_COUVERT.search(info, 0)
-                    if nameRegex:
-                        couvertures = nameRegex.group(1)
-                        cCouvertures = parseNames(couvertures)
-                        if re.search("<.*?>", cCouvertures):
-                            book.CoverArtist = ""
-                            cCoverNote = Trans(32)
-                        else:
-                            book.CoverArtist = cCouvertures
-                    else:
-                        book.CoverArtist = ""
-
-                if DBGONOFF:print Trans(120), book.CoverArtist , cCoverNote
+            if CBInker:
+                book.Inker = getGenericBookArtists([ALBUM_INKER_MULTI_AUTHOR], info, Trans(73))
 
             if CBPrinted:
                 nameRegex = ALBUM_DEPOT.search(info, 0)
@@ -1436,7 +1334,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             if CBEditor:
                 nameRegex = ALBUM_EDITEUR.search(info, 0)
                 if nameRegex:
-                    editeur = parseNames(nameRegex.group(1)).strip()
+                    editeur = parseName(nameRegex.group(1)).strip()
                     book.Publisher = editeur
                 else:
                     book.Publisher = ""
@@ -1456,17 +1354,6 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
                 if DBGONOFF:print "ISBN: ", book.ISBN
 
-            # Lettrage is optional => So, there is a specific research
-            if CBLetterer:
-                nameRegex = ALBUM_LETTRAGE.search(info, 0)
-                if nameRegex:
-                    letterer = nameRegex.group(1).strip()
-                    book.Letterer = parseNames(letterer)
-                else:
-                    book.Letterer = ""
-
-                if DBGONOFF:print Trans(38), book.Letterer 
-            
             # Album evaluation is optional => So, there is a specific research
             if CBRating:
                 nameRegex = ALBUM_EVAL.search(albumUrl, 0)
@@ -1583,31 +1470,40 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
     return True
 
-def parseNames(extractedNames):
+def getGenericBookArtists(patterns, book_info, label):
 
-    newstr = RAW_STR.sub('=', extractedNames)
-
-    splitted = newstr.split('=')
-    names = ""
-
-    for splitT in splitted:
-
-        Regex = re.compile(LAST_FIRST_NAMES, re.IGNORECASE)
-        nameRegex = Regex.search(splitT)
-
+    """ Parse album info for artists (writer, penciller, colorist, etc.) """
+    result = ''
+    artist_list = []
+    for pattern in patterns:
+        nameRegex = pattern.search(book_info, 0)
         if nameRegex:
-            names = names + ',' + nameRegex.group('firstname') + ' ' + nameRegex.group('name')
+            # Special process for 'Indéterminé' which is not usually using a link (i.e. https://www.bedetheque.com/serie-25893-BD-June-Aredit.html)
+            if '&lt;Indéterminé&gt;' in nameRegex.group(1):
+                if AcceptGenericArtists:
+                    thisArtist = '<Indéterminé>'
+                    if thisArtist not in artist_list:
+                        artist_list.append(thisArtist)
+            else:
+                for artist_multi in ALBUM_MULTI_AUTHOR_NAMES.finditer(nameRegex.group(1)):
+                    thisArtist = parseName(artist_multi.group(1).strip())
+                    if thisArtist not in artist_list:
+                        artist_list.append(thisArtist)
+            result = ', '.join(artist_list)
+    if DBGONOFF:print label + ':', result
+    return result
 
-        else:
+def parseName(extractedName):
+    name = extractedName.strip()
+    if not AcceptGenericArtists and re.match(r'&lt;', extractedName):
+        return ''
 
-            if splitT != "":
-                names = names + ',' + splitT
+    nameRegex = LAST_FIRST_NAMES.search(extractedName)
+    if nameRegex:
+        name = nameRegex.group('firstname') + ' ' + nameRegex.group('name')
 
-        if re.match(r',&lt;', names):
-            names = ''
-        names = re.sub(',&nbsp;,', r', ', names)
+    return checkWebChar(name).strip()
 
-    return checkWebChar(names[1:len(names)]).strip().strip(",")
 
 def _read_url(url, bSingle):
 
@@ -1903,8 +1799,8 @@ class ProgressBarDialog(Form):
 def LoadSetting():
 
     global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
-    global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, PadNumber, SerieResumeEverywhere
-    global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, AlwaysChooseSerie, ShortWebLink
+    global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, PadNumber, SerieResumeEverywhere
+    global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, AlwaysChooseSerie, ShortWebLink, AcceptGenericArtists
 
     ###############################################################
     # Config read #
@@ -1992,6 +1888,10 @@ def LoadSetting():
         CBLetterer = ft(MySettings.Get("CBLetterer"))
     except Exception as e:
         CBLetterer = True
+    try:
+        CBInker = ft(MySettings.Get("CBInker"))
+    except Exception as e:
+        CBInker = True
     try:
         CBPrinted = ft(MySettings.Get("CBPrinted"))
     except Exception as e:
@@ -2108,7 +2008,10 @@ def LoadSetting():
         AlwaysChooseSerie = ft(MySettings.Get("AlwaysChooseSerie"))
     except Exception as e:
         AlwaysChooseSerie = False
-
+    try:
+        AcceptGenericArtists = ft(MySettings.Get("AcceptGenericArtists"))
+    except Exception as e:
+        AcceptGenericArtists = False
     ###############################################################
     
     if ONESHOTFORMAT and CBFormat:
@@ -2146,6 +2049,7 @@ def SaveSetting():
     MySettings.Set("CBSynopsys",  tf(CBSynopsys))
     MySettings.Set("CBImprint",  tf(CBImprint))
     MySettings.Set("CBLetterer",  tf(CBLetterer))
+    MySettings.Set("CBInker",  tf(CBInker))
     MySettings.Set("CBPrinted",  tf(CBPrinted))
     MySettings.Set("CBRating",  tf(CBRating))
     MySettings.Set("CBISBN",  tf(CBISBN))
@@ -2174,6 +2078,8 @@ def SaveSetting():
     MySettings.Set("SerieResumeEverywhere", tf(SerieResumeEverywhere))
     MySettings.Set("AlwaysChooseSerie", tf(AlwaysChooseSerie))
     MySettings.Set("ONESHOTFORMAT", tf(ONESHOTFORMAT))
+    MySettings.Set("AcceptGenericArtists", tf(AcceptGenericArtists))
+    
     if AllowUserChoice == True:
         MySettings.Set("CBStop",  "1")
     elif AllowUserChoice == False:
@@ -2266,10 +2172,11 @@ class BDConfigForm(Form):
             [
                 ('Series', {'label': Trans(71), 'state': if_else(CBSeries, CheckState.Checked, CheckState.Unchecked)}),
                 ('Title', {'label': Trans(72), 'state': if_else(CBTitle, CheckState.Checked, CheckState.Unchecked)}),
-                ('Writer', {'label': Trans(73), 'state': if_else(CBWriter, CheckState.Checked, CheckState.Unchecked)}),
-                ('Penciller', {'label': Trans(74), 'state': if_else(CBPenciller, CheckState.Checked, CheckState.Unchecked)}),
-                ('Colorist', {'label': Trans(75), 'state': if_else(CBColorist, CheckState.Checked, CheckState.Unchecked)}),
-                ('Letterer', {'label': Trans(76), 'state': if_else(CBLetterer, CheckState.Checked, CheckState.Unchecked)}),
+                ('Writer', {'label': Trans(30), 'state': if_else(CBWriter, CheckState.Checked, CheckState.Unchecked)}),
+                ('Penciller', {'label': Trans(31), 'state': if_else(CBPenciller, CheckState.Checked, CheckState.Unchecked)}),
+                ('Colorist', {'label': Trans(33), 'state': if_else(CBColorist, CheckState.Checked, CheckState.Unchecked)}),
+                ('Letterer', {'label': Trans(38), 'state': if_else(CBLetterer, CheckState.Checked, CheckState.Unchecked)}),
+                ('Inker', {'label': Trans(73), 'state': if_else(CBInker, CheckState.Checked, CheckState.Unchecked)}),
                 ('CoverArtist', {'label': Trans(121), 'state': if_else(CBCouverture, CheckState.Checked, CheckState.Unchecked)}),
                 ('Publisher', {'label': Trans(78), 'state': if_else(CBEditor, CheckState.Checked, CheckState.Unchecked)}),
                 ('Language', {'label': Trans(79), 'state': if_else(CBLanguage, CheckState.Checked, CheckState.Unchecked)}),
@@ -2314,6 +2221,7 @@ class BDConfigForm(Form):
         self._FORMATARTICLES = System.Windows.Forms.CheckBox()
         self._PopUpEditionForm = System.Windows.Forms.CheckBox()
         self._SerieResumeEverywhere = System.Windows.Forms.CheckBox()
+        self._AcceptGenericArtists = System.Windows.Forms.CheckBox()
         self._AlwaysChooseSerie = System.Windows.Forms.CheckBox()
         self._OneShotFormat = System.Windows.Forms.CheckBox()
         self._ShortWebLink = System.Windows.Forms.CheckBox()
@@ -2390,6 +2298,7 @@ class BDConfigForm(Form):
         self._tabPage2.Controls.Add(self._COUNTOF)
         self._tabPage2.Controls.Add(self._COUNTFINIE)
         self._tabPage2.Controls.Add(self._SerieResumeEverywhere)
+        self._tabPage2.Controls.Add(self._AcceptGenericArtists)
         self._tabPage2.Controls.Add(self._SUBPATT)
         self._tabPage2.Controls.Add(self._labelSUBPATT)
         self._tabPage2.Controls.Add(self._PadNumber)
@@ -2733,6 +2642,16 @@ class BDConfigForm(Form):
         self._SerieResumeEverywhere.UseVisualStyleBackColor = True
         self._SerieResumeEverywhere.CheckState = if_else(SerieResumeEverywhere, CheckState.Unchecked, CheckState.Checked)
         #
+        # AcceptGenericArtists
+        #
+        self._AcceptGenericArtists.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
+        self._AcceptGenericArtists.Location = System.Drawing.Point(268, 268)
+        self._AcceptGenericArtists.Name = "AcceptGenericArtists"
+        self._AcceptGenericArtists.Size = System.Drawing.Size(350, 24)
+        self._AcceptGenericArtists.Text = Trans(74)
+        self._AcceptGenericArtists.UseVisualStyleBackColor = True
+        self._AcceptGenericArtists.CheckState = if_else(AcceptGenericArtists, CheckState.Checked, CheckState.Unchecked)
+        #
         # labelChoice (Decision in case of multiple choices when scraping)
         #
         self._labelChoice.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
@@ -2940,7 +2859,7 @@ class BDConfigForm(Form):
     def button_Click(self, sender, e):
 
         global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ONESHOTFORMAT
-        global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, SerieResumeEverywhere
+        global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, SerieResumeEverywhere, AcceptGenericArtists
         global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber, AlwaysChooseSerie, ShortWebLink
 
         if sender.Name.CompareTo(self._OKButton.Name) == 0:
@@ -2962,6 +2881,7 @@ class BDConfigForm(Form):
             CBSynopsys = if_else(self._scrapedData['Synopsys']['state'] == CheckState.Checked, True, False)
             CBImprint = if_else(self._scrapedData['Imprint']['state'] == CheckState.Checked, True, False)
             CBLetterer = if_else(self._scrapedData['Letterer']['state'] == CheckState.Checked, True, False)
+            CBInker = if_else(self._scrapedData['Inker']['state'] == CheckState.Checked, True, False)
             CBPrinted = if_else(self._scrapedData['Printed']['state'] == CheckState.Checked, True, False)
             CBRating = if_else(self._scrapedData['Rating']['state'] == CheckState.Checked, True, False)
             CBISBN = if_else(self._scrapedData['ISBN']['state'] == CheckState.Checked, True, False)
@@ -2994,6 +2914,7 @@ class BDConfigForm(Form):
             PopUpEditionForm = if_else(self._PopUpEditionForm.CheckState == CheckState.Checked, False, True)
             SerieResumeEverywhere = if_else(self._SerieResumeEverywhere.CheckState == CheckState.Checked, False, True)
             AlwaysChooseSerie = if_else(self._AlwaysChooseSerie.CheckState == CheckState.Checked, True, False)
+            AcceptGenericArtists = if_else(self._AcceptGenericArtists.CheckState == CheckState.Checked, True, False)
 
             try:
                 if int(self._TIMEOUT.Text) > 0:
