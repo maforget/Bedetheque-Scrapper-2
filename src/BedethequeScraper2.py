@@ -935,7 +935,7 @@ ListAlbum elements:
 """
 def AlbumChooser(ListAlbum):
 
-    global NewLink
+    global NewLink, TimerExpired
 
     albumURL = ""
     if DBGONOFF:print "Nbr. d'item dans la Liste Album est de: " + str(len(ListAlbum))
