@@ -151,7 +151,7 @@ SERIE_HEADER2 = re.compile(SERIE_HEADER2_PATTERN, re.IGNORECASE | re.MULTILINE |
 
 # Info Serie for Quickscrape
 
-SERIE_QSERIE_PATTERN = r'<h1>\s*<a href="(https://www.bedetheque.com[^\.]+\.html)"\stitle="[^"]+">\s*([^<]+)\s*</a'
+SERIE_QSERIE_PATTERN = r'<h1>\s*<a href="serie-[^\.]+\.html">([^"<>]+)</a>'
 
 # Info Album from Album
 INFO_SERIENAMENUMBER_ALBUM_PATTERN = r'<span\sclass="type">S.*?rie\s:\s</span>\s?(.*?)<.*?id="%s">.*?<div\sclass="titre">(?:(.*?)<.*?numa">(.*?)</span>\.?\s?)?(.*?)<'
