@@ -433,7 +433,7 @@ def WorkerThread(books):
 
                     RetAlb = SetAlbumInformation(book, serieUrl, dlgName, albumNum)
 
-                    #SkipAlbum utlisez seulement lorsque l'on appuye sur Annuler dans la fenetre pour choisir l'album ParseSerieInfo
+                    #SkipAlbum utlisez lorsque l'on appuye sur Annuler (ou AllowUserChoice == 0) dans la fenetre pour choisir l'album ParseSerieInfo
                     if not SkipAlbum and not RetAlb and not '/revue-' in serieUrl:
                         # reading info on album when no album list is present (i.e. "Croisade (Seconde époque: Nomade)")
                         RetAlb = parseAlbumInfo (book, serieUrl, albumNum)
@@ -958,8 +958,9 @@ def AlbumChooser(ListAlbum):
             else:
                 albumURL = NewLink
         else:
-            albumURL = ListAlbum[0][0]
-            if DBGONOFF:print "---> Plus d'un item mais l'option pause scrape est désactivé, choix du 1er item"
+            albumURL = False
+            SkipAlbum = True
+            if DBGONOFF:print "---> Plus d'un item mais l'option pause scrape est désactivé"
     elif len(ListAlbum) == 1:
         albumURL = ListAlbum[0][0]
         if DBGONOFF:print "---> Seulement 1 item dans la liste"    
