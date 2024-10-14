@@ -2670,8 +2670,9 @@ class BDConfigForm(Form):
         self._radioChoiceSkip.Size = System.Drawing.Size(200, 24)
         self._radioChoiceSkip.Text = Trans(45)
         self._radioChoiceSkip.UseVisualStyleBackColor = True
+        self._radioChoiceSkip.CheckedChanged += self.radioChoiceSkip_CheckedChanged
         #
-        # radioChoiceUser (no user choice allowed)
+        # radioChoiceUser (user choice allowed)
         #
         self._radioChoiceUser.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
         self._radioChoiceUser.Location = System.Drawing.Point(220, 20)
@@ -2961,6 +2962,16 @@ class BDConfigForm(Form):
 
     def ScrapedDataCheckedListBox_CheckItem(self, sender, e):
         self._scrapedData[self._scrapedData.keys()[e.Index]]['state'] = e.NewValue
+
+    def radioChoiceSkip_CheckedChanged(self, sender, e):
+        if sender.Checked == True:
+            self._TIMEPOPUP.Enabled = False
+            self._labelTIMEPOPUP.Enabled = False
+        else:
+            self._TIMEPOPUP.Enabled = True
+            self._labelTIMEPOPUP.Enabled = True
+
+
 
 def Translate():
 
