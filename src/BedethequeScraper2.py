@@ -1275,8 +1275,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
             nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
             if nameRegex:
-                seriesFormat = checkWebChar(nameRegex2.group(1).strip())
                 series = checkWebChar(nameRegex.group(1).strip())
+                seriesFormat = checkWebChar(nameRegex2.group(1).strip()) if nameRegex2 else series
                 if DBGONOFF:  print Trans(9) + series + ' // Formaté: ' + seriesFormat
 
             if CBTitle:
