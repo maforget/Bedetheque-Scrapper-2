@@ -103,6 +103,7 @@ ONESHOTFORMAT = False
 bStopit = False
 AlwaysChooseSerie = False
 TimerExpired = False
+SkipAlbum = False
 
 ########################################
 # Nombres auteurs
@@ -917,7 +918,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
                 ListAlbum = ListAlbumAll
 
             albumURL = AlbumChooser(ListAlbum)
-            if not albumURL:
+            if not albumURL and not SkipAlbum:
                 #Rien trouvé il ce peux qu'il n'est pas de liste sur le coté, surement 1 seul item
                 Regex = re.compile(r'class="titre"\shref="(.+?)".+?<span class="numa">.*?</span>.+?', re.IGNORECASE | re.DOTALL)
                 r = Regex.search(request)
@@ -936,7 +937,7 @@ ListAlbum elements:
 """
 def AlbumChooser(ListAlbum):
 
-    global NewLink
+    global NewLink, SkipAlbum
 
     albumURL = ""
     if DBGONOFF:print "Nbr. d'item dans la Liste Album est de: " + str(len(ListAlbum))
