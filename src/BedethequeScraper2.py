@@ -1228,7 +1228,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
                 if result == DialogResult.Cancel:
                     pickedVar = ListAlbum[0][1]
-                    if DBGONOFF:print "---> Cancel appuyer, on choisi le premier"
+                    if TimerExpired and DBGONOFF:print "---> Le temps est expiré, choix du 1er item"
+                    if not TimerExpired and DBGONOFF:print "---> Cancel appuyer, on choisi le premier"
 
                 else:
                     pickedVar = NewSeries
