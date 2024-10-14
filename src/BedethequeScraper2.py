@@ -102,6 +102,7 @@ Serie_Resume = ""
 ONESHOTFORMAT = False
 bStopit = False
 AlwaysChooseSerie = False
+TimerExpired = False
 
 ########################################
 # Nombres auteurs
@@ -935,7 +936,7 @@ ListAlbum elements:
 """
 def AlbumChooser(ListAlbum):
 
-    global NewLink, TimerExpired
+    global NewLink
 
     albumURL = ""
     if DBGONOFF:print "Nbr. d'item dans la Liste Album est de: " + str(len(ListAlbum))
