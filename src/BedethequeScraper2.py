@@ -2920,7 +2920,7 @@ class BDConfigForm(Form):
             CBISBN = if_else(self._scrapedData['ISBN']['state'] == CheckState.Checked, True, False)
             CBLanguage = if_else(self._scrapedData['Language']['state'] == CheckState.Checked, True, False)
             CBEditor = if_else(self._scrapedData['Publisher']['state'] == CheckState.Checked, True, False)
-            CBFormat = if_else(self._scrapedData['SerieStatus']['state'] == CheckState.Checked, if_else(self._OneShotFormat.CheckState == CheckState.Checked, False, True), False)
+            CBFormat = if_else(self._scrapedData['Format']['state'] == CheckState.Checked, if_else(self._OneShotFormat.CheckState == CheckState.Checked, False, True), False)
             CBColorist = if_else(self._scrapedData['Colorist']['state'] == CheckState.Checked, True, False)
             CBPenciller = if_else(self._scrapedData['Penciller']['state'] == CheckState.Checked, True, False)
             CBWriter = if_else(self._scrapedData['Writer']['state'] == CheckState.Checked, True, False)
