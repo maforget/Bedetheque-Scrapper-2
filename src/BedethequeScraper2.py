@@ -3628,8 +3628,14 @@ class HighDpiHelper:
     @staticmethod
     def GetDpiScale(control):
         def calculateDpiScale():
-            with control.CreateGraphics() as graphics:
-                return graphics.DpiX / 96.0
+            try:
+                with control.CreateGraphics() as graphics:
+                    return graphics.DpiX / 96.0
+            except:
+                cError = debuglogOnError()
+                log_BD("   [error]", cError, 1)
+                return 1.0
+
         return calculateDpiScale()
 
     @staticmethod
