@@ -1525,9 +1525,9 @@ def _read_url(url, bSingle):
         bSingle = True
 
     if bSingle:
-        requestUri = quote(url, safe = "%/:=&~#+$!,?;'@()*[]")
+        requestUri = url_fix(url)
     else:
-        requestUri = quote("https://www.bedetheque.com/" + url, safe = "%/:=&~#+$!,?;'@()*[]")
+        requestUri = url_fix("https://www.bedetheque.com/" + url)
 
     try:
         System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
@@ -1703,10 +1703,9 @@ def url_fix(s, charset='utf-8'):
 
     if isinstance(s, unicode):
         s = s.encode(charset, 'ignore')
-        s = s.replace("/","-")
 
     scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = quote(path, '/%')
+    path = quote(path, "%/:=&~#+$!,?;'@()*[]")
     qs = quote_plus(qs, ':&=')
 
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
