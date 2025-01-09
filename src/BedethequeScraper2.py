@@ -1622,7 +1622,6 @@ def thread_proc():
         pass
 
 def debuglogOnError():
-
     global bError
 
     traceback = sys.exc_info()[2]
@@ -1630,32 +1629,28 @@ def debuglogOnError():
 
     logfile = (__file__[:-len('BedethequeScraper2.py')] + "BD2_debug_log.txt")
 
-    print "Writing Log to " + logfile
-    print 'Caught ', sys.exc_info()[0].__name__, ': ', sstr(sys.exc_info()[1])
+    print("Writing Log to " + logfile)
+    print('Caught ', sys.exc_info()[0].__name__, ': ', sstr(sys.exc_info()[1]))
 
-    log = open(logfile, 'a')
-    log.write ("\n\n" + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + "\n")
-    cError = sstr(sys.exc_info()[1])
-    log.write ("".join(['Caught ', sys.exc_info()[0].__name__, ': ', cError, '\n']))
+    with open(logfile, 'a') as log:
+        log.write("\n\n" + str(datetime.now().strftime("%A %d %B %Y %H:%M:%S")) + "\n")
+        cError = sstr(sys.exc_info()[1])
+        log.write("".join(['Caught ', sys.exc_info()[0].__name__, ': ', cError, '\n']).encode('utf-8'))
 
+        while traceback is not None:
+            frame = traceback.tb_frame
+            lineno = traceback.tb_lineno
+            code = frame.f_code
+            filename = code.co_filename
+            name = code.co_name
+            stackTrace.append((filename, lineno, name))
+            traceback = traceback.tb_next
 
-    while traceback is not None:
-        frame = traceback.tb_frame
-        lineno = traceback.tb_lineno
-        code = frame.f_code
-        filename = code.co_filename
-        name = code.co_name
-        stackTrace.append((filename, lineno, name))
-        traceback = traceback.tb_next
-
-    nL = 0
-    for line in stackTrace:
-        nL += 1
-        print nL, "-", line
-        log.write (",".join("%s" % tup for tup in line) + "\n")
-
-    log.flush()
-    log.close()
+        nL = 0
+        for line in stackTrace:
+            nL += 1
+            print(nL, "-", line)
+            log.write(",".join("%s" % tup for tup in line).encode('utf-8') + "\n")
 
     bError = True
 
