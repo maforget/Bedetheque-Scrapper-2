@@ -2751,7 +2751,6 @@ class BDConfigForm(Form):
         self._TIMEOUT.Size = System.Drawing.Size(40, 20)
         self._TIMEOUT.TabIndex = 29
         self._TIMEOUT.TextAlign = HorizontalAlignment.Center
-        self._TIMEOUT.MaxLength = 4
         self._TIMEOUT.Text = TIMEOUT
         #
         # TIMEOUTS Label
