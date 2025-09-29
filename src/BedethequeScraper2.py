@@ -31,6 +31,9 @@ clr.AddReference('System')
 clr.AddReference('System.Windows.Forms')
 from System.Windows.Forms import * 
 
+clr.AddReference('cYo.Common.Windows')
+from cYo.Common.Windows.Forms import FormEx, UserControlEx
+
 from System.IO import FileInfo, File
 from System.Diagnostics.Process import Start
 from System.Net import HttpWebRequest, Cookie, DecompressionMethods
@@ -1732,7 +1735,7 @@ def if_else(condition, trueVal, falseVal):
     else:
         return falseVal
 
-class ProgressBarDialog(Form):
+class ProgressBarDialog(FormEx):
 
     def __init__(self, nMax):
 
@@ -2170,7 +2173,7 @@ def tf(bool):
     elif bool == "2":
         return "2"
 
-class BDConfigForm(Form):
+class BDConfigForm(FormEx):
 
     def __init__(self):
 
@@ -2751,6 +2754,7 @@ class BDConfigForm(Form):
         self._TIMEOUT.Size = System.Drawing.Size(40, 20)
         self._TIMEOUT.TabIndex = 29
         self._TIMEOUT.TextAlign = HorizontalAlignment.Center
+        self._TIMEOUT.MaxLength = 4
         self._TIMEOUT.Text = TIMEOUT
         #
         # TIMEOUTS Label
@@ -3082,7 +3086,7 @@ class FormType():
     ALBUM = 2
     EDITION = 3
 
-class SeriesForm(Form):
+class SeriesForm(FormEx):
 
     def __init__(self, serie, listItems, formType = FormType.SERIE):
 
@@ -3474,7 +3478,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 
     return True
 
-class DirectScrape(Form):
+class DirectScrape(FormEx):
 
     def __init__(self):
 
