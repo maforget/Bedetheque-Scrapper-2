@@ -31,8 +31,15 @@ clr.AddReference('System')
 clr.AddReference('System.Windows.Forms')
 from System.Windows.Forms import * 
 
-clr.AddReference('cYo.Common.Windows')
-from cYo.Common.Windows.Forms import FormEx, UserControlEx
+try:
+    clr.AddReference('cYo.Common.Windows')
+    from cYo.Common.Windows.Forms import FormEx, UserControlEx
+    BaseForm = FormEx
+    BaseUserControl = UserControlEx
+except (ImportError, AttributeError):
+    # Fallback for older program versions
+    BaseForm = Form
+    BaseUserControl = UserControl
 
 from System.IO import FileInfo, File
 from System.Diagnostics.Process import Start
@@ -1735,7 +1742,7 @@ def if_else(condition, trueVal, falseVal):
     else:
         return falseVal
 
-class ProgressBarDialog(FormEx):
+class ProgressBarDialog(BaseForm):
 
     def __init__(self, nMax):
 
@@ -2173,7 +2180,7 @@ def tf(bool):
     elif bool == "2":
         return "2"
 
-class BDConfigForm(FormEx):
+class BDConfigForm(BaseForm):
 
     def __init__(self):
 
@@ -3086,7 +3093,7 @@ class FormType():
     ALBUM = 2
     EDITION = 3
 
-class SeriesForm(FormEx):
+class SeriesForm(BaseForm):
 
     def __init__(self, serie, listItems, formType = FormType.SERIE):
 
@@ -3478,7 +3485,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 
     return True
 
-class DirectScrape(FormEx):
+class DirectScrape(BaseForm):
 
     def __init__(self):
 
