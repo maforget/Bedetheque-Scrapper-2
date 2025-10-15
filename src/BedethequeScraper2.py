@@ -31,16 +31,6 @@ clr.AddReference('System')
 clr.AddReference('System.Windows.Forms')
 from System.Windows.Forms import * 
 
-try:
-    clr.AddReference('cYo.Common.Windows')
-    from cYo.Common.Windows.Forms import FormEx, UserControlEx
-    BaseForm = FormEx
-    BaseUserControl = UserControlEx
-except (ImportError, AttributeError):
-    # Fallback for older program versions
-    BaseForm = Form
-    BaseUserControl = UserControl
-
 from System.IO import FileInfo, File
 from System.Diagnostics.Process import Start
 from System.Net import HttpWebRequest, Cookie, DecompressionMethods
@@ -1742,7 +1732,7 @@ def if_else(condition, trueVal, falseVal):
     else:
         return falseVal
 
-class ProgressBarDialog(BaseForm):
+class ProgressBarDialog(Form):
 
     def __init__(self, nMax):
 
@@ -1803,6 +1793,7 @@ class ProgressBarDialog(BaseForm):
 
         # Adjust DPI scaling in this form
         HighDpiHelper.AdjustControlImagesDpiScale(self)
+        ThemeMe(self)
 
     def Update(self, cText, nInc = 1, book = False):
 
@@ -2180,7 +2171,7 @@ def tf(bool):
     elif bool == "2":
         return "2"
 
-class BDConfigForm(BaseForm):
+class BDConfigForm(Form):
 
     def __init__(self):
 
@@ -2888,6 +2879,7 @@ class BDConfigForm(BaseForm):
 
         # Adjust DPI scaling in this form
         HighDpiHelper.AdjustControlImagesDpiScale(self)
+        ThemeMe(self);
 
         self.ResumeLayout(False)
 
@@ -3087,12 +3079,17 @@ def Capitalize(s):
     ns = s[0:1].upper() + s[1:]
     return ns
 
+def ThemeMe(control):
+    if ComicRack.App.ProductVersion >= '0.9.182':
+            ComicRack.Theme.ApplyTheme(control)
+
+
 class FormType():
     SERIE = 1
     ALBUM = 2
     EDITION = 3
 
-class SeriesForm(BaseForm):
+class SeriesForm(Form):
 
     def __init__(self, serie, listItems, formType = FormType.SERIE):
 
@@ -3100,6 +3097,7 @@ class SeriesForm(BaseForm):
         self.list_filtered_index = []
         self.formType = formType
         self.InitializeComponent(serie)
+        ThemeMe(self);
 
     def InitializeComponent(self, serie):
 
@@ -3484,11 +3482,12 @@ def QuickScrapeBD2(books, book = "", cLink = False):
 
     return True
 
-class DirectScrape(BaseForm):
+class DirectScrape(Form):
 
     def __init__(self):
 
         self.InitializeComponent()
+        ThemeMe(self);
 
     def InitializeComponent(self):
 
