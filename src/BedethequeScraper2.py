@@ -1133,7 +1133,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         debuglog("Cancelled from parseAlbumInfo Start")
         return False
 
-    albumUrl = _read_url(pageUrl, False)
+    albumHTML = _read_url(pageUrl, False)
 
     if bStopit:
         debuglog("Cancelled from parseAlbumInfo after _read_url return")
@@ -1158,14 +1158,14 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             ALBUM_BDTHEQUE_NUM_PATTERN = r'tails\">%s<span\sclass=\"numa">%s</span>.*?<a name=\"(.*?)\"'
             ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % (num, dlgAltNumber), re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-            nameRegex = ALBUM_BDTHEQUE_NUM.search(albumUrl)
+            nameRegex = ALBUM_BDTHEQUE_NUM.search(albumHTML)
 
             if nameRegex:
                 AlbumBDThequeNum = nameRegex.group(1)
             else:
                 ALBUM_BDTHEQUE_NUM_PATTERN = r'>%s<span\sclass=\"numa">.*?</span>.*?<a name=\"(.*?)\"'
                 ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % num, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-                nameRegex = ALBUM_BDTHEQUE_NUM.search(albumUrl)
+                nameRegex = ALBUM_BDTHEQUE_NUM.search(albumHTML)
                 if nameRegex:
                     AlbumBDThequeNum = nameRegex.group(1)
                 else:
@@ -1175,7 +1175,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
         # Album N. in Lettres
         else:
-            nameRegex = ALBUM_BDTHEQUE_NOTNUM.search(albumUrl)
+            nameRegex = ALBUM_BDTHEQUE_NOTNUM.search(albumHTML)
             if nameRegex:
                 AlbumBDThequeNum = nameRegex.group(1)
 
@@ -1189,13 +1189,13 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         ListAlbum = list()
         pickedVar = ""
         picked = False
-        info = albumUrl
-        tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumUrl, re.IGNORECASE | re.DOTALL)
+        info = albumHTML
+        tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumHTML, re.IGNORECASE | re.DOTALL)
         #if no tome take alt number from top of the page
         t = if_else(tome.group(1), tome.group(1), checkWebChar(tome.group(2).strip())) if tome else ""
         #nameRegex groups (inside editions): group#1 => cover, group#2 => tome, group#3 => alt, group#4 => titre, group#5 => info (artists table), group#6 => url anchor
         nameRegex = re.compile(r'class="couv">.+?href="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<div class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
-        for albumPick in nameRegex.finditer(albumUrl):    
+        for albumPick in nameRegex.finditer(albumHTML):    
             couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', albumPick.group(1)) if albumPick.group(1) else "" #get higher resolution image
             title = checkWebChar(albumPick.group(4).strip())
             nfo = albumPick.group(5)
@@ -1279,8 +1279,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             debuglog("Alt: ", book.AlternateNumber)
 
             series = book.Series
-            nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
-            nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumUrl, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
+            nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
+            nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
             if nameRegex:
                 series = checkWebChar(nameRegex.group(1).strip())
                 seriesFormat = checkWebChar(nameRegex2.group(1).strip()) if nameRegex2 else series
@@ -1365,7 +1365,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
             # Album evaluation is optional => So, there is a specific research
             if CBRating:
-                nameRegex = ALBUM_EVAL.search(albumUrl, 0)
+                nameRegex = ALBUM_EVAL.search(albumHTML, 0)
                 if nameRegex:
                     evaluation = nameRegex.group(1)
                     book.CommunityRating = float(evaluation)
@@ -1381,7 +1381,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
             # Collection is optional => So, there is a specific research
             if CBImprint:
-                nameRegex = ALBUM_COLLECTION.search(albumUrl, 0)
+                nameRegex = ALBUM_COLLECTION.search(albumHTML, 0)
                 nameRegex2 = ALBUM_COLLECTION.search(info, 0)
                 if nameRegex or nameRegex2:
                     if nameRegex2:
@@ -1408,7 +1408,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             # Album summary is optional => So, there is a specific research
             if CBSynopsys:
                 summary = ""
-                nameRegex = ALBUM_RESUME.search(albumUrl, 0)
+                nameRegex = ALBUM_RESUME.search(albumHTML, 0)
                 if nameRegex:
                     resume = strip_tags(nameRegex.group(1)).strip()
                     resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
