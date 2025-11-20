@@ -123,6 +123,10 @@ SERIE_URL_PATTERN = r'<a\shref="(.*?)">\r\n.{50,60}<span\sclass="libelle">%s\s*?
 ALBUM_ID_PATTERN = r'id="%s".*?album-%s(.*?)\.html'
 ALBUM_INFO_PATTERN = r'<meta\sname="description"\scontent="(.*?)"'
 
+# Encart "Informations sur l'album"
+INFOS_ALBUMS_PATTERN = r'<ul class="infos-albums">.+?</ul>'
+INFOS_ALBUMS = re.compile(INFOS_ALBUMS_PATTERN, re.IGNORECASE | re.DOTALL)
+
 SERIE_LANGUE_PATTERN = r'class="flag"/>(.*?)</span>'
 SERIE_LANGUE = re.compile(SERIE_LANGUE_PATTERN, re.IGNORECASE)
 
@@ -199,7 +203,7 @@ ALBUM_ACHEVE = re.compile(ALBUM_ACHEVE_PATTERN, re.IGNORECASE | re.MULTILINE | r
 ALBUM_EDITEUR_PATTERN = r'<label>Editeur\s:\s?</label>(.*?)</'
 ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COLLECTION_PATTERN = r'<label>Collection\s:\s?</label>.*?">(.*?)</'
+ALBUM_COLLECTION_PATTERN = r'<label>Collection\s:\s?</label>(?:<a href.+?>)*([^><]+?)<'
 ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_TAILLE_PATTERN = r'<label>Format\s:\s?</label>.*?(.+?)</'
@@ -1134,6 +1138,10 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         return False
 
     albumHTML = _read_url(pageUrl, False)
+    info_album_regex = INFOS_ALBUMS.search(albumHTML)
+    info_album = ''
+    if info_album_regex:
+        info_album = info_album_regex.group()
 
     if bStopit:
         debuglog("Cancelled from parseAlbumInfo after _read_url return")
@@ -1279,8 +1287,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             debuglog("Alt: ", book.AlternateNumber)
 
             series = book.Series
-            nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, Comme avant
-            nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement
+            nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, dans l'entête
+            nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", info_album, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement, dans l'encart
             if nameRegex:
                 series = checkWebChar(nameRegex.group(1).strip())
                 seriesFormat = checkWebChar(nameRegex2.group(1).strip()) if nameRegex2 else series
@@ -1381,8 +1389,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
             # Collection is optional => So, there is a specific research
             if CBImprint:
-                nameRegex = ALBUM_COLLECTION.search(albumHTML, 0)
-                nameRegex2 = ALBUM_COLLECTION.search(info, 0)
+                nameRegex = ALBUM_COLLECTION.search(info_album, 0) # cherche dans l'encart pour la collection
+                nameRegex2 = ALBUM_COLLECTION.search(info, 0) # cherche dans l'édition seulement
                 if nameRegex or nameRegex2:
                     if nameRegex2:
                         nameRegex = nameRegex2
