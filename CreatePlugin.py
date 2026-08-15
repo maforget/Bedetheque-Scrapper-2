@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import zipfile
 
 def zip_files(list_files, out_name):    
@@ -75,10 +77,59 @@ def get_plugin_name():
     # dir = os.path.expanduser("~/Desktop")
     dir = os.path.dirname(__file__)
     out_name = os.path.join(dir, f"{name}_v{version}.crplugin")
-    print(out_name)
     return out_name
 
+
+def is_running_in_ci():
+    # GitHub Actions sets this on every runner automatically.
+    return os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
+
+
+def build_fetcher_exe():
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    build_script = os.path.join(root_dir, "build_fetcher.py")
+
+    if not os.path.isfile(build_script):
+        raise FileNotFoundError("build_fetcher.py not found: " + build_script)
+
+    print("Building BedethequeFetcher.exe...", file=sys.stderr)
+    subprocess.run(
+        [sys.executable, build_script],
+        check=True,
+        cwd=root_dir,
+    )
+
+    exe_path = find_path("BedethequeFetcher.exe")
+    if not exe_path:
+        raise FileNotFoundError(
+            "build_fetcher.py ran but BedethequeFetcher.exe was not found "
+            "afterwards (expected in src/)."
+        )
+
+
 if __name__ == '__main__':
+    # On the GitHub runner, building the exe and zipping is handled by
+    # dedicated workflow steps (a separate Windows job builds the exe,
+    # montudor/action-zip does the zipping). This script's only job there
+    # is to print the target .crplugin filename on stdout, which the
+    # workflow captures with $(python CreatePlugin.py).
+    #
+    # Locally, there's no such pipeline, so pass --local (or just run
+    # outside of GitHub Actions) to have this script build the exe itself
+    # and produce the finished .crplugin directly.
+    local_build = not is_running_in_ci()
+
+    if "--local" in sys.argv:
+        local_build = True
+    elif "--ci" in sys.argv:
+        local_build = False
+
     name = get_plugin_name()
-    files = get_package_files()
-    #zip_files(files, name)
+
+    if local_build:
+        build_fetcher_exe()
+        files = get_package_files()
+        zip_files(files, name)
+        print("Created:", name, file=sys.stderr)
+
+    print(name)

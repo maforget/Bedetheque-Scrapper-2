@@ -14,27 +14,34 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+  # Builds BedethequeFetcher.exe. This must run on Windows: PyInstaller
+  # packages for the OS it runs on, it cannot cross-compile a .exe from
+  # Linux.
+  build-fetcher:
+    runs-on: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v4
-          
+        uses: actions/checkout@v7
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.10' 
+          python-version: '3.14'
+
+      - name: Install build dependencies
+        run: |
+          pip install cloudscraper pyinstaller
+
+      - name: Build BedethequeFetcher.exe
+        run: |
+          python build_fetcher.py
 
       # Runs a single command using the runners shell
       - name: Run Python script
         id: get_filepath
         run: |
-          echo "file_path=$(python CreatePlugin.py)" >> $GITHUB_OUTPUT
+          echo "file_path=$(python CreatePlugin.py --ci)" >> $GITHUB_OUTPUT
 
       - name: Zipping files
         uses: montudor/action-zip@v1.0.0

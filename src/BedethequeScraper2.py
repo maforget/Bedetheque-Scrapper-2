@@ -1521,10 +1521,98 @@ def parseName(extractedName):
 
     return checkWebChar(name).strip()
 
+def _run_fetcher(file_name, arguments, timeout_ms):
+    """
+    Starts `file_name arguments`, capturing stdout (the HTML payload) and
+    stderr (diagnostics) on their own plain background threads, so neither
+    pipe can fill up and stall the child process (large HTML pages can
+    easily exceed the OS pipe buffer if nothing is draining it).
+
+    This deliberately avoids Process.OutputDataReceived/BeginOutputReadLine.
+    This plugin runs on the host application's STA UI thread, and .NET
+    automatically marshals those events back onto whichever thread created
+    the Process, if that thread owns a message loop - which a WinForms UI
+    thread does. Since this function blocks that same thread while
+    waiting, those marshaled callbacks could never actually run, so the
+    output was never captured: a real deadlock, not a hypothetical one.
+    A plain background Thread doing a blocking Stream read has nothing to
+    do with the STA apartment/message loop, so it can't get stuck on it.
+
+    Returns (exit_code, stdout_text, stderr_text).
+    """
+    start_info = System.Diagnostics.ProcessStartInfo()
+    start_info.FileName = file_name
+    start_info.Arguments = arguments
+    start_info.UseShellExecute = False
+    start_info.CreateNoWindow = True
+    start_info.RedirectStandardOutput = True
+    start_info.RedirectStandardError = True
+    start_info.StandardOutputEncoding = System.Text.Encoding.UTF8
+    start_info.StandardErrorEncoding = System.Text.Encoding.UTF8
+
+    process = System.Diagnostics.Process.Start(start_info)
+
+    stdout_result = [None]
+    stderr_result = [None]
+    read_exceptions = []
+
+    def read_stdout():
+        try:
+            stdout_result[0] = process.StandardOutput.ReadToEnd()
+        except Exception, e:
+            read_exceptions.append(e)
+
+    def read_stderr():
+        try:
+            stderr_result[0] = process.StandardError.ReadToEnd()
+        except Exception, e:
+            read_exceptions.append(e)
+
+    stdout_thread = System.Threading.Thread(System.Threading.ThreadStart(read_stdout))
+    stdout_thread.IsBackground = True
+
+    stderr_thread = System.Threading.Thread(System.Threading.ThreadStart(read_stderr))
+    stderr_thread.IsBackground = True
+
+    try:
+        # Start draining both pipes *before* waiting on the process, so a
+        # large page can never fill a buffer and stall the child.
+        stdout_thread.Start()
+        stderr_thread.Start()
+
+        if not process.WaitForExit(timeout_ms):
+            try:
+                process.Kill()
+            except:
+                pass
+
+            raise Exception("Fetcher timed out after " + str(timeout_ms / 1000) + " seconds")
+
+        # The process has already exited, so both ReadToEnd() calls
+        # should return almost immediately (they only block until EOF).
+        # Thread.Join, unlike Thread.Sleep, pumps the STA message queue
+        # while it waits, so it's safe to call from this thread.
+        stdout_thread.Join(10000)
+        stderr_thread.Join(10000)
+
+        if read_exceptions:
+            raise read_exceptions[0]
+
+        return (
+            process.ExitCode,
+            stdout_result[0] or '',
+            stderr_result[0] or '',
+        )
+    finally:
+        try:
+            process.Dispose()
+        except:
+            pass
+
 
 def _read_url(url, bSingle):
-
     page = ''
+
     if bStopit:
         debuglog("Cancelled from _read_url Start")
         return page
@@ -1533,52 +1621,69 @@ def _read_url(url, bSingle):
         bSingle = True
 
     if bSingle:
-        requestUri = url_fix(url)
+        target_url = url_fix(url)
     else:
-        requestUri = url_fix("https://www.bedetheque.com/" + url)
+        target_url = url_fix("https://www.bedetheque.com/" + url.lstrip("/"))
+
+    debuglog("Final fetcher URL: " + target_url)
 
     try:
-        System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
-        Req = System.Net.HttpWebRequest.Create(requestUri)
-        Req.CookieContainer = CookieContainer
-        #Req.CookieContainer.Add(System.Uri(requestUri), Cookie("__utma", "164207276.656597940.1352121294.1352232667.1352393821.4"))
-        #Req.CookieContainer.Add(System.Uri(requestUri), Cookie("__utmb", "164207276.4.10.1352232512"))
-        #Req.CookieContainer.Add(System.Uri(requestUri), Cookie("__utmc", "164207276"))
-        #Req.CookieContainer.Add(System.Uri(requestUri), Cookie("__utmz", "164207276.1352121300.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)"))        
-        #Req.CookieContainer.Add(System.Uri(requestUri), Cookie("SERVERID1", "A"))
-        #Req.CookieContainer.Add(System.Uri(requestUri), Cookie("BELlangue","Français"))
-        Req.Timeout = 15000
-        Req.UserAgent = 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)'
-        #Req.Headers.Add('Accept-Encoding','gzip, deflate')
-        Req.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-        Req.Headers.Add('X-Powered-By', 'PHP/5.3.17')
-        Req.Referer = requestUri
-        Req.Accept = 'text/html, application/xhtml+xml, */*'
-        Req.Headers.Add('Accept-Language','en-GB,it-IT;q=0.8,it;q=0.6,en-US;q=0.4,en;q=0.2')
-        Req.KeepAlive = True
-        webresponse = Req.GetResponse()
-        a = webresponse.Cookies
+        plugin_dir = System.IO.Path.GetDirectoryName(__file__)
+        fetcher_path = System.IO.Path.Combine(plugin_dir, "BedethequeFetcher.exe")
+
+        if System.IO.File.Exists(fetcher_path):
+            file_name = fetcher_path
+            arguments = '"' + target_url + '"'
+        else:
+            # Dev-only fallback: run the fetcher straight from its .py
+            # source with the system Python interpreter. The real release
+            # ships BedethequeFetcher.exe alongside the plugin and should
+            # never need this path or any extra dependency on the host.
+            fetcher_script = System.IO.Path.GetFullPath(System.IO.Path.Combine(plugin_dir, "BedethequeFetcher.py"))
+
+            if not System.IO.File.Exists(fetcher_script):
+                raise Exception(
+                    "Neither BedethequeFetcher.exe nor BedethequeFetcher.py "
+                    "were found: " + fetcher_path + " / " + fetcher_script
+                )
+
+            debuglog(
+                "BedethequeFetcher.exe not found, falling back to "
+                "python for development: " + fetcher_script
+            )
+
+            file_name = "python"
+            arguments = '"' + fetcher_script + '" "' + target_url + '"'
+            debuglog("Dev-only fallback: running fetcher via python with arguments: " + arguments)
+
+        debuglog("Fetcher URL: " + target_url)
+
+        exit_code, stdout_text, stderr_text = _run_fetcher(
+            file_name,
+            arguments,
+            45000
+        )
+
+        if exit_code != 0:
+            raise Exception("BedethequeFetcher exit code " + str(exit_code) + ": " + stderr_text)
+
+        if not stdout_text:
+            raise Exception("BedethequeFetcher did not return any content")
+
+        page = stdout_text
 
         Application.DoEvents()
+
         if bStopit:
             debuglog("Cancelled from _read_url End")
-            return page
+            return ''
 
-        inStream = webresponse.GetResponseStream()
-        encode = System.Text.Encoding.GetEncoding("utf-8")
-        ReadStream = System.IO.StreamReader(inStream, encode)
-        #ReadStream.BaseStream.ReadTimeout = 15000
-        page = ReadStream.ReadToEnd()
-
-    except URLError, e:
+    except Exception, e:
         debuglog(Trans(60))
         debuglog(Trans(61), e)
         cError = debuglogOnError()
         log_BD("   [" + dlgName + "] " + dlgNumber + " Alt.No " + dlgAltNumber + " -> " , cError, 1)
         Result = MessageBox.Show(ComicRack.MainWindow, Trans(98) + cError ,Trans(97), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
-
-    inStream.Close()
-    webresponse.Close()
 
     return page
 

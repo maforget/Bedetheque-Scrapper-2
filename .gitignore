@@ -6,3 +6,7 @@
 /old
 /debug
 *.bat
+/build
+/src/BedethequeFetcher.exe
+*.spec
+*.crplugin
