@@ -40,10 +40,8 @@ jobs:
         run: |
           echo "file_path=$(python CreatePlugin.py --ci)" >> $GITHUB_OUTPUT
 
-      - name: Zipping files
-        uses: montudor/action-zip@v1.0.0
-        with:
-          args: zip -q -j -r dir.zip src
+      - name: Package Files
+        run: powershell Compress-Archive -Path 'src\*' -DestinationPath 'dir.zip' -Force
 
       - name: Rename to crplugin
         run: |
