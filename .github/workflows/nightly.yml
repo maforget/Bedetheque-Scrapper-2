@@ -38,7 +38,7 @@ jobs:
       - name: Run Python script
         id: get_filepath
         run: |
-          echo "file_path=$(python CreatePlugin.py --ci)" >> $GITHUB_OUTPUT
+          echo "file_path=$(python CreatePlugin.py --ci)" >> $env:GITHUB_OUTPUT
 
       - name: Package Files
         run: powershell Compress-Archive -Path 'src\*' -DestinationPath 'dir.zip' -Force
