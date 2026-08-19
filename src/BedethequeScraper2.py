@@ -28,12 +28,15 @@ from urllib2 import *
 from HTMLParser import HTMLParser
 
 clr.AddReference('System')
+clr.AddReference('System.Web.Extensions')
 clr.AddReference('System.Windows.Forms')
 from System.Windows.Forms import * 
 
 from System.IO import FileInfo, File
+from System.Diagnostics import ProcessStartInfo, Process
 from System.Diagnostics.Process import Start
-from System.Net import HttpWebRequest, Cookie, DecompressionMethods
+from System.Net import HttpWebRequest
+from System.Net.Sockets import TcpClient, SocketType, ProtocolType
 from System.Threading import Thread, ThreadStart
 from System import Math
 
@@ -1521,40 +1524,211 @@ def parseName(extractedName):
 
     return checkWebChar(name).strip()
 
-def _run_fetcher(file_name, arguments, timeout_ms):
-    """
-    Starts `file_name arguments`, capturing stdout (the HTML payload) and
-    stderr (diagnostics) on their own plain background threads, so neither
-    pipe can fill up and stall the child process (large HTML pages can
-    easily exceed the OS pipe buffer if nothing is draining it).
+DAEMON_PORT = 56789
+DAEMON_STARTWAIT_SECS = 20
+DAEMON_HOST = "127.0.0.1"
+DAEMON_CONNECT_TIMEOUT_MS = 5000
+DAEMON_RECV_TIMEOUT_MS = 120000
+# PyInstaller single-file build of BedethequeFetcher.py, preferred when present.
+DAEMON_EXE = "BedethequeFetcher.exe"
+# Name of the daemon target currently started by launch_daemon_thread
+# ("", DAEMON_EXE, or "BedethequeFetcher.py").
+daemon_running_name = ""
+use_cloudscraper = False
 
-    This deliberately avoids Process.OutputDataReceived/BeginOutputReadLine.
-    This plugin runs on the host application's STA UI thread, and .NET
-    automatically marshals those events back onto whichever thread created
-    the Process, if that thread owns a message loop - which a WinForms UI
-    thread does. Since this function blocks that same thread while
-    waiting, those marshaled callbacks could never actually run, so the
-    output was never captured: a real deadlock, not a hypothetical one.
-    A plain background Thread doing a blocking Stream read has nothing to
-    do with the STA apartment/message loop, so it can't get stuck on it.
+_daemon_json_serializer = System.Web.Script.Serialization.JavaScriptSerializer()
+_daemon_json_serializer.MaxJsonLength = System.Int32.MaxValue
 
-    Returns (exit_code, stdout_text, stderr_text).
-    """
-    start_info = System.Diagnostics.ProcessStartInfo()
-    start_info.FileName = file_name
-    start_info.Arguments = arguments
-    start_info.UseShellExecute = False
-    start_info.CreateNoWindow = True
-    start_info.RedirectStandardOutput = True
-    start_info.RedirectStandardError = True
-    start_info.StandardOutputEncoding = System.Text.Encoding.UTF8
-    start_info.StandardErrorEncoding = System.Text.Encoding.UTF8
+def _script_dir():
+    """Directory holding this script (and the daemon: BedethequeFetcher.exe
+    and/or BedethequeFetcher.py)."""
+    return __file__[:-len('BedethequeScraper2.py')]
 
-    process = System.Diagnostics.Process.Start(start_info)
+def get_args(url=None):
+    """Get the command line arguments to launch the daemon (BedethequeFetcher.exe).
+    If url is provided, it will be passed as a command line argument."""
+    global daemon_running_name
 
+    exe = _script_dir() + DAEMON_EXE
+    script = _script_dir() + "BedethequeFetcher.py"
+
+    if File.Exists(exe):
+        # Full path: a bare exe name would not resolve to this folder.
+        what, args = exe, ""
+    elif File.Exists(script):
+        what, args = "BedethequeFetcher.py", '"' + script + '"'
+    else:
+        daemon_running_name = ""
+        log_BD(DAEMON_EXE + " / BedethequeFetcher.py not found in " + _script_dir, "", 1)
+        return None
+
+    if use_cloudscraper and url:
+        args += " --cloudscraper" + " --url " + url
+        log_BD("Using cloudscraper for URL: " + url, "", 1)
+
+    return what, args
+
+def is_daemon_running():
+    """True if something (BedethequeFetcher) answers on its TCP port."""
+    try:
+        client = TcpClient()
+        try:
+            client.Connect("127.0.0.1", DAEMON_PORT)
+        finally:
+            client.Close()
+        return True
+    except:
+        return False
+
+def _daemon_psi(what, args = ""):
+    """ProcessStartInfo to start the daemon (the PyInstaller .exe, or a
+    Python 3 script through ``python``). ``what`` is either the daemon's
+    log name for a script ("BedethequeFetcher.py"), in which case the script
+    path is passed as the sole argument and ``python`` is resolved via PATH,
+    or the full path of a .exe to run directly. Common settings keep the
+    process hidden and its output pipes redirected so a background thread
+    can drain them."""
+    psi = ProcessStartInfo()
+    if what.endswith(".py"):
+        psi.FileName = "python"
+        # BedethequeFetcher.py will take care of removing the current folder from the sys.path, so we don't need to pass -I anymore. Otherwise it will not look in the %appdata% folder for the cloudscraper module.
+        # psi.Arguments = "-I "
+    else:
+        psi.FileName = what
+
+    psi.Arguments += args
+    psi.UseShellExecute = False
+    psi.RedirectStandardOutput = True
+    psi.RedirectStandardError = True
+    psi.CreateNoWindow = True
+    psi.StandardOutputEncoding = System.Text.Encoding.UTF8
+    psi.StandardErrorEncoding = System.Text.Encoding.UTF8
+    return psi
+
+def launch_process(url=None):
+    """Launch BedethequeFetcher (same folder as this script) in the background."""
+    global daemon_running_name
+    what, args = get_args(url)
+
+    # PID of *this* (plugin host) process — the one we want the
+    # child to watch for, regardless of how it's packaged/launched.
+    own_pid = Process.GetCurrentProcess().Id
+    args = args + " --parent_pid " + str(own_pid)
+
+    try:
+        proc = Process()
+        proc.StartInfo = _daemon_psi(what, args)
+        proc.Start()
+    except:
+        cError = debuglogOnError()
+        log_BD("Failed to start " + what, cError, 1)
+        return None
+
+    # Log the short name (script name or exe file name, not a full path).
+    display = what[len(_script_dir()):] if what.startswith(_script_dir()) else what
+    daemon_running_name = '' if url else display
+    debuglog(display + " launched (pid " + str(proc.Id) + ")")
+    return proc
+
+def launch_daemon_thread():
+    """Launch BedethequeFetcher (same folder as this script) hidden in the
+    background, with a new .NET thread draining its output pipes so the
+    daemon (started as an external process) never blocks on a full pipe
+    buffer. The PyInstaller build ``BedethequeFetcher.exe`` is preferred; if
+    it is not present, the source script ``BedethequeFetcher.py`` (run with
+    Python 3) is launched instead. Returns the Process, or None if it could
+    not be started."""
+    proc = launch_process()
+
+    def _drain():
+        err = ""
+        try:
+            err = proc.StandardError.ReadToEnd()
+        except:
+            pass
+        try:
+            proc.StandardOutput.ReadToEnd()
+        except:
+            pass
+        try:
+            proc.WaitForExit()
+            if proc.ExitCode and err.strip():
+                log_BD(what + " (pid " + str(proc.Id) + ") exited with code " + str(proc.ExitCode) + " -- " + err.strip()[:2000], "", 1)
+        except:
+            pass
+
+    drain = Thread(ThreadStart(_drain))
+    drain.IsBackground = True
+    drain.Start()
+    debuglog("launched daemon on port: " + str(DAEMON_PORT))
+    return proc
+
+def ensure_fetch_daemon():
+    """Make sure BedethequeFetcher is up; launch it in a new thread if not."""
+    if is_daemon_running():
+        return True
+
+    proc = launch_daemon_thread()
+    if proc is None:
+        return False
+
+    # Probe the port from a background thread (Thread.Sleep on the STA
+    # calling thread would not pump messages) and join it to wait.
+    end = datetime.now() + timedelta(seconds=DAEMON_STARTWAIT_SECS)
+
+    def _wait_port():
+        while not is_daemon_running() and datetime.now() < end:
+            Thread.Sleep(250)
+
+    waiter = Thread(ThreadStart(_wait_port))
+    waiter.IsBackground = True
+    waiter.Start()
+    waiter.Join((DAEMON_STARTWAIT_SECS + 5) * 1000)
+    if is_daemon_running():
+        debuglog("BedethequeFetcher ready on port " + str(DAEMON_PORT))
+        return True
+
+    # The port never came up: kill the stuck daemon so the next scrape does
+    # not keep spawning a new one.
+    try:
+        proc.Kill()
+    except:
+        pass
+    name = daemon_running_name if daemon_running_name else "fetch daemon"
+    log_BD(name + " (pid " + str(proc.Id) + ") did not answer on 127.0.0.1:" + str(DAEMON_PORT) + " after " + str(DAEMON_STARTWAIT_SECS) + " s; killed", "", 1)
+    return False
+
+def _daemon_request_line(url):
+    """Build the one-line JSON request sent to BedethequeFetcher daemon
+    (``{"url": "..."}\r\n``), serialized through the .NET JavaScriptSerializer."""
+    return System.Text.Encoding.UTF8.GetBytes(_daemon_json_serializer.Serialize({"url": url}) + "\r\n")
+
+def _daemon_json_field(line, key):
+    """Return the string value of ``key`` in the daemon's flat one-line JSON
+    reply, or None when the key is absent (the success reply carries no 'error')."""
+    reply = _daemon_json_serializer.Deserialize(line, System.Collections.Generic.Dictionary[str, System.Object])
+    found, value = reply.TryGetValue(key)
+    return System.Convert.ToString(value) if found else None
+
+def fetch(url):
+    if use_cloudscraper:
+        return fetch_cloudscraper(url)
+    else:
+        return fetch_daemon(url)
+
+def fetch_cloudscraper(url):
     stdout_result = [None]
     stderr_result = [None]
     read_exceptions = []
+
+    if not url:
+        return ''
+
+    process = launch_process(url)
+    debuglog("using cloudscraper fetcher for URL: " + str(url))
+
+    if process is None:
+        return ''
 
     def read_stdout():
         try:
@@ -1573,20 +1747,22 @@ def _run_fetcher(file_name, arguments, timeout_ms):
 
     stderr_thread = System.Threading.Thread(System.Threading.ThreadStart(read_stderr))
     stderr_thread.IsBackground = True
-
+    
     try:
         # Start draining both pipes *before* waiting on the process, so a
         # large page can never fill a buffer and stall the child.
         stdout_thread.Start()
         stderr_thread.Start()
 
+        timeout = DAEMON_STARTWAIT_SECS + 25
+        timeout_ms = timeout * 1000
         if not process.WaitForExit(timeout_ms):
             try:
                 process.Kill()
             except:
                 pass
 
-            raise Exception("Fetcher timed out after " + str(timeout_ms / 1000) + " seconds")
+            raise Exception("Fetcher timed out after " + str(timeout) + " seconds")
 
         # The process has already exited, so both ReadToEnd() calls
         # should return almost immediately (they only block until EOF).
@@ -1597,18 +1773,74 @@ def _run_fetcher(file_name, arguments, timeout_ms):
 
         if read_exceptions:
             raise read_exceptions[0]
+        
+        if process.ExitCode != 0:
+            raise Exception("BedethequeFetcher exit code " + str(process.ExitCode) + ": " + stderr_result[0])
 
-        return (
-            process.ExitCode,
-            stdout_result[0] or '',
-            stderr_result[0] or '',
-        )
+        if not stdout_result[0]:
+            raise Exception("BedethequeFetcher did not return any content")
+
+        return stdout_result[0] or ''
     finally:
         try:
             process.Dispose()
         except:
             pass
 
+def fetch_daemon(url):
+    """Fetch a bedetheque page by asking the local BedethequeFetcher daemon over
+    its TCP socket, speaking its line-delimited JSON protocol directly:
+
+        client > daemon:  {"url": "https://..."}\r\n
+        daemon > client:  {"url": "...", "html": "..."}\r\n   or   {"error": "..."}\r\n
+
+    The request is NOT sent to bedetheque.com from this script (a direct
+    request is rejected with a 403): the daemon owns the cookies / user-agent
+    and performs the real fetch.
+    IronPython talks to the daemon through a raw ``TcpClient`` socket.
+    Before talking to the daemon, it is checked and launched in a background
+    thread (same directory as this script) if it is not running.
+    """
+    if not ensure_fetch_daemon():
+        raise RuntimeError("BedethequeFetcher is not running on 127.0.0.1:" + str(DAEMON_PORT) + " and could not be started")
+
+    if isinstance(url, str):
+        url = url.decode("utf-8", "replace")
+    request_line = _daemon_request_line(url)
+
+    client = TcpClient()
+    try:
+        client.Connect(DAEMON_HOST, DAEMON_PORT)
+
+        stream = client.GetStream()
+        stream.WriteTimeout = DAEMON_CONNECT_TIMEOUT_MS
+        stream.ReadTimeout = DAEMON_RECV_TIMEOUT_MS
+
+        # Send the JSON request line (.NET Stream.Write is void: it writes
+        # all requested bytes or raises, no partial-write loop needed).
+        stream.Write(request_line, 0, request_line.Length)
+
+        # Read the daemon's JSON reply line (explicit UTF-8, no BOM sniffing).
+        reader = System.IO.StreamReader(stream, System.Text.Encoding.UTF8)
+        line = reader.ReadLine()
+    finally:
+        try:
+            client.Close()
+        except:
+            pass
+
+    if not line:
+        raise RuntimeError("BedethequeFetcher closed the connection without responding for " + url)
+    line = line.strip()
+
+    error = _daemon_json_field(line, "error")
+    if error is not None:
+        raise RuntimeError("Fetch failed for " + url + ": " + error)
+
+    html = _daemon_json_field(line, "html")
+    if html is None:
+        raise RuntimeError("Malformed BedethequeFetcher response (no 'html' field) for " + url)
+    return html
 
 def _read_url(url, bSingle):
     page = ''
@@ -1628,50 +1860,7 @@ def _read_url(url, bSingle):
     debuglog("Final fetcher URL: " + target_url)
 
     try:
-        plugin_dir = System.IO.Path.GetDirectoryName(__file__)
-        fetcher_path = System.IO.Path.Combine(plugin_dir, "BedethequeFetcher.exe")
-
-        if System.IO.File.Exists(fetcher_path):
-            file_name = fetcher_path
-            arguments = '"' + target_url + '"'
-        else:
-            # Dev-only fallback: run the fetcher straight from its .py
-            # source with the system Python interpreter. The real release
-            # ships BedethequeFetcher.exe alongside the plugin and should
-            # never need this path or any extra dependency on the host.
-            fetcher_script = System.IO.Path.GetFullPath(System.IO.Path.Combine(plugin_dir, "BedethequeFetcher.py"))
-
-            if not System.IO.File.Exists(fetcher_script):
-                raise Exception(
-                    "Neither BedethequeFetcher.exe nor BedethequeFetcher.py "
-                    "were found: " + fetcher_path + " / " + fetcher_script
-                )
-
-            debuglog(
-                "BedethequeFetcher.exe not found, falling back to "
-                "python for development: " + fetcher_script
-            )
-
-            file_name = "python"
-            arguments = '"' + fetcher_script + '" "' + target_url + '"'
-            debuglog("Dev-only fallback: running fetcher via python with arguments: " + arguments)
-
-        debuglog("Fetcher URL: " + target_url)
-
-        exit_code, stdout_text, stderr_text = _run_fetcher(
-            file_name,
-            arguments,
-            45000
-        )
-
-        if exit_code != 0:
-            raise Exception("BedethequeFetcher exit code " + str(exit_code) + ": " + stderr_text)
-
-        if not stdout_text:
-            raise Exception("BedethequeFetcher did not return any content")
-
-        page = stdout_text
-
+        page = fetch(target_url)
         Application.DoEvents()
 
         if bStopit:
@@ -1939,7 +2128,7 @@ class ProgressBarDialog(Form):
 def LoadSetting():
 
     global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
-    global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, PadNumber, SerieResumeEverywhere
+    global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, PadNumber, SerieResumeEverywhere, use_cloudscraper
     global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, AlwaysChooseSerie, ShortWebLink, AcceptGenericArtists
 
     ###############################################################
@@ -2085,6 +2274,10 @@ def LoadSetting():
     except Exception as e:
         CBRescrape = False
     try:
+        use_cloudscraper = ft(MySettings.Get("use_cloudscraper"))
+    except Exception as e:
+        use_cloudscraper = False
+    try:
         AllowUserChoice = ft(MySettings.Get("CBStop"))
     except Exception as e:
         AllowUserChoice = "2"
@@ -2203,6 +2396,7 @@ def SaveSetting():
     MySettings.Set("CBTitle",  tf(CBTitle))
     MySettings.Set("CBDefault",  tf(CBDefault))
     MySettings.Set("CBRescrape",  tf(CBRescrape))
+    MySettings.Set("use_cloudscraper", tf(use_cloudscraper))
     MySettings.Set("ARTICLES",  ARTICLES)
     MySettings.Set("SUBPATT",  SUBPATT)
     MySettings.Set("COUNTOF",  tf(COUNTOF))
@@ -2219,7 +2413,7 @@ def SaveSetting():
     MySettings.Set("AlwaysChooseSerie", tf(AlwaysChooseSerie))
     MySettings.Set("ONESHOTFORMAT", tf(ONESHOTFORMAT))
     MySettings.Set("AcceptGenericArtists", tf(AcceptGenericArtists))
-    
+
     if AllowUserChoice == True:
         MySettings.Set("CBStop",  "1")
     elif AllowUserChoice == False:
@@ -2372,6 +2566,7 @@ class BDConfigForm(Form):
         self._PadNumber = System.Windows.Forms.TextBox()
         self._labelPadNumber = System.Windows.Forms.Label()
         self._CBRescrape = System.Windows.Forms.CheckBox()
+        self._use_cloudscraper = System.Windows.Forms.CheckBox()
         self._labelChoice = System.Windows.Forms.GroupBox()
         self._radioChoiceSkip = System.Windows.Forms.RadioButton()
         self._radioChoiceUser = System.Windows.Forms.RadioButton()
@@ -2391,7 +2586,7 @@ class BDConfigForm(Form):
         self._TabData.Location = System.Drawing.Point(0, 0)
         self._TabData.Name = "TabData"
         self._TabData.SelectedIndex = 0
-        self._TabData.Size = System.Drawing.Size(612, 362)
+        self._TabData.Size = System.Drawing.Size(612, 394)
         self._TabData.TabIndex = 22
         #
         # tabPage1
@@ -2413,13 +2608,14 @@ class BDConfigForm(Form):
         self._tabPage1.Controls.Add(self._labelTIMEOUT)
         self._tabPage1.Controls.Add(self._labelTIMEOUTS)
         self._tabPage1.Controls.Add(self._CBRescrape)
+        self._tabPage1.Controls.Add(self._use_cloudscraper)
         self._tabPage1.Controls.Add(self._labelChoice)
         self._labelChoice.Controls.Add(self._radioChoiceSkip)
         self._labelChoice.Controls.Add(self._radioChoiceUser)
         self._tabPage1.Location = System.Drawing.Point(4, 22)
         self._tabPage1.Name = "tabPage1"
         self._tabPage1.Padding = System.Windows.Forms.Padding(3)
-        self._tabPage1.Size = System.Drawing.Size(600, 350)
+        self._tabPage1.Size = System.Drawing.Size(600, 382)
         self._tabPage1.TabIndex = 0
         self._tabPage1.Text = Trans(95)
         self._tabPage1.UseVisualStyleBackColor = True
@@ -2446,7 +2642,7 @@ class BDConfigForm(Form):
         self._tabPage2.Location = System.Drawing.Point(4, 22)
         self._tabPage2.Name = "tabPage2"
         self._tabPage2.Padding = System.Windows.Forms.Padding(3)
-        self._tabPage2.Size = System.Drawing.Size(600, 350)
+        self._tabPage2.Size = System.Drawing.Size(600, 382)
         self._tabPage2.TabIndex = 1
         self._tabPage2.Text = Trans(96)
         self._tabPage2.UseVisualStyleBackColor = True
@@ -2464,7 +2660,7 @@ class BDConfigForm(Form):
         self._tabPage3.Location = System.Drawing.Point(4, 22)
         self._tabPage3.Name = "tabPage3"
         self._tabPage3.Padding = System.Windows.Forms.Padding(3)
-        self._tabPage3.Size = System.Drawing.Size(600, 350)
+        self._tabPage3.Size = System.Drawing.Size(600, 382)
         self._tabPage3.TabIndex = 1
         self._tabPage3.Text = Trans(47)
         self._tabPage3.UseVisualStyleBackColor = True
@@ -2529,7 +2725,7 @@ class BDConfigForm(Form):
         self._CancelButton.BackColor = System.Drawing.Color.Red
         self._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
         self._CancelButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
-        self._CancelButton.Location = System.Drawing.Point(520, 370)
+        self._CancelButton.Location = System.Drawing.Point(520, 402)
         self._CancelButton.Name = "CancelButton"
         self._CancelButton.Size = System.Drawing.Size(75, 32)
         self._CancelButton.TabIndex = 30
@@ -2542,7 +2738,7 @@ class BDConfigForm(Form):
         self._OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
         self._OKButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
         self._OKButton.ForeColor = System.Drawing.Color.Black
-        self._OKButton.Location = System.Drawing.Point(16, 370)
+        self._OKButton.Location = System.Drawing.Point(16, 402)
         self._OKButton.Name = "OKButton"
         self._OKButton.Size = System.Drawing.Size(75, 32)
         self._OKButton.TabIndex = 29
@@ -2580,7 +2776,7 @@ class BDConfigForm(Form):
         #
         self._labelVersion.Font = System.Drawing.Font("Microsoft Sans Serif", 6.75, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
         self._labelVersion.ImageAlign = System.Drawing.ContentAlignment.BottomCenter
-        self._labelVersion.Location = System.Drawing.Point(162, 380)
+        self._labelVersion.Location = System.Drawing.Point(162, 412)
         self._labelVersion.Name = "labelVersion"
         self._labelVersion.Size = System.Drawing.Size(264, 16)
         self._labelVersion.TabIndex = 19
@@ -2715,6 +2911,17 @@ class BDConfigForm(Form):
         self._CBRescrape.Text = Trans(137)
         self._CBRescrape.UseVisualStyleBackColor = True
         self._CBRescrape.CheckState = if_else(CBRescrape, CheckState.Checked, CheckState.Unchecked)
+        #
+        # use_cloudscraper
+        #
+        self._use_cloudscraper.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
+        self._use_cloudscraper.Location = System.Drawing.Point(8, 342)
+        self._use_cloudscraper.Name = "use_cloudscraper"
+        self._use_cloudscraper.Size = System.Drawing.Size(400, 20)
+        self._use_cloudscraper.TabIndex = 22
+        self._use_cloudscraper.Text = Trans(152)
+        self._use_cloudscraper.UseVisualStyleBackColor = True
+        self._use_cloudscraper.CheckState = if_else(use_cloudscraper, CheckState.Checked, CheckState.Unchecked)
         #
         # COUNTOF
         #
@@ -2973,7 +3180,7 @@ class BDConfigForm(Form):
         #
         # ConfigForm
         #
-        self.ClientSize = System.Drawing.Size(612, 412)
+        self.ClientSize = System.Drawing.Size(612, 444)
         self.Controls.Add(self._TabData)
         self.Controls.Add(self._labelVersion)
         self.Controls.Add(self._CancelButton)
@@ -3000,7 +3207,7 @@ class BDConfigForm(Form):
     def button_Click(self, sender, e):
 
         global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ONESHOTFORMAT
-        global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, SerieResumeEverywhere, AcceptGenericArtists
+        global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, SerieResumeEverywhere, AcceptGenericArtists, use_cloudscraper
         global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber, AlwaysChooseSerie, ShortWebLink
 
         if sender.Name.CompareTo(self._OKButton.Name) == 0:
@@ -3036,6 +3243,7 @@ class BDConfigForm(Form):
             CBSeries = if_else(self._scrapedData['Series']['state'] == CheckState.Checked, True, False)
             CBDefault = if_else(self._CBDefault.CheckState == CheckState.Checked, True, False)
             CBRescrape = if_else(self._CBRescrape.CheckState == CheckState.Checked, True, False)
+            use_cloudscraper = if_else(self._use_cloudscraper.CheckState == CheckState.Checked, True, False)
             AllowUserChoice = if_else(self._radioChoiceUser.Checked, True, False)
             if self._radioChoiceUser.Checked:
                 if self._labelTIMEPOPUP.CheckState == CheckState.Checked:
@@ -3194,7 +3402,7 @@ def Capitalize(s):
 
 def ThemeMe(control):
     if ComicRack.App.ProductVersion >= '0.9.182':
-            ComicRack.Theme.ApplyTheme(control)
+        ComicRack.Theme.ApplyTheme(control)
 
 
 class FormType():
