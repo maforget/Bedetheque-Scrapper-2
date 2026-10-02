@@ -1289,8 +1289,8 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             debuglog("Alt: ", book.AlternateNumber)
 
             series = book.Series
-            nameRegex = re.search('bandeau-info.+?<h1>.+?>([^"]+?)[<>]', albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, dans l'entête
-            nameRegex2 = re.search("<label>S.rie : </label>(.+?)</li>", info_album, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement, dans l'encart
+            nameRegex = re.search('bdt-ah-top.+?<h1>.+?>([^"]+?)[<>]', albumHTML, re.IGNORECASE | re.DOTALL | re.MULTILINE)# Les 5 Terres Album et Serie, dans l'entête
+            nameRegex2 = re.search("<dt>S.rie</dt><dd><a[^>]+?>([^<]+?)</a>", info_album, re.IGNORECASE | re.DOTALL | re.MULTILINE)# 5 Terres (Les) sur Album seulement, dans l'encart
             if nameRegex:
                 series = checkWebChar(nameRegex.group(1).strip())
                 seriesFormat = checkWebChar(nameRegex2.group(1).strip()) if nameRegex2 else series
