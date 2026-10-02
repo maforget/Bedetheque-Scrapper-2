@@ -215,7 +215,7 @@ ALBUM_TAILLE = re.compile(ALBUM_TAILLE_PATTERN, re.IGNORECASE | re.MULTILINE | r
 ALBUM_ISBN_PATTERN = r"<dt>EAN/ISBN</dt>\s*<dd>(.*?)</dd>"
 ALBUM_ISBN = re.compile(ALBUM_ISBN_PATTERN, re.IGNORECASE | re.DOTALL)
 
-ALBUM_PLANCHES_PATTERN = r'<label>Planches\s:\s?</label>(\d*?)</'
+ALBUM_PLANCHES_PATTERN = r"<dt>Planches</dt>\s*<dd>(.*?)</dd>"
 ALBUM_PLANCHES = re.compile(ALBUM_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_COVER_PATTERN = r'<meta\sproperty="og:title".*?="https:(.*?)"'
