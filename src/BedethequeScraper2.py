@@ -127,7 +127,7 @@ ALBUM_ID_PATTERN = r'id="%s".*?album-%s(.*?)\.html'
 ALBUM_INFO_PATTERN = r'<meta\sname="description"\scontent="(.*?)"'
 
 # Encart "Informations sur l'album"
-INFOS_ALBUMS_PATTERN = r'<ul class="infos-albums">.+?</ul>'
+INFOS_ALBUMS_PATTERN = r'<dl class="bdt-sheet">.+?</div>'
 INFOS_ALBUMS = re.compile(INFOS_ALBUMS_PATTERN, re.IGNORECASE | re.DOTALL)
 
 SERIE_LANGUE_PATTERN = r'class="flag"/>(.*?)</span>'
