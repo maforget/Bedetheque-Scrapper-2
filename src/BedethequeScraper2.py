@@ -203,7 +203,7 @@ ALBUM_DEPOT = re.compile(ALBUM_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.
 ALBUM_ACHEVE_PATTERN = r'<dt>Achev.*?\s:\s</dt>\s+<dd>(?P<month>[\d|-]{0,2})/?(?P<year>[\d]{2,4})?<'
 ALBUM_ACHEVE = re.compile(ALBUM_ACHEVE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_EDITEUR_PATTERN = r'<label>Editeur\s:\s?</label>(.*?)</'
+ALBUM_EDITEUR_PATTERN = r'<dt>.diteur</dt>\s+<dd>(.*?)</dd>'
 ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_COLLECTION_PATTERN = r'<label>Collection\s:\s?</label>(?:<a href.+?>)*([^><]+?)<'
