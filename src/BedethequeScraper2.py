@@ -1201,7 +1201,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         pickedVar = ""
         picked = False
         info = albumHTML
-        tome = re.search(r'<h2>\s*(-?\w*?)<span class="numa">(.*?)</span>.', albumHTML, re.IGNORECASE | re.DOTALL)
+        tome = re.search(r'<h2 class="bdt-ah-sub">\s*([^<>]+?)<span class="bdt-numa">(.*?)</span>', albumHTML, re.IGNORECASE | re.DOTALL)
         #if no tome take alt number from top of the page
         t = if_else(tome.group(1), tome.group(1), checkWebChar(tome.group(2).strip())) if tome else ""
         #nameRegex groups (inside editions): group#1 => cover, group#2 => tome, group#3 => alt, group#4 => titre, group#5 => info (artists table), group#6 => url anchor
