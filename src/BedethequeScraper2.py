@@ -172,29 +172,29 @@ ALBUM_TITLE_PATTERN = r'itemprop="url"\shref="%s"\stitle="(.*?)">'
 ALBUM_EVAL_PATTERN = r'ratingValue">(.*?)<'
 ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_MULTI_AUTHOR_NAMES_PATTERN = r'">(.*?)</'
+ALBUM_MULTI_AUTHOR_NAMES_PATTERN = r'">([^<>]*?)</'
 ALBUM_MULTI_AUTHOR_NAMES = re.compile(ALBUM_MULTI_AUTHOR_NAMES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_SCENAR_MULTI_AUTHOR_PATTERN = r'<label>sc.*?nario\s:</label>(.*?)<label>[^&]'
+ALBUM_SCENAR_MULTI_AUTHOR_PATTERN = r"<dt>Sc.nario</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_SCENAR_MULTI_AUTHOR = re.compile(ALBUM_SCENAR_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 # Storyboard artists (i.e https://www.bedetheque.com/BD-Aio-Zitelli-Tome-1-Recits-de-guerre-14-18-215576.html)
-ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN = r'label>storyboard\s:</label>(.*?)<label>[^&]'
+ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN = r"<dt>storyboard</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_STORYBOARD_MULTI_AUTHOR = re.compile(ALBUM_STORYBOARD_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_DESSIN_MULTI_AUTHOR_PATTERN = r'<label>dessin\s:</label>(.*?)<label>[^&]'
+ALBUM_DESSIN_MULTI_AUTHOR_PATTERN = r"<dt>dessin</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_DESSIN_MULTI_AUTHOR = re.compile(ALBUM_DESSIN_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COLOR_MULTI_AUTHOR_PATTERN = r'<label>couleurs\s:</label>(.*?)<label>[^&]'
+ALBUM_COLOR_MULTI_AUTHOR_PATTERN = r"<dt>Couleurs</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_COLOR_MULTI_AUTHOR = re.compile(ALBUM_COLOR_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COUVERT_MULTI_AUTHOR_PATTERN = r'<label>couverture\s:</label>(.*?)<label>[^&]'
+ALBUM_COUVERT_MULTI_AUTHOR_PATTERN = r"<dt>Couverture</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_COUVERT_MULTI_AUTHOR = re.compile(ALBUM_COUVERT_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_LETTRAGE_MULTI_AUTHOR_PATTERN = r'<label>lettrage\s:</label>(.*?)<label>[^&]'
+ALBUM_LETTRAGE_MULTI_AUTHOR_PATTERN = r"<dt>Lettrage</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_LETTRAGE_MULTI_AUTHOR = re.compile(ALBUM_LETTRAGE_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_INKER_MULTI_AUTHOR_PATTERN = r'<label>encrage\s:</label>(.*?)<label>[^&]'
+ALBUM_INKER_MULTI_AUTHOR_PATTERN = r"<dt>Encrage</dt>\s*<dd>(.+?)<dt>[^<>]+?</dt>"
 ALBUM_INKER_MULTI_AUTHOR = re.compile(ALBUM_INKER_MULTI_AUTHOR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_DEPOT_PATTERN = r'<label>D.pot L.gal\s:\s?</label>(?P<month>[\d|-]{0,2})/?(?P<year>[\d]{2,4})?'
