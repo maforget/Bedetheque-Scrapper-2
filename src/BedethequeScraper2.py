@@ -206,7 +206,7 @@ ALBUM_ACHEVE = re.compile(ALBUM_ACHEVE_PATTERN, re.IGNORECASE | re.MULTILINE | r
 ALBUM_EDITEUR_PATTERN = r'<dt>.diteur</dt>\s+<dd>(.*?)</dd>'
 ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COLLECTION_PATTERN = r'<label>Collection\s:\s?</label>(?:<a href.+?>)*([^><]+?)<'
+ALBUM_COLLECTION_PATTERN = r"<dt>Collection</dt><dd>(?:<a href.+?>)*([^><]+?)<"
 ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_TAILLE_PATTERN = r'<label>Format\s:\s?</label>.*?(.+?)</'
