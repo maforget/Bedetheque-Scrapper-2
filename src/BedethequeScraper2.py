@@ -139,7 +139,7 @@ SERIE_GENRE = re.compile(SERIE_GENRE_PATTERN, re.IGNORECASE | re.MULTILINE | re.
 SERIE_RESUME_PATTERN = r'<meta\sname="description"\scontent="(.*?)"\s/>'
 SERIE_RESUME = re.compile(SERIE_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-SERIE_STATUS_PATTERN = r'<h3>.*?<span><i\sclass="icon-info-sign"></i>(.*?)</span>'
+SERIE_STATUS_PATTERN = r'class="parution-serie">([^<>]+?)<'
 SERIE_STATUS = re.compile(SERIE_STATUS_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 SERIE_NOTE_PATTERN = r'<p\sclass="static">Note:\s<strong>\s(?P<note>[^<]*?)</strong>'
@@ -834,6 +834,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
                 else:
                     fin = ""
 
+                debuglog("Parution: " + fin)
                 if ("finie" in fin) or (dlgNumber.lower() == "one shot"):
                     book.SeriesComplete = YesNo.Yes
                     SerieState = Trans(54)
