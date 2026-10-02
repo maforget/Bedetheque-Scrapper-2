@@ -121,7 +121,7 @@ SERIE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/serie-(.*?)">.*?libe
 SERIE_LIST_CHECK_PATTERN = r's.ries\strouv.{20,60}?La\srecherche.*?\srenvoie\splus\sde\s500\sdonn'
 SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
 
-SERIE_URL_PATTERN = r'<a\shref="(.*?)">\r\n.{50,60}<span\sclass="libelle">%s\s*?</span>'
+SERIE_URL_PATTERN = r'<a href="([^"]+?)">(?:(?!</a>).)+?<span class="bdt-liste-libelle"><b>%s</b></span>'
 
 ALBUM_ID_PATTERN = r'id="%s".*?album-%s(.*?)\.html'
 ALBUM_INFO_PATTERN = r'<meta\sname="description"\scontent="(.*?)"'
@@ -550,7 +550,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                 return ''
 
             if request:
-                RegCompile = re.compile(SERIE_URL_PATTERN % checkRegExp(serie.strip()),  re.IGNORECASE)
+                RegCompile = re.compile(SERIE_URL_PATTERN % checkRegExp(serie.strip()),  re.IGNORECASE | re.DOTALL)
                 nameRegex = RegCompile.search(request)
 
                 if nameRegex:
