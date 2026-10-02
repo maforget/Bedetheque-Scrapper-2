@@ -1204,15 +1204,14 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         tome = re.search(r'<h2 class="bdt-ah-sub">\s*([^<>]+?)<span class="bdt-numa">(.*?)</span>', albumHTML, re.IGNORECASE | re.DOTALL)
         #if no tome take alt number from top of the page
         t = if_else(tome.group(1), tome.group(1), checkWebChar(tome.group(2).strip())) if tome else ""
-        #nameRegex groups (inside editions): group#1 => cover, group#2 => tome, group#3 => alt, group#4 => titre, group#5 => info (artists table), group#6 => url anchor
-        nameRegex = re.compile(r'class="couv">.+?href="(.+?)".+?class="titre".*?>([^<>]*?)<span class="numa">(.*?)</span>.+?\r\n\s+(.+?)</.+?>(.+?)<div class="album-admin".*?id="bt-album-(.+?)">', re.IGNORECASE | re.DOTALL | re.MULTILINE)
+        nameRegex = re.compile(r'<article class="bdt-edition bdt-edition--detail" id="(?P<id>[^"]+)">.+?<h3>.+?<span class="bdt-numa">(?P<alt>[^\s<]+)*.+?</h3>.+?<a class="bdt-img bdt-ecov[^"]+"\shref="(?P<couv>[^"]+)".+?<dt>Titre</dt><dd><b>(?P<titre>[^<]+).+?<dt>Identifiant</dt>(?P<infos>.+?)</dl>.+?</article>', re.IGNORECASE | re.DOTALL | re.MULTILINE)
         for albumPick in nameRegex.finditer(albumHTML):    
-            couv = re.sub('/cache/thb_couv/', '/media/Couvertures/', albumPick.group(1)) if albumPick.group(1) else "" #get higher resolution image
-            title = checkWebChar(albumPick.group(4).strip())
-            nfo = albumPick.group(5)
+            couv = albumPick.group("couv")
+            title = checkWebChar(albumPick.group("titre").strip())
+            nfo = albumPick.group("infos")
             # a is altNumber
-            a = checkWebChar(albumPick.group(3).strip() if isnumeric(t) else albumPick.group(3).strip().replace(t,'',1).strip())
-            url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group(6).strip()
+            a = checkWebChar(albumPick.group("alt").strip() if isnumeric(t) else albumPick.group("alt").strip().replace(t,'',1).strip()) if albumPick.group("alt") else ""
+            url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group("id").strip()
             albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
             debuglog("Tome)", t, "Alt)", a, "Title)", title)
 
