@@ -209,7 +209,7 @@ ALBUM_EDITEUR = re.compile(ALBUM_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE |
 ALBUM_COLLECTION_PATTERN = r"<dt>Collection</dt><dd>(?:<a href.+?>)*([^><]+?)<"
 ALBUM_COLLECTION = re.compile(ALBUM_COLLECTION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_TAILLE_PATTERN = r'<label>Format\s:\s?</label>.*?(.+?)</'
+ALBUM_TAILLE_PATTERN = r"<dt>Format</dt>\s*<dd>(.*?)</dd>"
 ALBUM_TAILLE = re.compile(ALBUM_TAILLE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_ISBN_PATTERN = r"<dt>EAN/ISBN</dt>\s*<dd>(.*?)</dd>"
