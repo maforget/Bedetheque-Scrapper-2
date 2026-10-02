@@ -1163,38 +1163,6 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             ID_ALBUM = ID_ALBUM_PATT.group(1)
             AlbumBDThequeNum = ID_ALBUM
 
-    else:
-        # Album N. est Numerique
-        if dlgNumber or dlgAltNumber:
-            ALBUM_BDTHEQUE_NUM_PATTERN = r'tails\">%s<span\sclass=\"numa">%s</span>.*?<a name=\"(.*?)\"'
-            ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % (num, dlgAltNumber), re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-            nameRegex = ALBUM_BDTHEQUE_NUM.search(albumHTML)
-
-            if nameRegex:
-                AlbumBDThequeNum = nameRegex.group(1)
-            else:
-                ALBUM_BDTHEQUE_NUM_PATTERN = r'>%s<span\sclass=\"numa">.*?</span>.*?<a name=\"(.*?)\"'
-                ALBUM_BDTHEQUE_NUM = re.compile(ALBUM_BDTHEQUE_NUM_PATTERN % num, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-                nameRegex = ALBUM_BDTHEQUE_NUM.search(albumHTML)
-                if nameRegex:
-                    AlbumBDThequeNum = nameRegex.group(1)
-                else:
-                    # Album not found
-                    nameRegex = ""
-                    return False
-
-        # Album N. in Lettres
-        else:
-            nameRegex = ALBUM_BDTHEQUE_NOTNUM.search(albumHTML)
-            if nameRegex:
-                AlbumBDThequeNum = nameRegex.group(1)
-
-            else:
-
-                nameRegex = ""
-                return False
-
     try:
         i = 0
         ListAlbum = list()
