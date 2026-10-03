@@ -133,7 +133,7 @@ INFOS_ALBUMS = re.compile(INFOS_ALBUMS_PATTERN, re.IGNORECASE | re.DOTALL)
 SERIE_LANGUE_PATTERN = r'class="flag"/>(.*?)</span>'
 SERIE_LANGUE = re.compile(SERIE_LANGUE_PATTERN, re.IGNORECASE)
 
-SERIE_GENRE_PATTERN = r'<span\sclass="style">(.*?)<'
+SERIE_GENRE_PATTERN = r'class="bdt-tag bdt-sh-genre">(.*?)<'
 SERIE_GENRE = re.compile(SERIE_GENRE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 SERIE_RESUME_PATTERN = r'<meta\sname="description"\scontent="(.*?)"\s/>'
