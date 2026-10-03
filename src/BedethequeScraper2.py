@@ -1119,13 +1119,14 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
         return False
 
 class AlbumInfo:
-    def __init__ (self, n, a, title, info, couv, url):
+    def __init__ (self, n, a, title, info, couv, url, bookId):
         self.Couv = couv
         self.N = n
         self.A = a
         self.Title = title
         self.Info = info
         self.URL = url
+        self.ID = bookId
 
 def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
@@ -1173,16 +1174,17 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         tome = re.search(r'<h2 class="bdt-ah-sub">\s*([^<>]+?)<span class="bdt-numa">(.*?)</span>', albumHTML, re.IGNORECASE | re.DOTALL)
         #if no tome take alt number from top of the page
         t = if_else(tome.group(1), tome.group(1), checkWebChar(tome.group(2).strip())) if tome else ""
-        nameRegex = re.compile(r'<article class="bdt-edition bdt-edition--detail" id="(?P<id>[^"]+)">.+?<h3>.+?<span class="bdt-numa">(?P<alt>[^\s<]+)*.+?</h3>.+?<a class="bdt-img bdt-ecov[^"]+"\shref="(?P<couv>[^"]+)".+?<dt>Titre</dt><dd><b>(?P<titre>[^<]+).+?<dt>Identifiant</dt>(?P<infos>.+?)</dl>.+?</article>', re.IGNORECASE | re.DOTALL | re.MULTILINE)
+        nameRegex = re.compile(r'<article class="bdt-edition bdt-edition--detail" id="ed-(?P<id>[^"]+)">.+?<h3>.+?<span class="bdt-numa">(?P<alt>[^\s<]+)*.+?</h3>.+?<a class="bdt-img bdt-ecov[^"]+"\shref="(?P<couv>[^"]+)".+?<dt>Titre</dt><dd><b>(?P<titre>[^<]+).+?<dt>Identifiant</dt>(?P<infos>.+?)</dl>.+?</article>', re.IGNORECASE | re.DOTALL | re.MULTILINE)
         for albumPick in nameRegex.finditer(albumHTML):    
             couv = albumPick.group("couv")
             title = checkWebChar(albumPick.group("titre").strip())
             nfo = albumPick.group("infos")
             # a is altNumber
             a = checkWebChar(albumPick.group("alt").strip() if isnumeric(t) else albumPick.group("alt").strip().replace(t,'',1).strip()) if albumPick.group("alt") else ""
-            url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + albumPick.group("id").strip()
-            albumInfo = AlbumInfo(t, a, title, nfo, couv, url)
-            debuglog("Tome)", t, "Alt)", a, "Title)", title)
+            bookId = albumPick.group("id").strip()
+            url = pageUrl + "#reed" if i == 0 else pageUrl + "#" + bookId
+            albumInfo = AlbumInfo(t, a, title, nfo, couv, url, bookId)
+            debuglog("Tome)", t, "Alt)", a, "Title)", title, "bookId)", bookId)
 
             ListAlbum.append([a, albumInfo, str(i).zfill(3)])
             i = i + 1
@@ -1221,9 +1223,11 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                 pickedVar = ListAlbum[0][1]
                 debuglog("---> Choix du 1er item")
 
+        bookId = AlbumBDThequeNum if AlbumBDThequeNum else ''
         if pickedVar :
             info = pickedVar.Info
-            debuglog("Choisi #Alt: " + pickedVar.A + " // Titre: " + pickedVar.Title)
+            bookId = pickedVar.ID if pickedVar.ID else bookId  # Use the edition id if it exists, otherwise the id from the pageUrl
+            debuglog("Choisi #Alt: " + pickedVar.A + " // Titre: " + pickedVar.Title + " // ID: " + bookId)
 
         if info :
             if RenameSeries:
@@ -1387,10 +1391,11 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             # Album summary is optional => So, there is a specific research
             if CBSynopsys:
                 summary = ""
-                nameRegex = ALBUM_RESUME.search(albumHTML, 0)
-                if nameRegex:
-                    resume = strip_tags(nameRegex.group(1)).strip()
-                    resume = re.sub(r'Tout sur la série.*?:\s?', "", resume, re.IGNORECASE)
+                # Summary on page is truncated, so we need to fetch the summary via the ajax pageUrl -> baseurl + "ajax/resume/album/" + id
+                summaryUrl = "ajax/resume/album/" + bookId
+                resume = _read_url(summaryUrl, False)
+                if resume:
+                    resume = strip_tags(resume).strip()
                     PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
                     if Serie_Resume and PrintSerieResume and remove_accents(Serie_Resume) != remove_accents(resume):
                         summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")                    
