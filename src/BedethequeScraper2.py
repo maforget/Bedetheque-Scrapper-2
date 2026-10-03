@@ -136,7 +136,7 @@ SERIE_LANGUE = re.compile(SERIE_LANGUE_PATTERN, re.IGNORECASE)
 SERIE_GENRE_PATTERN = r'class="bdt-tag bdt-sh-genre">(.*?)<'
 SERIE_GENRE = re.compile(SERIE_GENRE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-SERIE_RESUME_PATTERN = r'<meta\sname="description"\scontent="(.*?)"\s/>'
+SERIE_RESUME_PATTERN = r'class="bdt-sh-resume">([^<>]*?)<'
 SERIE_RESUME = re.compile(SERIE_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 SERIE_STATUS_PATTERN = r'class="parution-serie">([^<>]+?)<'
