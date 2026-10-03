@@ -145,13 +145,13 @@ SERIE_STATUS = re.compile(SERIE_STATUS_PATTERN, re.IGNORECASE | re.MULTILINE | r
 SERIE_NOTE_PATTERN = r'<p\sclass="static">Note:\s<strong>\s(?P<note>[^<]*?)</strong>'
 SERIE_NOTE = re.compile(SERIE_NOTE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-SERIE_COUNT_PATTERN = r'class="icon-book"></i>\s(\d+)'
+SERIE_COUNT_PATTERN = r'title="Nombre de tomes de la série">(\d+)'
 SERIE_COUNT = re.compile(SERIE_COUNT_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-SERIE_COUNT_REAL_PATTERN = r'liste-albums-side(.*?)WIDGET'
+SERIE_COUNT_REAL_PATTERN = r'class="bdt-box-albums-liste">(.+?)</ul>'
 SERIE_COUNT_REAL = re.compile(SERIE_COUNT_REAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-SERIE_COUNTOF_PATTERN = r'<label>(.*?)<span'
+SERIE_COUNTOF_PATTERN = r'class="bdt-box-albums-num"[^<>]+?>([^<>]+?)<span'
 SERIE_COUNTOF = re.compile(SERIE_COUNTOF_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 SERIE_HEADER2_PATTERN = r'<h3(.+?)</p'
