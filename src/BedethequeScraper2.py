@@ -130,7 +130,7 @@ ALBUM_INFO_PATTERN = r'<meta\sname="description"\scontent="(.*?)"'
 INFOS_ALBUMS_PATTERN = r'<dl class="bdt-sheet">.+?</div>'
 INFOS_ALBUMS = re.compile(INFOS_ALBUMS_PATTERN, re.IGNORECASE | re.DOTALL)
 
-SERIE_LANGUE_PATTERN = r'class="flag"/>(.*?)</span>'
+SERIE_LANGUE_PATTERN = r'<li[^<>]+?(?<="Langue de parution").+?class="bdt-sh-flag"[^<>]+?>([^<>]+?)<'
 SERIE_LANGUE = re.compile(SERIE_LANGUE_PATTERN, re.IGNORECASE)
 
 SERIE_GENRE_PATTERN = r'class="bdt-tag bdt-sh-genre">(.*?)<'
