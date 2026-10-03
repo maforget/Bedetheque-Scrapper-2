@@ -1751,7 +1751,7 @@ def fetch_cloudscraper(url):
             raise Exception("BedethequeFetcher exit code " + str(process.ExitCode) + ": " + stderr_result[0])
 
         if not stdout_result[0]:
-            raise Exception("BedethequeFetcher did not return any content")
+            raise NoContentError("BedethequeFetcher did not return any content")
 
         return stdout_result[0] or ''
     finally:
@@ -1840,6 +1840,9 @@ def _read_url(url, bSingle):
             debuglog("Cancelled from _read_url End")
             return ''
 
+    except NoContentError, nce:
+        debuglog("No content returned for URL: " + target_url + ": " + str(nce))
+
     except Exception, e:
         debuglog(Trans(60))
         debuglog(Trans(61), e)
@@ -1848,6 +1851,9 @@ def _read_url(url, bSingle):
         Result = MessageBox.Show(ComicRack.MainWindow, Trans(98) + cError ,Trans(97), MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1)
 
     return page
+
+class NoContentError(Exception):
+    pass
 
 def isnumeric(nNum):
 
