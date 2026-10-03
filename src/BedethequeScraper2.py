@@ -1243,7 +1243,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
             #web
             if CBWeb == True and not CBRescrape:
                 if not ShortWebLink:
-                    book.Web = pickedVar.URL.replace("#reed", "")
+                    book.Web = pickedVar.URL.replace("#reed", "") if isinstance(pickedVar, AlbumInfo) else ""
                     debuglog(Trans(123), book.Web)
                 else:
                     cBelid = re.search(r'-(\d+).html', pageUrl)
