@@ -915,12 +915,12 @@ def parseSerieInfo(book, serieUrl, lDirect):
 
                     debuglog(Trans(59) + if_else(dlgNumber.lower() == "one shot", "1", cCountText))
 
-            Regex = re.compile(r'<label>([^<]*?)<span\sclass=\"numa\">(.*?)</span.*?<a\shref=\"(.*?)".*?title=.+?\">(.+?)</', re.IGNORECASE | re.DOTALL)
+            Regex = re.compile(r'<li>\s+?<a href="(?P<url>[^"]+?)" title="(?P<title>[^"]+?)">.+?class="bdt-box-albums-num"[^<>]+?>(?P<tome>[^<>]+?)<span class="bdt-numa">(?P<alt>[^<>]*?)<', re.IGNORECASE | re.DOTALL)
 
             i = 0
             ListAlbum, ListAlbumAll = list(), list()
             for r in Regex.finditer(request):
-                n, a, url, title = r.group(1), r.group(2), r.group(3), r.group(4)
+                n, a, url, title = r.group("tome"), r.group("alt"), r.group("url"), r.group("title")
                 num = if_else(n,n, if_else(a, a, ""))
                 ListAlbumAll.append([url, num + ". " + title, str(i).zfill(3)])
                 if dlgNumber != "" and (num == dlgNumber) and not lDirect:
@@ -933,7 +933,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
             albumURL = AlbumChooser(ListAlbum)
             if not albumURL and not SkipAlbum:
                 #Rien trouvé il ce peux qu'il n'est pas de liste sur le coté, surement 1 seul item
-                Regex = re.compile(r'class="titre"\shref="(.+?)".+?<span class="numa">.*?</span>.+?', re.IGNORECASE | re.DOTALL)
+                Regex = re.compile(r'class="bdt-edition-head">\s*<h3>\s*<a[^<>]+?href="([^"]+?)"', re.IGNORECASE | re.DOTALL)
                 r = Regex.search(request)
                 if r:
                     albumURL = r.group(1)
