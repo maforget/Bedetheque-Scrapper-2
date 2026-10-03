@@ -139,7 +139,7 @@ SERIE_GENRE = re.compile(SERIE_GENRE_PATTERN, re.IGNORECASE | re.MULTILINE | re.
 SERIE_RESUME_PATTERN = r'class="bdt-sh-resume">([^<>]*?)<'
 SERIE_RESUME = re.compile(SERIE_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-SERIE_STATUS_PATTERN = r'class="parution-serie">([^<>]+?)<'
+SERIE_STATUS_PATTERN = r'class="bdt-sh-parution">([^<>]+?)<'
 SERIE_STATUS = re.compile(SERIE_STATUS_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 SERIE_NOTE_PATTERN = r'<p\sclass="static">Note:\s<strong>\s(?P<note>[^<]*?)</strong>'
