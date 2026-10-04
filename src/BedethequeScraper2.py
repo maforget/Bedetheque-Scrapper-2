@@ -118,7 +118,7 @@ LAST_FIRST_NAMES = re.compile(LAST_FIRST_NAMES_PATTERN)
 # Info Serie
 SERIE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/serie-(.*?)">.+?class="bdt-liste-libelle">\s+<b>(.+?)</b>'
 
-SERIE_LIST_CHECK_PATTERN = r's.ries\strouv.{20,60}?La\srecherche.*?\srenvoie\splus\sde\s500\sdonn'
+SERIE_LIST_CHECK_PATTERN = r'séries\strouvées.{40,80}?La\srecherche\srenvoie\splus\sde'
 SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
 
 SERIE_URL_PATTERN = r'<a href="([^"]+?)">(?:(?!</a>).)+?<span class="bdt-liste-libelle"><b>%s</b></span>'
@@ -133,7 +133,7 @@ INFOS_ALBUMS = re.compile(INFOS_ALBUMS_PATTERN, re.IGNORECASE | re.DOTALL)
 SERIE_LANGUE_PATTERN = r'<li[^<>]+?(?<="Langue de parution").+?class="bdt-sh-flag"[^<>]+?>([^<>]+?)<'
 SERIE_LANGUE = re.compile(SERIE_LANGUE_PATTERN, re.IGNORECASE)
 
-SERIE_GENRE_PATTERN = r'class="bdt-tag bdt-sh-genre">(.*?)<'
+SERIE_GENRE_PATTERN = r'class="bdt-tag bdt-sh-genre"[^<>]+?>([^<>]+?)<'
 SERIE_GENRE = re.compile(SERIE_GENRE_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 SERIE_RESUME_PATTERN = r'class="bdt-sh-resume">([^<>]*?)<'
@@ -255,7 +255,7 @@ REVUE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/revue-(.*?)">.+?clas
 REVUE_LIST_EXISTS_PATTERN = r'<h2>\d{1,3} revue\w?? trouvée\w??</h2>'
 REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOTALL)
 
-REVUE_LIST_CHECK_PATTERN = r'<h1>Revues</h1>.*?La\srecherche\seffectu.*?\srenvoie\splus\sde\s.*?<h1>S.*?ries<'
+REVUE_LIST_CHECK_PATTERN = r'revues\strouvées.{40,80}?La\srecherche\srenvoie\splus\sde'
 REVUE_LIST_CHECK = re.compile(REVUE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
 
 REVUE_CALC_PATTERN = r'<option\svalue="(.{1,160}?)">%s</'
@@ -915,7 +915,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 
                     debuglog(Trans(59) + if_else(dlgNumber.lower() == "one shot", "1", cCountText))
 
-            Regex = re.compile(r'<li>\s+?<a href="(?P<url>[^"]+?)" title="(?P<title>[^"]+?)">.+?class="bdt-box-albums-num"[^<>]+?>(?P<tome>[^<>]+?)<span class="bdt-numa">(?P<alt>[^<>]*?)<', re.IGNORECASE | re.DOTALL)
+            Regex = re.compile(r'<li>\s+?<a href="(?P<url>[^"]+?)" title="(?P<title>[^"]+?)">.+?class="bdt-box-albums-num"[^<>]+?>(?P<tome>[^<>]*?)<span class="bdt-numa">(?P<alt>[^<>]*?)<', re.IGNORECASE | re.DOTALL)
 
             i = 0
             ListAlbum, ListAlbumAll = list(), list()
@@ -1173,7 +1173,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
         info = albumHTML
         tome = re.search(r'<h2 class="bdt-ah-sub">\s*([^<>]+?)<span class="bdt-numa">(.*?)</span>', albumHTML, re.IGNORECASE | re.DOTALL)
         #if no tome take alt number from top of the page
-        t = if_else(tome.group(1), tome.group(1), checkWebChar(tome.group(2).strip())) if tome else ""
+        t = if_else(tome.group(1).strip(), tome.group(1).strip(), checkWebChar(tome.group(2).strip())) if tome else ""
         nameRegex = re.compile(r'<article class="bdt-edition bdt-edition--detail" id="ed-(?P<id>[^"]+)">.+?<h3>.+?<span class="bdt-numa">(?P<alt>[^\s<]+)*.+?</h3>.+?<a class="bdt-img bdt-ecov[^"]+"\shref="(?P<couv>[^"]+)".+?<dt>Titre</dt><dd><b>(?P<titre>[^<]+).+?<dt>Identifiant</dt>(?P<infos>.+?)</article>', re.IGNORECASE | re.DOTALL | re.MULTILINE)
         for albumPick in nameRegex.finditer(albumHTML):    
             couv = albumPick.group("couv")
