@@ -572,7 +572,8 @@ def SetSerieId(book, serie, num, nBooksIn):
 
         ListSeries = list()
         debuglog("Nom de Série pour recherche = " + dlgNameClean)
-        urlN = '/search/tout?RechTexte=' + remove_accents(dlgNameClean.lower().strip()) +'&RechWhere=0'
+        # RechWhere: 0=Tout le site, 7=Toute la bédéthèque, 9=Revues, 10=Séries
+        urlN = '/search/tout?RechTexte=' + remove_accents(dlgNameClean.lower().strip()) +'&RechWhere=7'
 
         debuglog(Trans(113), 'www.bedetheque.com' + urlN)
 
