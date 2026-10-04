@@ -158,18 +158,10 @@ SERIE_HEADER2_PATTERN = r'<h3(.+?)</p'
 SERIE_HEADER2 = re.compile(SERIE_HEADER2_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 # Info Serie for Quickscrape
-
 SERIE_QSERIE_PATTERN = r'<h1>\s*<a href="[^<>]+/serie-[^\.]+\.html">([^"<>]+)</a>'
 
 # Info Album from Album
-INFO_SERIENAMENUMBER_ALBUM_PATTERN = r'<span\sclass="type">S.*?rie\s:\s</span>\s?(.*?)<.*?id="%s">.*?<div\sclass="titre">(?:(.*?)<.*?numa">(.*?)</span>\.?\s?)?(.*?)<'
-
-ALBUM_BDTHEQUE_NOTNUM_PATTERN = r'tails">.*?<span\sclass="numa"></span>.*?<a name="(.*?)"'
-ALBUM_BDTHEQUE_NOTNUM = re.compile(ALBUM_BDTHEQUE_NOTNUM_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_TITLE_PATTERN = r'itemprop="url"\shref="%s"\stitle="(.*?)">'
-
-ALBUM_EVAL_PATTERN = r'ratingValue">(.*?)<'
+ALBUM_EVAL_PATTERN = r'Note: <span itemprop="ratingValue">(.*?)<'
 ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_MULTI_AUTHOR_NAMES_PATTERN = r'">([^<>]*?)</'
@@ -218,36 +210,9 @@ ALBUM_ISBN = re.compile(ALBUM_ISBN_PATTERN, re.IGNORECASE | re.DOTALL)
 ALBUM_PLANCHES_PATTERN = r"<dt>Planches</dt>\s*<dd>(.*?)</dd>"
 ALBUM_PLANCHES = re.compile(ALBUM_PLANCHES_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_COVER_PATTERN = r'<meta\sproperty="og:title".*?="https:(.*?)"'
-ALBUM_COVER = re.compile(ALBUM_COVER_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-ALBUM_RESUME_PATTERN = r'<meta\sname="description"\scontent="(.*?)"'
-ALBUM_RESUME = re.compile(ALBUM_RESUME_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
 ALBUM_INFOEDITION_PATTERN = r"<b>Info\s.*?dition</b>\s?(.*?)<"
 ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
-ALBUM_URL_PATTERN = r'<label>%s<span\sclass="numa.*?\.<.*?<a\shref="(.*?)"\s.*?title=.+?">(.+?)</'
-
-ALBUM_SINGLE_URL_PATTERN = r'<label>%s<span\sclass="numa.*?\.%s<.*?<a\shref="(.*?)\#(.*?)"'
-
-ALBUM_NON_NUM_URL_PATTERN = r'<label><span\sclass="numa">%s</span>.*?\.<.*?<a\shref="(.*?)"\s.*?title=.+?">(.+?)</'  
-
-ALBUM_SINGLEALBUM_URLALL_PATTERN = r'<h3>(.*?)</h3>'
-ALBUM_SINGLEALBUM_URLALL = re.compile(ALBUM_SINGLEALBUM_URLALL_PATTERN, re.DOTALL | re.IGNORECASE)
-
-ALBUM_SINGLEALBUM_URL_PATTERN = r'href="(.*?)"\stitle.*?">.*?%s<span\sclass="numa">%s<'
-
-ALBUMDETAILS_URL_PATTERN = r'https://www.bedetheque.com/album-%s-(.*?)"'
-ALBUMDETAILSSINGLE_URL_PATTERN = r'https://www.bedetheque.com/album-(.*?)"'
-
-ALBUM_URL_PATTERN_NOTNUM = r'<div\sclass="album.*?href="(.*?)"'
-ALBUM_URL_NOTNUM = re.compile(ALBUM_URL_PATTERN_NOTNUM, re.MULTILINE | re.DOTALL | re.IGNORECASE)
-
-ALBUM_QNUM_PATTERN = r'og:title"\scontent="(.*?)-(.*?)-?\s(.*?)"\s*/>'
-ALBUM_QNUM = re.compile(ALBUM_QNUM_PATTERN, re.IGNORECASE)
-
-ALBUM_QTITLE_PATTERN = r'titre.*?%s<span.*?name">(.*?)<'
 ########################################
 # Info Revues
 REVUE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/revue-(.*?)">.+?class="bdt-liste-libelle">\s+<b>(.+?)</b>'
@@ -257,8 +222,6 @@ REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOT
 
 REVUE_LIST_CHECK_PATTERN = r'revues\strouvées.{40,80}?La\srecherche\srenvoie\splus\sde'
 REVUE_LIST_CHECK = re.compile(REVUE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
-
-REVUE_CALC_PATTERN = r'<option\svalue="(.{1,160}?)">%s</'
 
 REVUE_HEADER_PATTERN = r'class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.{1,600}?class="titre".{1,100}?#(%s)\..+?class="autres".+?)</li>'
 REVUE_HEADER_PATTERN_ALT = r'<a name="%s">.+?class="couv"(.{1,100}?couvertures"\shref="(https.{1,150}?)">.+?class="titre".{1,100}?#(.+?)\..+?class="autres".+?)</li>'
@@ -274,6 +237,9 @@ REVUE_DEPOT = re.compile(REVUE_DEPOT_PATTERN, re.IGNORECASE | re.MULTILINE | re.
 
 REVUE_PERIOD_PATTERN = r'<label>P.riodicit.\s:\s??</label>(.*?)</'
 REVUE_PERIOD = re.compile(REVUE_PERIOD_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+
+REVUE_EDITEUR_PATTERN = r'<label>Editeur\s:\s?</label>(.*?)</'
+REVUE_EDITEUR = re.compile(REVUE_EDITEUR_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 def BD_start(books):
 
@@ -1077,7 +1043,7 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
 
         #Editeur
         if CBEditor:
-            nameRegex = ALBUM_EDITEUR.search(Entete, 0)
+            nameRegex = REVUE_EDITEUR.search(Entete, 0)
             if nameRegex:
                 editeur = parseName(nameRegex.group(1))
                 book.Publisher = editeur
@@ -1109,6 +1075,20 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
         if CBWeb == True and not CBRescrape:
             book.Web = serieUrl
             debuglog(Trans(123), book.Web)
+
+        # Reset other fields
+        book.SeriesComplete = YesNo.Unknown
+        book.BlackAndWhite = YesNo.Unknown
+        book.AlternateNumber = ""
+        book.Tags = ""
+        book.Writer = ""
+        book.Penciller = ""
+        book.CoverArtist = ""
+        book.Letterer = ""
+        book.Inker = ""
+        book.ISBN = ""        
+        book.Imprint = ""
+        book.CommunityRating = 0.0
 
         if CBNotes:
             write_book_notes(book)
