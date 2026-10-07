@@ -916,7 +916,7 @@ def parseSerieInfo(book, serieUrl, lDirect):
 
                     debuglog(Trans(59) + if_else(dlgNumber.lower() == "one shot", "1", cCountText))
 
-            Regex = re.compile(r'<li>\s+?<a href="(?P<url>[^"]+?)" title="(?P<title>[^"]+?)">.+?class="bdt-box-albums-num"[^<>]+?>(?P<tome>[^<>]*?)<span class="bdt-numa">(?P<alt>[^<>]*?)<', re.IGNORECASE | re.DOTALL)
+            Regex = re.compile(r'<li[^>]*>\s+?<a href="(?P<url>[^"]+?)" title="(?P<title>[^"]+?)">.+?class="bdt-box-albums-num"[^<>]+?>(?P<tome>[^<>]*?)<span class="bdt-numa">(?P<alt>[^<>]*?)<', re.IGNORECASE | re.DOTALL)
 
             i = 0
             ListAlbum, ListAlbumAll = list(), list()
