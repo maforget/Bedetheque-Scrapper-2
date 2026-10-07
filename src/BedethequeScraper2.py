@@ -161,7 +161,7 @@ SERIE_HEADER2 = re.compile(SERIE_HEADER2_PATTERN, re.IGNORECASE | re.MULTILINE |
 SERIE_QSERIE_PATTERN = r'<h1>\s*<a href="[^<>]+/serie-[^\.]+\.html">([^"<>]+)</a>'
 
 # Info Album from Album
-ALBUM_EVAL_PATTERN = r'Note: <span itemprop="ratingValue">(.*?)<'
+ALBUM_EVAL_PATTERN = r'ratingValue">(.*?)<'
 ALBUM_EVAL = re.compile(ALBUM_EVAL_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 ALBUM_MULTI_AUTHOR_NAMES_PATTERN = r'">([^<>]*?)</'
