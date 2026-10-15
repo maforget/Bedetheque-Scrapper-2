@@ -158,7 +158,7 @@ SERIE_HEADER2_PATTERN = r'<h3(.+?)</p'
 SERIE_HEADER2 = re.compile(SERIE_HEADER2_PATTERN, re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 # Info Serie for Quickscrape
-SERIE_QSERIE_PATTERN = r'<h1>\s*<a href="[^<>]+/serie-[^\.]+\.html">([^"<>]+)</a>'
+SERIE_QSERIE_PATTERN = r'<h1>.+?<a href="[^<>]+/serie-[^\.]+\.html">([^"<>]+)</a>.*?</h1>'
 
 # Info Album from Album
 ALBUM_EVAL_PATTERN = r'ratingValue">(.*?)<'
