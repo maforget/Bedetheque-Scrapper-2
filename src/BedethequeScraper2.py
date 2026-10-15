@@ -1371,10 +1371,11 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
 
             # Album summary is optional => So, there is a specific research
             if CBSynopsys:
-                summary = ""
+                summary, resume = "", ""
                 # Summary on page is truncated, so we need to fetch the summary via the ajax pageUrl -> baseurl + "ajax/resume/album/" + id
-                summaryUrl = "ajax/resume/album/" + bookId
-                resume = _read_url(summaryUrl, False)
+                if AlbumBDThequeNum:
+                    summaryUrl = "ajax/resume/album/" + AlbumBDThequeNum
+                    resume = _read_url(summaryUrl, False)
                 if resume:
                     resume = strip_tags(resume).strip()
                     PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
