@@ -116,7 +116,7 @@ LAST_FIRST_NAMES = re.compile(LAST_FIRST_NAMES_PATTERN)
 
 ########################################
 # Info Serie
-SERIE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/serie-(.*?)">.+?class="bdt-liste-libelle">\s+<b>(.+?)</b>'
+SERIE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/serie-([^<>"]*?)">.+?class="bdt-liste-libelle">.*?<b>(.+?)</b>.+?</a>'
 
 SERIE_LIST_CHECK_PATTERN = r'séries\strouvées.{40,80}?La\srecherche\srenvoie\splus\sde'
 SERIE_LIST_CHECK = re.compile(SERIE_LIST_CHECK_PATTERN, re.IGNORECASE | re.DOTALL)
@@ -215,7 +215,7 @@ ALBUM_INFOEDITION = re.compile(ALBUM_INFOEDITION_PATTERN, re.IGNORECASE | re.MUL
 
 ########################################
 # Info Revues
-REVUE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/revue-(.*?)">.+?class="bdt-liste-libelle">\s+<b>(.+?)</b>'
+REVUE_LIST_PATTERN = r'<a\shref="https://www.bedetheque.com/revue-([^<>"]*?)">.+?class="bdt-liste-libelle">.*?<b>(.+?)</b>.+?</a>'
 
 REVUE_LIST_EXISTS_PATTERN = r'<h2>\d{1,3} revue\w?? trouvée\w??</h2>'
 REVUE_LIST_EXISTS = re.compile(REVUE_LIST_EXISTS_PATTERN, re.IGNORECASE | re.DOTALL)
