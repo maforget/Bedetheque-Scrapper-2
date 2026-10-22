@@ -1377,7 +1377,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                     summaryUrl = "ajax/resume/album/" + AlbumBDThequeNum
                     resume = _read_url(summaryUrl, False)
                 if resume:
-                    resume = strip_tags(resume).strip()
+                    resume = strip_tags(checkWebChar(resume)).strip()
                     PrintSerieResume = True if SerieResumeEverywhere else book.Number == '1'
                     if Serie_Resume and PrintSerieResume and remove_accents(Serie_Resume) != remove_accents(resume):
                         summary = Serie_Resume + if_else(resume, chr(10) + chr(10) + if_else(book.Title, '>' + book.Title + '< ' + chr(10), "") + resume, "")                    
@@ -1392,7 +1392,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                 nameRegex = ALBUM_INFOEDITION.search(info, 0)
                 if nameRegex:
                     if nameRegex.group(1) !=" &nbsp;":
-                        infoedition = strip_tags(nameRegex.group(1)).strip()
+                        infoedition = strip_tags(checkWebChar(nameRegex.group(1))).strip()
                         if infoedition:
                             summary = if_else(summary != "",summary + chr(10) + chr(10) + Trans(118) + infoedition,Trans(118) + infoedition)
                         debuglog(Trans(118) + Trans(119))
