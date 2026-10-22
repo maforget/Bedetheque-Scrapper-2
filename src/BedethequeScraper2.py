@@ -1858,6 +1858,7 @@ def checkWebChar(strIn):
     strIn = re.sub('\xc3', u'\xc3', strIn)
     strIn = re.sub('\xa2', u'\xa2', strIn)
     strIn = re.sub('\xc3', u'\xc3', strIn)
+    strIn = re.sub('\&#039;', "'", strIn)
 
     return strIn 
 
