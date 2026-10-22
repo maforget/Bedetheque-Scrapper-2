@@ -35,7 +35,7 @@ from System.Windows.Forms import *
 from System.IO import FileInfo, File
 from System.Diagnostics import ProcessStartInfo, Process
 from System.Diagnostics.Process import Start
-from System.Net import HttpWebRequest
+from System.Net import HttpWebRequest, WebUtility
 from System.Net.Sockets import TcpClient, SocketType, ProtocolType
 from System.Threading import Thread, ThreadStart
 from System import Math
@@ -1859,6 +1859,8 @@ def checkWebChar(strIn):
     strIn = re.sub('\xa2', u'\xa2', strIn)
     strIn = re.sub('\xc3', u'\xc3', strIn)
     strIn = re.sub('\&#039;', "'", strIn)
+
+    strIn = WebUtility.HtmlDecode(strIn)
 
     return strIn 
 
