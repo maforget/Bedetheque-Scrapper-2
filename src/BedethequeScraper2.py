@@ -53,7 +53,7 @@ BasicXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><configuration></configura
 
 CookieContainer = System.Net.CookieContainer()
 
-VERSION = "6.07"
+VERSION = "6.08"
 
 SHOWRENLOG = False
 SHOWDBGLOG = False
