@@ -985,7 +985,7 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
         if CBTitle:
             nameRegex = re.search(r'<h3 class="titre".+?</span>(.+?)</h3>', Entete, re.IGNORECASE | re.DOTALL | re.MULTILINE)
             if nameRegex: 
-                book.Title = titlize(nameRegex.group(1).strip())
+                book.Title = titlize(checkWebChar(nameRegex.group(1)).strip())
             debuglog(Trans(29), book.Title)
 
         #genre
@@ -3511,8 +3511,8 @@ class SeriesForm(Form):
                 title = ""
                 if self.formType == FormType.EDITION: 
                     title = self.List[x][1].Title
-                else: 
-                    title = self.List[x][1]
+                else:
+                    title = checkWebChar(self.List[x][1])
                 
                 display = "(" + self.List[x][2] + ") - " + title + if_else(self.List[x][0], "   (", "") + self.List[x][0] + if_else(self.List[x][0], ")", "")
                 if filter and filter not in display.lower():
