@@ -967,7 +967,7 @@ def parseRevueInfo(book, SerieInfoRegex, serieUrl, Numero = "", serie = ""):
 
         if Numero:
             try:
-                book.Number = Numero
+                book.Number = checkWebChar(Numero)
                 debuglog(Trans(115), book.Number)
             except:
                 book.Number = ""
