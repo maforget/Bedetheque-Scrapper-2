@@ -29,7 +29,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          pip install cloudscraper pyinstaller
+          pip install cloudscraper websockets pyinstaller
 
       - name: Build BedethequeFetcher.exe
         run: |

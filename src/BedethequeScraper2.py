@@ -456,6 +456,7 @@ def WorkerThread(books):
         f.Refresh()
         #Application.DoEvents()
         f.Close()
+        release_browser()
 
         log_BD("\n" + Trans(17) + str(nRenamed) , "", 0)
         log_BD(Trans(18) + str(nIgnored), "", 0)
@@ -599,7 +600,7 @@ def SetSerieId(book, serie, num, nBooksIn):
                 NewSeries = ''
                 a = ListSeries
                 pickAseries = SeriesForm(serie, ListSeries, FormType.SERIE)
-                result = pickAseries.ShowDialog()
+                result = pickAseries.ShowDialog(ComicRack.MainWindow)
 
                 if result == DialogResult.Cancel:
                     debuglog(Trans(24) + checkWebChar(serie) + "]")
@@ -926,7 +927,7 @@ def AlbumChooser(ListAlbum):
             NewLink = ""
             NewSeries = ""
             pickAnAlbum = SeriesForm(dlgNumber, ListAlbum, FormType.ALBUM)
-            result = pickAnAlbum.ShowDialog()
+            result = pickAnAlbum.ShowDialog(ComicRack.MainWindow)
                 
             if result == DialogResult.Cancel:
                 if TIMEPOPUP != "0" and TimerExpired:
@@ -1191,7 +1192,7 @@ def parseAlbumInfo(book, pageUrl, num, lDirect = False):
                 NewLink = ""
                 NewSeries = ""
                 pickAvar = SeriesForm(num, ListAlbum, FormType.EDITION)
-                result = pickAvar.ShowDialog()
+                result = pickAvar.ShowDialog(ComicRack.MainWindow)
 
                 if result == DialogResult.Cancel:
                     pickedVar = ListAlbum[0][1]
@@ -1490,6 +1491,8 @@ DAEMON_EXE = "BedethequeFetcher.exe"
 # ("", DAEMON_EXE, or "BedethequeFetcher.py").
 daemon_running_name = ""
 use_cloudscraper = False
+cloudscraper_failed = False
+BrowserPath = ""
 
 _daemon_json_serializer = System.Web.Script.Serialization.JavaScriptSerializer()
 _daemon_json_serializer.MaxJsonLength = System.Int32.MaxValue
@@ -1499,6 +1502,37 @@ def _script_dir():
     and/or BedethequeFetcher.py)."""
     return __file__[:-len('BedethequeScraper2.py')]
 
+def _runtime_exe(exe):
+    """Path of a copy of BedethequeFetcher.exe outside the plugin folder.
+
+    A running exe cannot be overwritten. When ComicRack installs an update at
+    startup and the old fetcher is still running from the plugin folder, the
+    copy fails and ComicRack deletes the installed plugin. Running a copy keeps
+    the plugin folder free. The copy is named after the size and time stamp of
+    the exe, so an update never collides with a copy that is still running."""
+    try:
+        info = FileInfo(exe)
+        folder = System.IO.Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "BedethequeScraper2", "bin")
+        System.IO.Directory.CreateDirectory(folder)
+        name = "BedethequeFetcher_" + str(info.Length) + "_" + str(info.LastWriteTimeUtc.Ticks) + ".exe"
+        target = System.IO.Path.Combine(folder, name)
+        if not File.Exists(target):
+            temp = target + ".tmp"
+            File.Copy(exe, temp, True)
+            File.Move(temp, target)
+        for old in System.IO.Directory.GetFiles(folder, "BedethequeFetcher_*"):
+            if not old.Equals(target, System.StringComparison.OrdinalIgnoreCase):
+                try:
+                    File.Delete(old)  # fails, harmlessly, while that version still runs
+                except:
+                    pass
+        return target
+    except:
+        debuglog("Could not copy " + DAEMON_EXE + ", running it from the plugin folder: " + str(debuglogOnError())[:200])
+        return exe
+
 def get_args(url=None):
     """Get the command line arguments to launch the daemon (BedethequeFetcher.exe).
     If url is provided, it will be passed as a command line argument."""
@@ -1506,12 +1540,14 @@ def get_args(url=None):
 
     exe = _script_dir() + DAEMON_EXE
     script = _script_dir() + "BedethequeFetcher.py"
+    # The fetcher reads BrowserPath from the plugin's App.Config.
+    config_arg = ' --config "' + _script_dir() + 'App.Config"'
 
     if File.Exists(exe):
         # Full path: a bare exe name would not resolve to this folder.
-        what, args = exe, ""
+        what, args = _runtime_exe(exe), config_arg
     elif File.Exists(script):
-        what, args = "BedethequeFetcher.py", '"' + script + '"'
+        what, args = "BedethequeFetcher.py", '"' + script + '"' + config_arg
     else:
         daemon_running_name = ""
         log_BD(DAEMON_EXE + " / BedethequeFetcher.py not found in " + _script_dir, "", 1)
@@ -1580,7 +1616,7 @@ def launch_process(url=None):
         return None
 
     # Log the short name (script name or exe file name, not a full path).
-    display = what[len(_script_dir()):] if what.startswith(_script_dir()) else what
+    display = System.IO.Path.GetFileName(what)
     daemon_running_name = '' if url else display
     debuglog(display + " launched (pid " + str(proc.Id) + ")")
     return proc
@@ -1666,10 +1702,16 @@ def _daemon_json_field(line, key):
     return System.Convert.ToString(value) if found else None
 
 def fetch(url):
-    if use_cloudscraper:
-        return fetch_cloudscraper(url)
-    else:
-        return fetch_daemon(url)
+    global cloudscraper_failed
+    if use_cloudscraper and not cloudscraper_failed:
+        try:
+            return fetch_cloudscraper(url)
+        except Exception, e:
+            # Cloudscraper is blocked (e.g. Cloudflare challenge). Stop using it
+            # for this session and let the daemon (urllib, then the browser) fetch.
+            cloudscraper_failed = True
+            debuglog("cloudscraper failed, using the fetcher daemon with browser fallback instead: " + str(e)[:300])
+    return fetch_daemon(url)
 
 def fetch_cloudscraper(url):
     stdout_result = [None]
@@ -1797,6 +1839,26 @@ def fetch_daemon(url):
         raise RuntimeError("Malformed BedethequeFetcher response (no 'html' field) for " + url)
     return html
 
+def release_browser():
+    """Tell the fetcher daemon the scrape is over so it closes the browser it
+    may have opened for the Cloudflare fallback. Does nothing if the daemon is
+    not running (it is never started just for this)."""
+    try:
+        if not is_daemon_running():
+            return
+        client = TcpClient()
+        try:
+            client.Connect(DAEMON_HOST, DAEMON_PORT)
+            stream = client.GetStream()
+            stream.WriteTimeout = DAEMON_CONNECT_TIMEOUT_MS
+            stream.ReadTimeout = 20000
+            data = System.Text.Encoding.UTF8.GetBytes('{"command": "close_browser"}\r\n')
+            stream.Write(data, 0, data.Length)
+            System.IO.StreamReader(stream, System.Text.Encoding.UTF8).ReadLine()
+        finally:
+            client.Close()
+    except:
+        debuglog("release_browser failed: " + str(debuglogOnError())[:200])
 def _read_url(url, bSingle):
     page = ''
 
@@ -2092,7 +2154,7 @@ class ProgressBarDialog(Form):
 def LoadSetting():
 
     global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ARTICLES, SUBPATT, COUNTOF, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, ONESHOTFORMAT
-    global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, PadNumber, SerieResumeEverywhere, use_cloudscraper
+    global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, PadNumber, SerieResumeEverywhere, use_cloudscraper, BrowserPath
     global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, CBCouverture, AlwaysChooseSerie, ShortWebLink, AcceptGenericArtists
 
     ###############################################################
@@ -2242,6 +2304,10 @@ def LoadSetting():
     except Exception as e:
         use_cloudscraper = False
     try:
+        BrowserPath = MySettings.Get("BrowserPath")
+    except Exception as e:
+        BrowserPath = ""
+    try:
         AllowUserChoice = ft(MySettings.Get("CBStop"))
     except Exception as e:
         AllowUserChoice = "2"
@@ -2361,6 +2427,7 @@ def SaveSetting():
     MySettings.Set("CBDefault",  tf(CBDefault))
     MySettings.Set("CBRescrape",  tf(CBRescrape))
     MySettings.Set("use_cloudscraper", tf(use_cloudscraper))
+    MySettings.Set("BrowserPath", BrowserPath)
     MySettings.Set("ARTICLES",  ARTICLES)
     MySettings.Set("SUBPATT",  SUBPATT)
     MySettings.Set("COUNTOF",  tf(COUNTOF))
@@ -2531,6 +2598,9 @@ class BDConfigForm(Form):
         self._labelPadNumber = System.Windows.Forms.Label()
         self._CBRescrape = System.Windows.Forms.CheckBox()
         self._use_cloudscraper = System.Windows.Forms.CheckBox()
+        self._labelBrowserPath = System.Windows.Forms.Label()
+        self._TBBrowserPath = System.Windows.Forms.TextBox()
+        self._ButtonBrowserPath = System.Windows.Forms.Button()
         self._labelChoice = System.Windows.Forms.GroupBox()
         self._radioChoiceSkip = System.Windows.Forms.RadioButton()
         self._radioChoiceUser = System.Windows.Forms.RadioButton()
@@ -2550,7 +2620,7 @@ class BDConfigForm(Form):
         self._TabData.Location = System.Drawing.Point(0, 0)
         self._TabData.Name = "TabData"
         self._TabData.SelectedIndex = 0
-        self._TabData.Size = System.Drawing.Size(612, 394)
+        self._TabData.Size = System.Drawing.Size(612, 422)
         self._TabData.TabIndex = 22
         #
         # tabPage1
@@ -2573,6 +2643,9 @@ class BDConfigForm(Form):
         self._tabPage1.Controls.Add(self._labelTIMEOUTS)
         self._tabPage1.Controls.Add(self._CBRescrape)
         self._tabPage1.Controls.Add(self._use_cloudscraper)
+        self._tabPage1.Controls.Add(self._labelBrowserPath)
+        self._tabPage1.Controls.Add(self._TBBrowserPath)
+        self._tabPage1.Controls.Add(self._ButtonBrowserPath)
         self._tabPage1.Controls.Add(self._labelChoice)
         self._labelChoice.Controls.Add(self._radioChoiceSkip)
         self._labelChoice.Controls.Add(self._radioChoiceUser)
@@ -2689,7 +2762,7 @@ class BDConfigForm(Form):
         self._CancelButton.BackColor = System.Drawing.Color.Red
         self._CancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
         self._CancelButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
-        self._CancelButton.Location = System.Drawing.Point(520, 402)
+        self._CancelButton.Location = System.Drawing.Point(520, 430)
         self._CancelButton.Name = "CancelButton"
         self._CancelButton.Size = System.Drawing.Size(75, 32)
         self._CancelButton.TabIndex = 30
@@ -2702,7 +2775,7 @@ class BDConfigForm(Form):
         self._OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
         self._OKButton.Font = System.Drawing.Font("Microsoft Sans Serif", 9, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
         self._OKButton.ForeColor = System.Drawing.Color.Black
-        self._OKButton.Location = System.Drawing.Point(16, 402)
+        self._OKButton.Location = System.Drawing.Point(16, 430)
         self._OKButton.Name = "OKButton"
         self._OKButton.Size = System.Drawing.Size(75, 32)
         self._OKButton.TabIndex = 29
@@ -2740,7 +2813,7 @@ class BDConfigForm(Form):
         #
         self._labelVersion.Font = System.Drawing.Font("Microsoft Sans Serif", 6.75, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, 0)
         self._labelVersion.ImageAlign = System.Drawing.ContentAlignment.BottomCenter
-        self._labelVersion.Location = System.Drawing.Point(162, 412)
+        self._labelVersion.Location = System.Drawing.Point(162, 440)
         self._labelVersion.Name = "labelVersion"
         self._labelVersion.Size = System.Drawing.Size(264, 16)
         self._labelVersion.TabIndex = 19
@@ -2886,6 +2959,37 @@ class BDConfigForm(Form):
         self._use_cloudscraper.Text = Trans(152)
         self._use_cloudscraper.UseVisualStyleBackColor = True
         self._use_cloudscraper.CheckState = if_else(use_cloudscraper, CheckState.Checked, CheckState.Unchecked)
+        #
+        # labelBrowserPath
+        #
+        self._labelBrowserPath.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
+        self._labelBrowserPath.Location = System.Drawing.Point(8, 370)
+        self._labelBrowserPath.Name = "labelBrowserPath"
+        self._labelBrowserPath.Size = System.Drawing.Size(230, 20)
+        self._labelBrowserPath.TabIndex = 23
+        self._labelBrowserPath.Text = Trans(153)
+        self._labelBrowserPath.Tag = "Label"
+        self._labelBrowserPath.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        #
+        # TBBrowserPath
+        #
+        self._TBBrowserPath.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
+        self._TBBrowserPath.Location = System.Drawing.Point(240, 370)
+        self._TBBrowserPath.Name = "TBBrowserPath"
+        self._TBBrowserPath.Size = System.Drawing.Size(254, 20)
+        self._TBBrowserPath.TabIndex = 24
+        self._TBBrowserPath.Text = BrowserPath
+        #
+        # ButtonBrowserPath
+        #
+        self._ButtonBrowserPath.Font = System.Drawing.Font("Microsoft Sans Serif", 8.25, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0)
+        self._ButtonBrowserPath.Location = System.Drawing.Point(500, 368)
+        self._ButtonBrowserPath.Name = "ButtonBrowserPath"
+        self._ButtonBrowserPath.Size = System.Drawing.Size(90, 24)
+        self._ButtonBrowserPath.TabIndex = 25
+        self._ButtonBrowserPath.Text = Trans(154)
+        self._ButtonBrowserPath.UseVisualStyleBackColor = True
+        self._ButtonBrowserPath.Click += self.ButtonBrowserPath_Click
         #
         # COUNTOF
         #
@@ -3144,7 +3248,7 @@ class BDConfigForm(Form):
         #
         # ConfigForm
         #
-        self.ClientSize = System.Drawing.Size(612, 444)
+        self.ClientSize = System.Drawing.Size(612, 472)
         self.Controls.Add(self._TabData)
         self.Controls.Add(self._labelVersion)
         self.Controls.Add(self._CancelButton)
@@ -3171,7 +3275,7 @@ class BDConfigForm(Form):
     def button_Click(self, sender, e):
 
         global SHOWRENLOG, SHOWDBGLOG, DBGONOFF, DBGLOGMAX, RENLOGMAX, LANGENFR, aWord, ONESHOTFORMAT
-        global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, SerieResumeEverywhere, AcceptGenericArtists, use_cloudscraper
+        global TBTags, CBCover, CBStatus, CBGenre, CBNotes, CBWeb, CBCount, CBSynopsys, CBImprint, CBLetterer, CBInker, CBPrinted, CBRating, CBISBN, CBDefault, CBRescrape, AllowUserChoice, PopUpEditionForm, SerieResumeEverywhere, AcceptGenericArtists, use_cloudscraper, BrowserPath
         global CBLanguage, CBEditor, CBFormat, CBColorist, CBPenciller, CBWriter, CBTitle, CBSeries, ARTICLES, SUBPATT, COUNTOF, CBCouverture, COUNTFINIE, TITLEIT, TIMEOUT, TIMEOUTS, TIMEPOPUP, FORMATARTICLES, PadNumber, AlwaysChooseSerie, ShortWebLink
 
         if sender.Name.CompareTo(self._OKButton.Name) == 0:
@@ -3208,6 +3312,7 @@ class BDConfigForm(Form):
             CBDefault = if_else(self._CBDefault.CheckState == CheckState.Checked, True, False)
             CBRescrape = if_else(self._CBRescrape.CheckState == CheckState.Checked, True, False)
             use_cloudscraper = if_else(self._use_cloudscraper.CheckState == CheckState.Checked, True, False)
+            BrowserPath = self._TBBrowserPath.Text.strip()
             AllowUserChoice = if_else(self._radioChoiceUser.Checked, True, False)
             if self._radioChoiceUser.Checked:
                 if self._labelTIMEPOPUP.CheckState == CheckState.Checked:
@@ -3270,6 +3375,14 @@ class BDConfigForm(Form):
         elif sender.Name.CompareTo(self._ButtonCheckAll.Name) == 0:
             for index in range(self._ScrapedDataCheckedListBox.Items.Count):
                 self._ScrapedDataCheckedListBox.SetItemCheckState(index, CheckState.Checked)
+
+    def ButtonBrowserPath_Click(self, sender, e):
+        dialog = OpenFileDialog()
+        dialog.Filter = "Executable (*.exe)|*.exe|All files (*.*)|*.*"
+        if self._TBBrowserPath.Text.strip() != "" and File.Exists(self._TBBrowserPath.Text.strip()):
+            dialog.FileName = self._TBBrowserPath.Text.strip()
+        if dialog.ShowDialog(self) == DialogResult.OK:
+            self._TBBrowserPath.Text = dialog.FileName
 
     def ScrapedDataCheckedListBox_CheckItem(self, sender, e):
         self._scrapedData[self._scrapedData.keys()[e.Index]]['state'] = e.NewValue
@@ -3694,7 +3807,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
                     f.Refresh()
 
                     scrape = DirectScrape()
-                    result = scrape.ShowDialog()
+                    result = scrape.ShowDialog(ComicRack.MainWindow)
 
                     if result == DialogResult.Cancel or (LinkBD2 == ""):
                         return False
@@ -3743,6 +3856,7 @@ def QuickScrapeBD2(books, book = "", cLink = False):
             f.Update(Trans(16), 1, book)
             f.Refresh()
             f.Close()
+            release_browser()
 
             return False
 

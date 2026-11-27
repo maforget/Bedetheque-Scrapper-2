@@ -63,6 +63,7 @@ def main():
         "--name=BedethequeFetcher",
         "--onefile",
         "--console",
+        "--hidden-import=websockets.sync.client",
         cloudscraper_browsers_json_data_arg(),
         "--distpath=" + DIST_DIR,
         "--workpath=" + BUILD_DIR,
