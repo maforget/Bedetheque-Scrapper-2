@@ -5,6 +5,31 @@ Script that scrapes data from Bedetheque.com for ComicRack.
 
 ![Bedetheque Scrapper 2 v5 6 Demo](https://user-images.githubusercontent.com/11904426/115951797-b56dbf80-a4b0-11eb-821b-6e97ca2cfca1.gif)
 
+## Cloudflare and the system browser
+Bedetheque.com is protected by Cloudflare. When Cloudflare answers with a challenge, `BedethequeFetcher.exe` loads the page in the browser already installed on your computer (Edge, Chrome or Brave). To use a different browser, set its path in the plugin configuration.
+
+- The browser runs on a separate, hidden Windows desktop, so no window appears and ComicRack keeps the focus. If the challenge needs a click, a browser window opens on your desktop: click the checkbox and scraping continues.
+- The browser uses its own profile in `%LOCALAPPDATA%\BedethequeScraper2\browser_profile`. It never touches your normal browser profile, passwords or cookies.
+- Only the `cf_clearance` cookie and the browser's User-Agent are saved, in `%LOCALAPPDATA%\BedethequeScraper2\clearance.json`. Later requests use them over plain HTTP, without starting the browser.
+- The fetcher only loads `https://*.bedetheque.com` pages, and it closes the browser when the scrape ends or the fetcher exits.
+- `%LOCALAPPDATA%\BedethequeScraper2\fetcher.log` lists every URL requested, including search terms. It contains no cookie values.
+- Delete `%LOCALAPPDATA%\BedethequeScraper2` to reset everything.
+
+### Antivirus warnings
+Starting a browser on a hidden desktop and reading a cookie from it over the browser's remote debugging port is also what some malware does. Because of this, antivirus software can flag `BedethequeFetcher.exe`; Microsoft Defender has flagged a development build as `Trojan:Win32/Bearfoos.A!ml`. Its machine-learning heuristic gives that kind of name to unknown programs. The source of the fetcher is in [`tools/BedethequeFetcher.py`](tools/BedethequeFetcher.py), and the exe is built from it by the release workflow. If your antivirus blocks it, restore the file and report it as a false positive, for Defender at <https://www.microsoft.com/wdsi/filesubmission>.
+
+
+## Tests
+The plugin tests (`tests\test_*_ipy.py`) run in ComicRack Community Edition's own IronPython, so ComicRack CE must be installed in `C:\Program Files\ComicRack Community Edition`. They import the plugin from a temporary copy of `src`. The fetcher tests (the other `tests\test_*.py`) run in Python 3 with `websockets` 15 or later, and point `LOCALAPPDATA` at a temporary folder, so your saved clearance and browser profile are never changed.
+
+The `*_live*` tests use bedetheque.com, the system browser and the built `src\BedethequeFetcher.exe`, so they run only with `-Live`. They start from a copy of your browser profile. If Cloudflare asks for a click, a browser window opens: click the checkbox.
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_tests.ps1              # offline tests, then build
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_tests.ps1 -Live        # also the live tests
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_tests.ps1 plugin -NoBuild   # tests matching a name, no build
+```
+
 ----
 
 ##### Other Plugins: 

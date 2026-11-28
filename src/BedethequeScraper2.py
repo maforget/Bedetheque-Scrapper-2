@@ -1502,37 +1502,6 @@ def _script_dir():
     and/or BedethequeFetcher.py)."""
     return __file__[:-len('BedethequeScraper2.py')]
 
-def _runtime_exe(exe):
-    """Path of a copy of BedethequeFetcher.exe outside the plugin folder.
-
-    A running exe cannot be overwritten. When ComicRack installs an update at
-    startup and the old fetcher is still running from the plugin folder, the
-    copy fails and ComicRack deletes the installed plugin. Running a copy keeps
-    the plugin folder free. The copy is named after the size and time stamp of
-    the exe, so an update never collides with a copy that is still running."""
-    try:
-        info = FileInfo(exe)
-        folder = System.IO.Path.Combine(
-            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-            "BedethequeScraper2", "bin")
-        System.IO.Directory.CreateDirectory(folder)
-        name = "BedethequeFetcher_" + str(info.Length) + "_" + str(info.LastWriteTimeUtc.Ticks) + ".exe"
-        target = System.IO.Path.Combine(folder, name)
-        if not File.Exists(target):
-            temp = target + ".tmp"
-            File.Copy(exe, temp, True)
-            File.Move(temp, target)
-        for old in System.IO.Directory.GetFiles(folder, "BedethequeFetcher_*"):
-            if not old.Equals(target, System.StringComparison.OrdinalIgnoreCase):
-                try:
-                    File.Delete(old)  # fails, harmlessly, while that version still runs
-                except:
-                    pass
-        return target
-    except:
-        debuglog("Could not copy " + DAEMON_EXE + ", running it from the plugin folder: " + str(debuglogOnError())[:200])
-        return exe
-
 def get_args(url=None):
     """Get the command line arguments to launch the daemon (BedethequeFetcher.exe).
     If url is provided, it will be passed as a command line argument."""
@@ -1540,17 +1509,22 @@ def get_args(url=None):
 
     exe = _script_dir() + DAEMON_EXE
     script = _script_dir() + "BedethequeFetcher.py"
-    # The fetcher reads BrowserPath from the plugin's App.Config.
-    config_arg = ' --config "' + _script_dir() + 'App.Config"'
+    # Browser used by the fetcher's Cloudflare fallback (empty: auto-detect).
+    browser_arg = ''
+    if BrowserPath.strip():
+        browser_arg = ' --browser "' + BrowserPath.strip().strip('"') + '"'
+
+    # Always pass the port, so the daemon listens where this script connects.
+    port_arg = ' --port ' + str(DAEMON_PORT)
 
     if File.Exists(exe):
         # Full path: a bare exe name would not resolve to this folder.
-        what, args = _runtime_exe(exe), config_arg
+        what, args = exe, port_arg + browser_arg
     elif File.Exists(script):
-        what, args = "BedethequeFetcher.py", '"' + script + '"' + config_arg
+        what, args = "BedethequeFetcher.py", '"' + script + '"' + port_arg + browser_arg
     else:
         daemon_running_name = ""
-        log_BD(DAEMON_EXE + " / BedethequeFetcher.py not found in " + _script_dir, "", 1)
+        log_BD(DAEMON_EXE + " / BedethequeFetcher.py not found in " + _script_dir(), "", 1)
         return None
 
     if use_cloudscraper and url:
@@ -1616,7 +1590,7 @@ def launch_process(url=None):
         return None
 
     # Log the short name (script name or exe file name, not a full path).
-    display = System.IO.Path.GetFileName(what)
+    display = what[len(_script_dir()):] if what.startswith(_script_dir()) else what
     daemon_running_name = '' if url else display
     debuglog(display + " launched (pid " + str(proc.Id) + ")")
     return proc
@@ -1839,26 +1813,74 @@ def fetch_daemon(url):
         raise RuntimeError("Malformed BedethequeFetcher response (no 'html' field) for " + url)
     return html
 
+def _daemon_command(command, timeout_ms):
+    """Send {"command": ...} to the fetcher daemon and wait for its reply.
+    Does nothing if the daemon is not running (it is never started just for
+    this). Returns True if the daemon answered."""
+    if not is_daemon_running():
+        return False
+    client = TcpClient()
+    try:
+        client.Connect(DAEMON_HOST, DAEMON_PORT)
+        stream = client.GetStream()
+        stream.WriteTimeout = DAEMON_CONNECT_TIMEOUT_MS
+        stream.ReadTimeout = timeout_ms
+        data = System.Text.Encoding.UTF8.GetBytes('{"command": "' + command + '"}\r\n')
+        stream.Write(data, 0, data.Length)
+        System.IO.StreamReader(stream, System.Text.Encoding.UTF8).ReadLine()
+        return True
+    finally:
+        client.Close()
+
 def release_browser():
     """Tell the fetcher daemon the scrape is over so it closes the browser it
-    may have opened for the Cloudflare fallback. Does nothing if the daemon is
-    not running (it is never started just for this)."""
+    may have opened for the Cloudflare fallback."""
     try:
-        if not is_daemon_running():
-            return
-        client = TcpClient()
-        try:
-            client.Connect(DAEMON_HOST, DAEMON_PORT)
-            stream = client.GetStream()
-            stream.WriteTimeout = DAEMON_CONNECT_TIMEOUT_MS
-            stream.ReadTimeout = 20000
-            data = System.Text.Encoding.UTF8.GetBytes('{"command": "close_browser"}\r\n')
-            stream.Write(data, 0, data.Length)
-            System.IO.StreamReader(stream, System.Text.Encoding.UTF8).ReadLine()
-        finally:
-            client.Close()
+        _daemon_command("close_browser", 20000)
     except:
         debuglog("release_browser failed: " + str(debuglogOnError())[:200])
+
+def _fetcher_processes():
+    """Running BedethequeFetcher.exe processes started from this plugin's
+    folder (the PyInstaller bootloader and its child)."""
+    exe = System.IO.Path.GetFullPath(_script_dir() + DAEMON_EXE)
+    found = []
+    for p in Process.GetProcessesByName("BedethequeFetcher"):
+        try:
+            if System.String.Equals(p.MainModule.FileName, exe, System.StringComparison.OrdinalIgnoreCase):
+                found.append(p)
+        except:
+            pass  # another user's process, or already gone
+    return found
+
+def stop_fetch_daemon():
+    """Make the fetcher daemon exit and wait until it has.
+
+    While BedethequeFetcher.exe runs, Windows will not let it be overwritten.
+    ComicRack installs pending plugin updates as soon as it starts, and when
+    it restarts it starts the new instance before the old one has exited; if
+    the copy fails it deletes the installed plugin. So the daemon is stopped
+    here, while ComicRack is still closing.
+
+    ComicRack runs each plugin command in its own script scope, so this
+    cannot rely on anything the scrape command remembered: it looks for the
+    running exe instead."""
+    procs = _fetcher_processes()
+    if not procs:
+        return  # nothing running: no socket, no delay
+    try:
+        _daemon_command("shutdown", 10000)
+    except:
+        pass  # the daemon closes the connection as it exits
+    for p in procs:
+        try:
+            # The PyInstaller bootloader exits once the daemon has.
+            if not p.WaitForExit(10000):
+                p.Kill()
+                p.WaitForExit(3000)
+        except:
+            pass
+
 def _read_url(url, bSingle):
     page = ''
 
@@ -3700,6 +3722,21 @@ def ConfigureBD2Quick():
         return
     else:
         SaveSetting()
+
+#@Name Bedetheque Scraper 2 (on close)
+#@Key Bedetheque2-shutdown
+#@Hook Shutdown
+#@Image BD2.png
+#@Description Stops BedethequeFetcher when ComicRack closes.
+def BD2_shutdown(is_user_closing):
+    """When ComicRack closes: stop the fetcher daemon, so its exe is not
+    locked when ComicRack installs an update on the next start. Must return
+    True, or ComicRack cancels the close."""
+    try:
+        stop_fetch_daemon()
+    except:
+        pass
+    return True
 
 #@Name Configurer BD2
 #@Image BD2.png
