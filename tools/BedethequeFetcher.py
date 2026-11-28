@@ -35,8 +35,9 @@ import time
 import traceback
 import urllib.error
 import urllib.request
-from ctypes import wintypes
 from urllib.parse import urlsplit
+if os.name == "nt":
+    from ctypes import wintypes
 
 """
 Small daemon that fetches bedetheque.com pages on demand.
@@ -101,15 +102,29 @@ log = logging.getLogger("fetch_daemon")
 _direct = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
+def _allowed_host(host):
+    host = (host or "").lower()
+    return host == ALLOWED_DOMAIN or host.endswith("." + ALLOWED_DOMAIN)
+
+
 def is_allowed(url):
-    """Only https pages of bedetheque.com may be fetched or opened."""
+    """Only https pages of bedetheque.com may be fetched or opened.
+
+    Browsers and urlsplit read some URLs differently: for
+    "https://evil.com\\@bedetheque.com/" urlsplit sees bedetheque.com while
+    Chrome treats the backslash as a slash and opens evil.com. So URLs with
+    a backslash, a space or a control character, a user name or another port
+    are refused. The plugin percent-encodes the URLs it sends (url_fix)."""
+    if not isinstance(url, str) or "\\" in url or any(ord(ch) < 33 for ch in url):
+        return False
     try:
         parts = urlsplit(url)
-        host = (parts.hostname or "").lower()
+        host = parts.hostname
+        port = parts.port
     except ValueError:
         return False
-    return parts.scheme == "https" and (
-        host == ALLOWED_DOMAIN or host.endswith("." + ALLOWED_DOMAIN))
+    return (parts.scheme == "https" and parts.username is None
+            and port in (None, 443) and _allowed_host(host))
 
 
 class _AllowedRedirects(urllib.request.HTTPRedirectHandler):
@@ -164,38 +179,62 @@ def _load_clearance():
             data = json.load(fh)
     except (OSError, ValueError):
         return None, None
+    if not isinstance(data, dict):
+        return None, None
+    user_agent = data.get("user_agent")
     cookie = data.get("cookie")
-    if cookie is None:
+    if cookie is None and isinstance(data.get("cookies"), list):
         # Older format: a list of all bedetheque cookies. Keep only the
         # clearance, and rewrite the file without the others.
-        cookie = next((c for c in data.get("cookies", [])
-                       if c.get("name") == CLEARANCE_COOKIE), None)
-        if cookie is not None and data.get("user_agent"):
-            _save_clearance(data["user_agent"], cookie)
-    if (not cookie or cookie.get("name") != CLEARANCE_COOKIE
-            or not data.get("user_agent")):
+        cookie = next((c for c in data["cookies"]
+                       if isinstance(c, dict) and c.get("name") == CLEARANCE_COOKIE), None)
+        if _valid_clearance(user_agent, cookie):
+            _save_clearance(user_agent, cookie)
+    if not _valid_clearance(user_agent, cookie):
         return None, None
-    if 0 < (cookie.get("expires") or -1) < time.time():
-        return None, None
-    return data["user_agent"], cookie
+    return user_agent, cookie
+
+
+def _valid_clearance(user_agent, cookie):
+    """True for a usable, unexpired cf_clearance cookie of bedetheque.com."""
+    if not isinstance(user_agent, str) or not user_agent or not isinstance(cookie, dict):
+        return False
+    if (cookie.get("name") != CLEARANCE_COOKIE or not isinstance(cookie.get("value"), str)
+            or not isinstance(cookie.get("domain"), str)
+            or not _allowed_host(cookie["domain"].lstrip("."))):
+        return False
+    expires = cookie.get("expires")
+    if expires is not None and not isinstance(expires, (int, float)):
+        return False
+    return not (0 < (expires or -1) < time.time())
+
+
+_save_lock = threading.Lock()
 
 
 def _save_clearance(user_agent, cookie):
-    """Write the clearance atomically (temp file + os.replace)."""
+    """Write the clearance atomically (temp file + os.replace). Saves are
+    serialised: on Windows, os.replace fails while another thread replaces
+    the same file."""
     path = _clearance_file()
-    tmp = path + ".tmp"
     keep = {k: cookie.get(k) for k in
             ("name", "value", "domain", "path", "expires", "secure")}
-    try:
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump({"user_agent": user_agent, "cookie": keep}, fh)
-        os.replace(tmp, path)
-    except OSError:
-        log.warning("could not save %s", path)
+    tmp = None
+    with _save_lock:
         try:
-            os.remove(tmp)
+            # A temp name of its own, also safe against another process.
+            fd, tmp = tempfile.mkstemp(prefix="clearance.", suffix=".tmp",
+                                       dir=os.path.dirname(path))
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump({"user_agent": user_agent, "cookie": keep}, fh)
+            os.replace(tmp, path)
         except OSError:
-            pass
+            log.warning("could not save %s", path)
+            if tmp:
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
 
 
 def _jar_cookie(c):
@@ -217,8 +256,13 @@ class Daemon:
         self._jar = _load_jar()
         self._ua, cookie = _load_clearance()
         if cookie:
-            self._jar.set_cookie(_jar_cookie(cookie))
-            log.info("loaded saved Cloudflare clearance")
+            try:
+                self._jar.set_cookie(_jar_cookie(cookie))
+                log.info("loaded saved Cloudflare clearance")
+            except (KeyError, TypeError, ValueError) as exc:
+                # A damaged file must not stop the daemon from starting.
+                log.warning("ignoring the saved clearance: %r", exc)
+                self._ua = None
         self._opener = _build_opener(self._jar, self._ua)
         self._browser = BrowserFetcher(browser_path)
         self._browser_until = 0.0  # use the browser directly until then
@@ -257,6 +301,11 @@ class Daemon:
         try:
             html, _ = self._read_html(opener, url)
         except urllib.error.HTTPError as exc:
+            # Cloudflare marks its challenge pages with cf-mitigated. A 403 or
+            # 503 without it (a rejected CSRF token, an origin outage, or a
+            # Cloudflare page that does not set the header) does not start
+            # the browser: that is the trade-off for not launching it on
+            # every plain error.
             challenged = bool(exc.headers and exc.headers.get("cf-mitigated"))
             if not challenged:
                 if exc.code == 403:
@@ -347,73 +396,76 @@ class DesktopUnavailable(OSError):
     pass
 
 
-# Win32 declarations for _JobProcess.
-class _STARTUPINFOW(ctypes.Structure):
-    _fields_ = [("cb", wintypes.DWORD), ("lpReserved", wintypes.LPWSTR),
-                ("lpDesktop", wintypes.LPWSTR), ("lpTitle", wintypes.LPWSTR),
-                ("dwX", wintypes.DWORD), ("dwY", wintypes.DWORD),
-                ("dwXSize", wintypes.DWORD), ("dwYSize", wintypes.DWORD),
-                ("dwXCountChars", wintypes.DWORD), ("dwYCountChars", wintypes.DWORD),
-                ("dwFillAttribute", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
-                ("wShowWindow", wintypes.WORD), ("cbReserved2", wintypes.WORD),
-                ("lpReserved2", ctypes.c_void_p), ("hStdInput", wintypes.HANDLE),
-                ("hStdOutput", wintypes.HANDLE), ("hStdError", wintypes.HANDLE)]
+# Win32 declarations for _JobProcess. Only on Windows, so the module can
+# still be imported (linted, tested) elsewhere.
+_k32 = _u32 = None
+if os.name == "nt":
+    class _STARTUPINFOW(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("lpReserved", wintypes.LPWSTR),
+                    ("lpDesktop", wintypes.LPWSTR), ("lpTitle", wintypes.LPWSTR),
+                    ("dwX", wintypes.DWORD), ("dwY", wintypes.DWORD),
+                    ("dwXSize", wintypes.DWORD), ("dwYSize", wintypes.DWORD),
+                    ("dwXCountChars", wintypes.DWORD), ("dwYCountChars", wintypes.DWORD),
+                    ("dwFillAttribute", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
+                    ("wShowWindow", wintypes.WORD), ("cbReserved2", wintypes.WORD),
+                    ("lpReserved2", ctypes.c_void_p), ("hStdInput", wintypes.HANDLE),
+                    ("hStdOutput", wintypes.HANDLE), ("hStdError", wintypes.HANDLE)]
 
 
-class _PROCESS_INFORMATION(ctypes.Structure):
-    _fields_ = [("hProcess", wintypes.HANDLE), ("hThread", wintypes.HANDLE),
-                ("dwProcessId", wintypes.DWORD), ("dwThreadId", wintypes.DWORD)]
+    class _PROCESS_INFORMATION(ctypes.Structure):
+        _fields_ = [("hProcess", wintypes.HANDLE), ("hThread", wintypes.HANDLE),
+                    ("dwProcessId", wintypes.DWORD), ("dwThreadId", wintypes.DWORD)]
 
 
-class _IO_COUNTERS(ctypes.Structure):
-    _fields_ = [(n, ctypes.c_ulonglong) for n in
-                ("ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
-                 "ReadTransferCount", "WriteTransferCount", "OtherTransferCount")]
+    class _IO_COUNTERS(ctypes.Structure):
+        _fields_ = [(n, ctypes.c_ulonglong) for n in
+                    ("ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
+                     "ReadTransferCount", "WriteTransferCount", "OtherTransferCount")]
 
 
-class _JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
-    _fields_ = [("PerProcessUserTimeLimit", ctypes.c_longlong),
-                ("PerJobUserTimeLimit", ctypes.c_longlong),
-                ("LimitFlags", wintypes.DWORD),
-                ("MinimumWorkingSetSize", ctypes.c_size_t),
-                ("MaximumWorkingSetSize", ctypes.c_size_t),
-                ("ActiveProcessLimit", wintypes.DWORD),
-                ("Affinity", ctypes.c_size_t),
-                ("PriorityClass", wintypes.DWORD),
-                ("SchedulingClass", wintypes.DWORD)]
+    class _JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_longlong),
+                    ("PerJobUserTimeLimit", ctypes.c_longlong),
+                    ("LimitFlags", wintypes.DWORD),
+                    ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t),
+                    ("ActiveProcessLimit", wintypes.DWORD),
+                    ("Affinity", ctypes.c_size_t),
+                    ("PriorityClass", wintypes.DWORD),
+                    ("SchedulingClass", wintypes.DWORD)]
 
 
-class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
-    _fields_ = [("BasicLimitInformation", _JOBOBJECT_BASIC_LIMIT_INFORMATION),
-                ("IoInfo", _IO_COUNTERS),
-                ("ProcessMemoryLimit", ctypes.c_size_t),
-                ("JobMemoryLimit", ctypes.c_size_t),
-                ("PeakProcessMemoryUsed", ctypes.c_size_t),
-                ("PeakJobMemoryUsed", ctypes.c_size_t)]
+    class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+        _fields_ = [("BasicLimitInformation", _JOBOBJECT_BASIC_LIMIT_INFORMATION),
+                    ("IoInfo", _IO_COUNTERS),
+                    ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                    ("PeakJobMemoryUsed", ctypes.c_size_t)]
 
 
-_k32 = ctypes.WinDLL("kernel32", use_last_error=True)
-_u32 = ctypes.WinDLL("user32", use_last_error=True)
-_k32.CreateProcessW.argtypes = [
-    wintypes.LPCWSTR, wintypes.LPWSTR, ctypes.c_void_p, ctypes.c_void_p,
-    wintypes.BOOL, wintypes.DWORD, ctypes.c_void_p, wintypes.LPCWSTR,
-    ctypes.c_void_p, ctypes.c_void_p]
-_k32.CreateJobObjectW.restype = wintypes.HANDLE
-_k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
-_k32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int,
-                                         ctypes.c_void_p, wintypes.DWORD]
-_k32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
-_k32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
-_k32.ResumeThread.argtypes = [wintypes.HANDLE]
-_k32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-_k32.WaitForSingleObject.restype = wintypes.DWORD
-_k32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
-_k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
-_k32.CloseHandle.argtypes = [wintypes.HANDLE]
-_u32.CreateDesktopW.restype = wintypes.HANDLE
-_u32.CreateDesktopW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR, ctypes.c_void_p,
-                                wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p]
-_u32.CloseDesktop.argtypes = [wintypes.HANDLE]
+    _k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    _u32 = ctypes.WinDLL("user32", use_last_error=True)
+    _k32.CreateProcessW.argtypes = [
+        wintypes.LPCWSTR, wintypes.LPWSTR, ctypes.c_void_p, ctypes.c_void_p,
+        wintypes.BOOL, wintypes.DWORD, ctypes.c_void_p, wintypes.LPCWSTR,
+        ctypes.c_void_p, ctypes.c_void_p]
+    _k32.CreateJobObjectW.restype = wintypes.HANDLE
+    _k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+    _k32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int,
+                                             ctypes.c_void_p, wintypes.DWORD]
+    _k32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    _k32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    _k32.ResumeThread.argtypes = [wintypes.HANDLE]
+    _k32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    _k32.WaitForSingleObject.restype = wintypes.DWORD
+    _k32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    _k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    _k32.CloseHandle.argtypes = [wintypes.HANDLE]
+    _u32.CreateDesktopW.restype = wintypes.HANDLE
+    _u32.CreateDesktopW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR, ctypes.c_void_p,
+                                    wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p]
+    _u32.CloseDesktop.argtypes = [wintypes.HANDLE]
 
 
 class _JobProcess:
@@ -436,6 +488,8 @@ class _JobProcess:
         self._job = None
         self._handle = None
         self.returncode = None
+        if _k32 is None:
+            raise OSError("the browser fallback needs Windows")
         if desktop:
             GENERIC_ALL = 0x10000000
             self._desktop = _u32.CreateDesktopW(desktop, None, None, 0, GENERIC_ALL, None)
@@ -562,6 +616,9 @@ class BrowserFetcher:
         except OSError as exc:
             raise BrowserBusy("the browser profile is in use (%s)" % exc)
         args = [exe, "--remote-debugging-port=0", "--user-data-dir=" + profile,
+                # With remote debugging on, the browser sets navigator.webdriver,
+                # and Cloudflare then keeps challenging even after a click.
+                "--disable-blink-features=AutomationControlled",
                 "--no-first-run", "--no-default-browser-check", "--mute-audio",
                 "--hide-crash-restore-bubble", "about:blank"]
         if not visible:
@@ -603,9 +660,17 @@ class BrowserFetcher:
             self.close()
             raise BrowserError("could not connect to the browser: %s" % exc)
         self._msg_id = 0
-        self._ua = self._eval("navigator.userAgent")
-        threading.Thread(target=self._idle_watch, args=(self._proc,),
-                         daemon=True).start()
+        try:
+            self._ua = self._eval("navigator.userAgent")
+            if not self._ua:
+                raise PageError("the browser reported no User-Agent")
+            threading.Thread(target=self._idle_watch, args=(self._proc,),
+                             daemon=True).start()
+        except Exception as exc:
+            # Without the User-Agent the clearance could never be used, and
+            # without the idle watcher the browser would never close.
+            self.close()
+            raise BrowserError("the browser did not finish starting: %s" % exc)
 
     @staticmethod
     def _page_ws_url(port_file):
@@ -833,11 +898,11 @@ def _handle_client(conn, addr):
             if request.get("command") == "shutdown":
                 # Sent by the plugin when ComicRack closes, so the exe is no
                 # longer running (and locked) when ComicRack installs an update.
+                # Reply first: a fetch can hold the browser for a while, and
+                # ComicRack is waiting.
                 log.info("shutting down on request")
-                daemon().close()
                 _send_json(conn, {"ok": True})
-                logging.shutdown()
-                os._exit(0)
+                _exit_after_close(0, SHUTDOWN_CLOSE_SECS)
             url = request.get("url")
             if not url or not isinstance(url, str):
                 log.warning("missing 'url' from %s", peer)
@@ -982,6 +1047,21 @@ def main_daemon(host="127.0.0.1", port=56789):
     return 1 if error_occurred else 0
 
 
+SHUTDOWN_CLOSE_SECS = 8   # shutdown command: the plugin waits 10 s in all
+WATCHDOG_CLOSE_SECS = 3   # parent gone: nobody is waiting
+
+
+def _exit_after_close(code, secs):
+    """Close the browser gracefully (it flushes its profile), waiting at most
+    secs, then exit. If the close takes longer, exiting still ends the
+    browser: it is in a kill-on-close job object."""
+    closer = threading.Thread(target=daemon().close, daemon=True)
+    closer.start()
+    closer.join(secs)
+    logging.shutdown()
+    os._exit(code)
+
+
 _PROCESS_SYNCHRONIZE = 0x00100000
 _INFINITE = 0xFFFFFFFF
 
@@ -1007,8 +1087,7 @@ def watch_parent(parent_pid):
         kernel32.WaitForSingleObject(handle, _INFINITE)
         kernel32.CloseHandle(handle)
         log.info("parent process %s exited; shutting down", parent_pid)
-        logging.shutdown()
-        os._exit(1)
+        _exit_after_close(1, WATCHDOG_CLOSE_SECS)
 
     t = threading.Thread(target=_wait, name="parent-watchdog", daemon=True)
     t.start()

@@ -19,17 +19,6 @@ Bedetheque.com is protected by Cloudflare. When Cloudflare answers with a challe
 Starting a browser on a hidden desktop and reading a cookie from it over the browser's remote debugging port is also what some malware does. Because of this, antivirus software can flag `BedethequeFetcher.exe`; Microsoft Defender has flagged a development build as `Trojan:Win32/Bearfoos.A!ml`. Its machine-learning heuristic gives that kind of name to unknown programs. The source of the fetcher is in [`tools/BedethequeFetcher.py`](tools/BedethequeFetcher.py), and the exe is built from it by the release workflow. If your antivirus blocks it, restore the file and report it as a false positive, for Defender at <https://www.microsoft.com/wdsi/filesubmission>.
 
 
-## Tests
-The plugin tests (`tests\test_*_ipy.py`) run in ComicRack Community Edition's own IronPython, so ComicRack CE must be installed in `C:\Program Files\ComicRack Community Edition`. They import the plugin from a temporary copy of `src`. The fetcher tests (the other `tests\test_*.py`) run in Python 3 with `websockets` 15 or later, and point `LOCALAPPDATA` at a temporary folder, so your saved clearance and browser profile are never changed.
-
-The `*_live*` tests use bedetheque.com, the system browser and the built `src\BedethequeFetcher.exe`, so they run only with `-Live`. They start from a copy of your browser profile. If Cloudflare asks for a click, a browser window opens: click the checkbox.
-
-```
-powershell -NoProfile -ExecutionPolicy Bypass -File .\run_tests.ps1              # offline tests, then build
-powershell -NoProfile -ExecutionPolicy Bypass -File .\run_tests.ps1 -Live        # also the live tests
-powershell -NoProfile -ExecutionPolicy Bypass -File .\run_tests.ps1 plugin -NoBuild   # tests matching a name, no build
-```
-
 ----
 
 ##### Other Plugins: 

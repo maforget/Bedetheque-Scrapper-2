@@ -540,7 +540,7 @@ def SetSerieId(book, serie, num, nBooksIn):
         ListSeries = list()
         debuglog("Nom de Série pour recherche = " + dlgNameClean)
         # RechWhere: 0=Tout le site, 7=Toute la bédéthèque, 9=Revues, 10=Séries
-        urlN = '/search/tout?RechTexte=' + remove_accents(dlgNameClean.lower().strip()) +'&RechWhere=7'
+        urlN = series_search_url(dlgNameClean)
 
         debuglog(Trans(113), 'www.bedetheque.com' + urlN)
 
@@ -2049,6 +2049,13 @@ def isPositiveInt(value):
     except:
         return False
 
+def series_search_url(name):
+    """Search path for a series name. The name is encoded on its own, so an
+    '&', '#' or '%' in it stays part of the search instead of ending the
+    search term or starting a fragment."""
+    term = quote_plus(remove_accents(name.lower().strip()).encode('utf-8'))
+    return '/search/tout?RechTexte=' + term + '&RechWhere=7'
+
 def url_fix(s, charset='utf-8'):
 
     if isinstance(s, unicode):
@@ -2056,7 +2063,9 @@ def url_fix(s, charset='utf-8'):
 
     scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
     path = quote(path, "%/:=&~#+$!,?;'@()*[]")
-    qs = quote_plus(qs, ':&=')
+    # '%' and '+' are kept: values already encoded (series_search_url) must
+    # not be encoded twice, and '+' is an encoded space there.
+    qs = quote_plus(qs, ':&=%+')
 
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
